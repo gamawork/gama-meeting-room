@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+function formatDateFull(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -94,6 +99,7 @@
             text-align: left;
             direction: ltr;
             padding-left: 40px;
+            position: relative;
         }
 
         .form-group input[type="date"]::-webkit-calendar-picker-indicator,
@@ -102,6 +108,49 @@
             left: 12px;
             right: auto;
             cursor: pointer;
+        }
+
+        .time-selector {
+            position: relative;
+        }
+
+        .time-dropdown {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+        }
+
+        .time-dropdown:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .date-display {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .date-display:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .hidden-input {
+            display: none;
         }
 
         .form-group select:focus,
@@ -249,7 +298,7 @@
             color: #1f2937;
             cursor: pointer;
             transition: all 0.3s ease;
-            min-height: 60px;
+            min-height: 40px;
         }
 
         .meeting-cell:hover {
@@ -259,14 +308,8 @@
 
         .meeting-title {
             font-weight: 700;
-            margin-bottom: 4px;
             font-size: 15px;
             color: #111827;
-        }
-
-        .meeting-organizer {
-            font-size: 12px;
-            color: #374151;
         }
 
         .empty-cell {
@@ -473,17 +516,22 @@
                         
                         <div class="form-group">
                             <label for="meetingDate">日期</label>
-                            <input type="date" id="meetingDate">
+                            <div class="date-display" id="dateDisplay" onclick="openDatePicker()">請選擇日期</div>
+                            <input type="date" id="meetingDate" class="hidden-input">
                         </div>
                         
                         <div class="form-group">
                             <label for="startTime">開始時間</label>
-                            <input type="time" id="startTime">
+                            <select id="startTime" class="time-dropdown">
+                                <option value="">請選擇時間</option>
+                            </select>
                         </div>
                         
                         <div class="form-group">
                             <label for="endTime">結束時間</label>
-                            <input type="time" id="endTime">
+                            <select id="endTime" class="time-dropdown">
+                                <option value="">請選擇時間</option>
+                            </select>
                         </div>
                         
                         <div class="form-group">
@@ -587,25 +635,91 @@
             loadBookings();
         }
 
-        function showSetupInstructions() {
-            document.getElementById('setupModal').style.display = 'block';
-        }
-
-        function closeSetupModal() {
-            document.getElementById('setupModal').style.display = 'none';
-        }
-
-        function saveScriptUrl() {
-            const url = document.getElementById('scriptUrl').value.trim();
-            if (url) {
-                SCRIPT_URL = url;
-                localStorage.setItem('gamaBookingScriptUrl', url);
-                closeSetupModal();
-                loadBookings();
-                showModal('設定完成', '已成功儲存 Google Apps Script URL，系統現在可以正常使用了！');
-            } else {
-                alert('請輸入有效的 URL');
+        // 時間選項生成（30分鐘為單位）
+        function generateTimeOptions() {
+            const times = [];
+            for (let hour = 0; hour < 24; hour++) {
+                times.push(`${String(hour).padStart(2, '0')}:00`);
+                times.push(`${String(hour).padStart(2, '0')}:30`);
             }
+            return times;
+        }
+
+        // 獲取當前最接近的30分鐘時間
+        function getNearestHalfHourTime() {
+            const now = new Date();
+            const minutes = now.getMinutes();
+            const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
+            const hour = minutes >= 45 ? now.getHours() + 1 : now.getHours();
+            
+            return `${String(hour % 24).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
+        }
+
+        // 初始化時間選項
+        function initializeTimeSelects() {
+            const times = generateTimeOptions();
+            const startSelect = document.getElementById('startTime');
+            const endSelect = document.getElementById('endTime');
+            
+            // 清空現有選項
+            startSelect.innerHTML = '<option value="">請選擇時間</option>';
+            endSelect.innerHTML = '<option value="">請選擇時間</option>';
+            
+            // 添加時間選項
+            times.forEach(time => {
+                startSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                endSelect.innerHTML += `<option value="${time}">${time}</option>`;
+            });
+            
+            // 設定預設結束時間
+            const defaultEndTime = getNearestHalfHourTime();
+            endSelect.value = defaultEndTime;
+        }
+
+        // 開啟日期選擇器
+        function openDatePicker() {
+            document.getElementById('meetingDate').showPicker();
+        }
+
+        // 格式化日期顯示（只顯示月日）
+        function formatDateDisplay(dateString) {
+            if (!dateString) return '請選擇日期';
+            const date = new Date(dateString);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `${month}月${day}日`;
+        }
+
+        // 監聽日期變更
+        function setupDateListener() {
+            document.getElementById('meetingDate').addEventListener('change', function() {
+                const dateDisplay = document.getElementById('dateDisplay');
+                dateDisplay.textContent = formatDateDisplay(this.value);
+            });
+        }
+
+        // 監聽開始時間變更，自動設定結束時間為最接近的30分或00分
+        function setupTimeListener() {
+            document.getElementById('startTime').addEventListener('change', function() {
+                const startTime = this.value;
+                if (startTime) {
+                    const [hour, minute] = startTime.split(':').map(Number);
+                    
+                    // 計算最接近的下一個 00 或 30 分
+                    let endHour = hour;
+                    let endMinute;
+                    
+                    if (minute < 30) {
+                        endMinute = 30; // 到下一個 30 分
+                    } else {
+                        endMinute = 0;  // 到下一個 00 分
+                        endHour += 1;
+                    }
+                    
+                    const endTime = `${String(endHour % 24).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+                    document.getElementById('endTime').value = endTime;
+                }
+            });
         }
 
         // 本地儲存相關函數（測試用）
@@ -733,10 +847,9 @@
         }
 
         function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `${month}/${day}`;
         }
 
         function getDayName(date) {
@@ -776,13 +889,13 @@
             const weekDates = getWeekDates(currentWeekStart);
             
             weekDates.forEach(date => {
-                const dateStr = formatDate(date);
+                const dateStr = formatDateFull(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
                 
                 if (dayBookings.length === 0) {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td class="date-cell">${dateStr}</td>
+                        <td class="date-cell">${formatDate(date)}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="4" onclick="quickBook('${dateStr}')">
                             點擊快速預約
@@ -797,13 +910,12 @@
                     dayBookings.forEach((booking, index) => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${dateStr}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${formatDate(date)}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="room-cell">${booking.room}</td>
                             <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
                             <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
                                 <div class="meeting-title">${booking.title}</div>
-                                <div class="meeting-organizer">登記者: ${booking.organizer}</div>
                             </td>
                             <td>${booking.organizer}</td>
                         `;
@@ -815,6 +927,7 @@
 
         function quickBook(date) {
             document.getElementById('meetingDate').value = date;
+            document.getElementById('dateDisplay').textContent = formatDateDisplay(date);
             document.getElementById('meetingTitle').focus();
         }
 
@@ -938,11 +1051,11 @@
         function updateStats() {
             const weekDates = getWeekDates(currentWeekStart);
             const weekBookingsCount = bookings.filter(booking => {
-                return weekDates.some(date => formatDate(date) === booking.date);
+                return weekDates.some(date => formatDateFull(date) === booking.date);
             }).length;
             
             const todayBookingsCount = bookings.filter(booking => 
-                booking.date === formatDate(currentWeekStart)
+                booking.date === formatDateFull(currentWeekStart)
             ).length;
             
             document.getElementById('weekBookings').textContent = weekBookingsCount;
@@ -959,10 +1072,14 @@
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
+            initializeTimeSelects();
+            setupDateListener();
+            setupTimeListener();
             updateWeekDisplay();
             updateSchedule();
             updateStats();
-            document.getElementById('meetingDate').value = formatDate(currentWeekStart);
+            document.getElementById('meetingDate').value = formatDateFull(currentWeekStart);
+            document.getElementById('dateDisplay').textContent = formatDateDisplay(formatDateFull(currentWeekStart));
         });
     </script>
 </body>
