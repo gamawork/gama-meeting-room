@@ -563,14 +563,19 @@
     </div>
 
     <script>
-        // Google Apps Script URL - 已設定為您的 Apps Script URL
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0g_4ycG0Db_LsKFxZgirutK0Cl-9OUPtF0gRVrxgTa_OonWBhskOzdXujs-pFRdMP2Q/exec';
+        // Google Apps Script URL - 已更新為最新版本
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
         
         // 切換到 Google Sheets 模式
         const USE_LOCAL_STORAGE = false; // 使用 Google Sheets
         
         console.log('系統模式: Google Sheets 模式');
         console.log('Apps Script URL:', SCRIPT_URL);
+        
+        console.log('系統模式:', USE_LOCAL_STORAGE ? '本地儲存模式（緊急回退）' : 'Google Sheets 模式');
+        if (!USE_LOCAL_STORAGE) {
+            console.log('Apps Script URL:', SCRIPT_URL);
+        }
         
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
