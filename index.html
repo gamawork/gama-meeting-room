@@ -600,7 +600,6 @@
             if (url) {
                 SCRIPT_URL = url;
                 localStorage.setItem('gamaBookingScriptUrl', url);
-                document.getElementById('setupNotice').style.display = 'none';
                 closeSetupModal();
                 loadBookings();
                 showModal('設定完成', '已成功儲存 Google Apps Script URL，系統現在可以正常使用了！');
