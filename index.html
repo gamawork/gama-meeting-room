@@ -358,6 +358,7 @@
             margin-bottom: 20px;
             border-radius: 10px;
             border-left: 4px solid #ffc107;
+            display: none;
         }
 
         @media (max-width: 1024px) {
@@ -434,12 +435,6 @@
 
         <div class="main-content">
             <div class="sidebar">
-                <div id="setupNotice" class="setup-notice">
-                    <strong>設定提醒：</strong><br>
-                    請先完成 Google Sheets 設定才能正常使用系統。
-                    <a href="#" onclick="showSetupInstructions()">查看設定說明</a>
-                </div>
-
                 <div class="quick-stats">
                     <div class="stat-card">
                         <div class="stat-number" id="totalRooms">6</div>
@@ -556,61 +551,26 @@
     </div>
 
     <!-- Setup Instructions Modal -->
-    <div id="setupModal" class="modal">
+    <div id="setupModal" class="modal" style="display: none;">
         <div class="modal-content" style="max-width: 700px;">
             <span class="close" onclick="closeSetupModal()">&times;</span>
-            <h3>Google Sheets 設定說明</h3>
+            <h3>系統資訊</h3>
             <div class="modal-message">
-                <h4>步驟 1：建立 Google 試算表</h4>
-                <ol>
-                    <li>開啟 <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
-                    <li>建立新的試算表，命名為「會議室預約系統」</li>
-                    <li>在第一列建立以下欄位標題：</li>
-                    <ul>
-                        <li>A1: date（日期）</li>
-                        <li>B1: room（會議室）</li>
-                        <li>C1: startTime（開始時間）</li>
-                        <li>D1: endTime（結束時間）</li>
-                        <li>E1: title（會議主題）</li>
-                        <li>F1: organizer（登記者）</li>
-                    </ul>
-                </ol>
-
-                <h4>步驟 2：建立 Google Apps Script</h4>
-                <ol>
-                    <li>在試算表中點選「擴充功能」→「Apps Script」</li>
-                    <li>刪除預設程式碼，貼上提供的程式碼</li>
-                    <li>儲存專案並部署為網路應用程式</li>
-                    <li>複製網路應用程式 URL</li>
-                </ol>
-
-                <h4>步驟 3：設定系統</h4>
-                <ol>
-                    <li>將 Apps Script URL 填入下方欄位</li>
-                    <li>測試連線是否正常</li>
-                </ol>
-
-                <div style="margin: 20px 0;">
-                    <label for="scriptUrl" style="display: block; margin-bottom: 5px; font-weight: bold;">Apps Script URL：</label>
-                    <input type="text" id="scriptUrl" placeholder="貼上您的 Google Apps Script URL" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-                    <button onclick="saveScriptUrl()" style="margin-top: 10px; padding: 10px 20px; background: #4facfe; color: white; border: none; border-radius: 5px; cursor: pointer;">儲存設定</button>
-                </div>
+                <p>此系統已與 Google Sheets 整合，所有預約資料會自動儲存。</p>
+                <p>如有任何問題，請聯繫系統管理員。</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Google Apps Script URL - 需要用戶設定
-        let SCRIPT_URL = localStorage.getItem('gamaBookingScriptUrl') || '';
+        // Google Apps Script URL - 請將此 URL 替換為您的 Apps Script URL
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby6q7GRRYMf8XfHNnJ1tqssJ2UZe2ABlLC_giw7w3mWO6rZ9yf5Bqj8YO-UtjGe8r2Ug/exec';
         
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
 
-        // 如果已設定 URL，隱藏設定提醒
-        if (SCRIPT_URL) {
-            document.getElementById('setupNotice').style.display = 'none';
-            loadBookings();
-        }
+        // 初始載入預約資料
+        loadBookings();
 
         function showSetupInstructions() {
             document.getElementById('setupModal').style.display = 'block';
@@ -636,7 +596,10 @@
 
         // Google Sheets API 相關函數
         async function loadBookings() {
-            if (!SCRIPT_URL) return;
+            if (!SCRIPT_URL) {
+                showModal('設定錯誤', '請先設定 Google Apps Script URL。');
+                return;
+            }
             
             try {
                 showLoading(true);
@@ -647,10 +610,12 @@
                     bookings = data.data || [];
                     updateSchedule();
                     updateStats();
+                } else {
+                    throw new Error(data.error || '載入失敗');
                 }
             } catch (error) {
                 console.error('載入預約資料失敗:', error);
-                showModal('載入失敗', '無法載入預約資料，請檢查網路連線或 Google Apps Script 設定。');
+                showModal('載入失敗', '無法載入預約資料，請檢查網路連線或聯繫管理員。');
             } finally {
                 showLoading(false);
             }
@@ -658,7 +623,7 @@
 
         async function saveBooking(booking) {
             if (!SCRIPT_URL) {
-                showModal('設定錯誤', '請先完成 Google Sheets 設定。');
+                showModal('系統錯誤', '請聯繫管理員設定系統。');
                 return false;
             }
 
@@ -687,7 +652,7 @@
                 }
             } catch (error) {
                 console.error('儲存預約失敗:', error);
-                showModal('儲存失敗', '無法儲存預約，請稍後再試或檢查 Google Apps Script 設定。');
+                showModal('儲存失敗', '無法儲存預約，請稍後再試或聯繫管理員。');
                 return false;
             } finally {
                 showLoading(false);
