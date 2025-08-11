@@ -563,14 +563,24 @@
     </div>
 
     <script>
-        // Google Apps Script URL - 請將此 URL 替換為您的 Apps Script URL
+        // Google Apps Script URL - 已設定為您的 Apps Script URL
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0g_4ycG0Db_LsKFxZgirutK0Cl-9OUPtF0gRVrxgTa_OonWBhskOzdXujs-pFRdMP2Q/exec';
+        
+        // 切換到 Google Sheets 模式
+        const USE_LOCAL_STORAGE = false; // 使用 Google Sheets
+        
+        console.log('系統模式: Google Sheets 模式');
+        console.log('Apps Script URL:', SCRIPT_URL);
         
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
 
         // 初始載入預約資料
-        loadBookings();
+        if (USE_LOCAL_STORAGE) {
+            loadBookingsFromLocal();
+        } else {
+            loadBookings();
+        }
 
         function showSetupInstructions() {
             document.getElementById('setupModal').style.display = 'block';
@@ -592,6 +602,58 @@
             } else {
                 alert('請輸入有效的 URL');
             }
+        }
+
+        // 本地儲存相關函數（測試用）
+        function loadBookingsFromLocal() {
+            try {
+                const stored = localStorage.getItem('gamaBookings');
+                if (stored) {
+                    bookings = JSON.parse(stored);
+                } else {
+                    // 載入預設測試資料
+                    bookings = [
+                        {
+                            date: '2025-08-11',
+                            room: '小會議室',
+                            startTime: '13:00',
+                            endTime: '14:00',
+                            title: 'Jimmy第一個月報告',
+                            organizer: 'Fred'
+                        },
+                        {
+                            date: '2025-08-11',
+                            room: '大會議室',
+                            startTime: '16:00',
+                            endTime: '17:00',
+                            title: 'Ace主管分享',
+                            organizer: 'Jackal'
+                        }
+                    ];
+                    saveBookingsToLocal();
+                }
+                updateSchedule();
+                updateStats();
+            } catch (error) {
+                console.error('載入本地資料失敗:', error);
+                bookings = [];
+            }
+        }
+
+        function saveBookingsToLocal() {
+            try {
+                localStorage.setItem('gamaBookings', JSON.stringify(bookings));
+            } catch (error) {
+                console.error('儲存本地資料失敗:', error);
+            }
+        }
+
+        function saveBookingLocal(booking) {
+            bookings.push(booking);
+            saveBookingsToLocal();
+            updateSchedule();
+            updateStats();
+            return true;
         }
 
         // Google Sheets API 相關函數
@@ -822,8 +884,13 @@
                 return;
             }
             
-            // 儲存到 Google Sheets
-            const success = await saveBooking(booking);
+            // 儲存預約
+            let success;
+            if (USE_LOCAL_STORAGE) {
+                success = saveBookingLocal(booking);
+            } else {
+                success = await saveBooking(booking);
+            }
             
             if (success) {
                 showModal('預約成功！', `會議主題: ${booking.title}<br>時間: ${booking.date} ${booking.startTime}-${booking.endTime}<br>地點: ${booking.room}<br>登記者: ${booking.organizer}`);
