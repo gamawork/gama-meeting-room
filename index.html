@@ -1,4 +1,44 @@
-<!DOCTYPE html>
+// 生成週期預約日期
+        function generateRecurringDates(startDate, recurringType, weeks) {
+            const dates = [];
+            const baseDate = new Date(startDate);
+            
+            for (let i = 0; i < weeks; i++) {
+                const nextDate = new Date(baseDate);
+                
+                if (recurringType === 'weekly') {
+                    nextDate.setDate(baseDate.getDate() + (i * 7));
+                } else if (recurringType === 'monthly') {
+                    nextDate.setMonth(baseDate.getMonth() + i);
+                }
+                
+                dates.push(formatDate(nextDate));
+            }
+            
+            return dates;
+        }
+
+        // 檢查週期預約衝突
+        function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
+            const conflicts = [];
+            
+            recurringDates.forEach(date => {
+                const conflictBooking = bookings.find(b => 
+                    b.date === date && 
+                    b.room === room && 
+                    timeOverlap(b.startTime, b.endTime, startTime, endTime)
+                );
+                
+                if (conflictBooking) {
+                    conflicts.push({
+                        date: date,
+                        booking: conflictBooking
+                    });
+                }
+            });
+            
+            return conflicts;
+        }<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -521,6 +561,34 @@
                             <input type="text" id="organizer" placeholder="請輸入登記者姓名">
                         </div>
                         
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="recurringBooking" style="cursor: pointer;">
+                                <span>週期預約</span>
+                            </label>
+                        </div>
+                        
+                        <div class="form-group" id="recurringOptions" style="display: none;">
+                            <label for="recurringType">重複頻率</label>
+                            <select id="recurringType">
+                                <option value="weekly">每週</option>
+                                <option value="monthly">每月</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="recurringPeriod" style="display: none;">
+                            <label for="recurringWeeks">持續期間</label>
+                            <select id="recurringWeeks">
+                                <option value="2">2週</option>
+                                <option value="3">3週</option>
+                                <option value="4">4週</option>
+                                <option value="5">5週</option>
+                                <option value="6">6週</option>
+                                <option value="7">7週</option>
+                                <option value="8">8週</option>
+                            </select>
+                        </div>
+                        
                         <button type="button" class="btn" id="submitBtn" onclick="submitBooking()">確認預約</button>
                     </div>
                 </div>
@@ -716,6 +784,22 @@
                     
                     const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
                     document.getElementById('endTime').value = endTime;
+                }
+            });
+        }
+
+        // 監聽週期預約勾選
+        function setupRecurringListener() {
+            document.getElementById('recurringBooking').addEventListener('change', function() {
+                const recurringOptions = document.getElementById('recurringOptions');
+                const recurringPeriod = document.getElementById('recurringPeriod');
+                
+                if (this.checked) {
+                    recurringOptions.style.display = 'block';
+                    recurringPeriod.style.display = 'block';
+                } else {
+                    recurringOptions.style.display = 'none';
+                    recurringPeriod.style.display = 'none';
                 }
             });
         }
@@ -953,6 +1037,9 @@
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
             const organizer = document.getElementById('organizer').value.trim();
+            const isRecurring = document.getElementById('recurringBooking').checked;
+            const recurringType = document.getElementById('recurringType').value;
+            const recurringWeeks = parseInt(document.getElementById('recurringWeeks').value);
             
             // 驗證必填欄位
             if (!title) {
@@ -986,37 +1073,56 @@
                 return;
             }
             
-            const booking = {
-                date: date,
-                room: room,
-                startTime: startTime,
-                endTime: endTime,
-                title: title,
-                organizer: organizer
-            };
+            // 處理週期預約
+            let datesToBook = [date];
+            if (isRecurring) {
+                datesToBook = generateRecurringDates(date, recurringType, recurringWeeks);
+            }
             
-            // 檢查時間衝突
-            const conflictBooking = bookings.find(b => 
-                b.date === booking.date && 
-                b.room === booking.room && 
-                timeOverlap(b.startTime, b.endTime, booking.startTime, booking.endTime)
-            );
-            
-            if (conflictBooking) {
-                showModal('預約失敗', `該時間段已被預約，請選擇其他時間。<br>衝突會議: ${conflictBooking.title}`);
+            // 檢查所有日期的衝突
+            const conflicts = checkRecurringConflicts(datesToBook, room, startTime, endTime);
+            if (conflicts.length > 0) {
+                let conflictMessage = '以下日期有衝突，無法預約：<br>';
+                conflicts.forEach(conflict => {
+                    conflictMessage += `• ${conflict.date}: ${conflict.booking.title}<br>`;
+                });
+                showModal('預約失敗', conflictMessage);
                 return;
             }
             
-            // 儲存預約
-            let success;
-            if (USE_LOCAL_STORAGE) {
-                success = saveBookingLocal(booking);
-            } else {
-                success = await saveBooking(booking);
+            // 批量儲存預約
+            let successCount = 0;
+            for (const bookingDate of datesToBook) {
+                const booking = {
+                    date: bookingDate,
+                    room: room,
+                    startTime: startTime,
+                    endTime: endTime,
+                    title: title,
+                    organizer: organizer
+                };
+                
+                let success;
+                if (USE_LOCAL_STORAGE) {
+                    success = saveBookingLocal(booking);
+                } else {
+                    success = await saveBooking(booking);
+                }
+                
+                if (success) {
+                    successCount++;
+                }
             }
             
-            if (success) {
-                showModal('預約成功！', `會議主題: ${booking.title}<br>時間: ${booking.date} ${booking.startTime}-${booking.endTime}<br>地點: ${booking.room}<br>登記者: ${booking.organizer}`);
+            if (successCount > 0) {
+                let successMessage;
+                if (isRecurring) {
+                    successMessage = `成功預約 ${successCount} 場週期會議！<br>會議主題: ${title}<br>時間: ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}<br>頻率: ${recurringType === 'weekly' ? '每週' : '每月'}`;
+                } else {
+                    successMessage = `會議主題: ${title}<br>時間: ${date} ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}`;
+                }
+                
+                showModal('預約成功！', successMessage);
                 
                 // 重設表單
                 document.getElementById('meetingTitle').value = '';
@@ -1026,6 +1132,9 @@
                 document.getElementById('organizer').value = '';
                 document.getElementById('meetingDate').value = '';
                 document.getElementById('dateDisplay').textContent = '請選擇日期';
+                document.getElementById('recurringBooking').checked = false;
+                document.getElementById('recurringOptions').style.display = 'none';
+                document.getElementById('recurringPeriod').style.display = 'none';
             }
         }
 
@@ -1070,6 +1179,7 @@
             initializeTimeSelects();
             setupDateListener();
             setupTimeListener();
+            setupRecurringListener();
             updateWeekDisplay();
             updateSchedule();
             updateStats();
