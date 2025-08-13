@@ -940,12 +940,41 @@
                         
                         // 標準化資料格式
                         bookings = bookings.map(booking => {
-                            // 處理可能的欄位名稱變化
+                            // 處理日期格式 - 移除時間部分
+                            let dateValue = booking.date || booking['日期'] || booking.Date;
+                            if (dateValue && typeof dateValue === 'string' && dateValue.includes('T')) {
+                                // 如果包含時間戳記，只取日期部分
+                                dateValue = dateValue.split('T')[0];
+                            } else if (dateValue instanceof Date) {
+                                // 如果是 Date 物件，格式化為 YYYY-MM-DD
+                                dateValue = formatDate(dateValue);
+                            }
+                            
+                            // 處理時間格式 - 移除秒數
+                            let startTime = booking.startTime || booking['開始時間'] || booking.StartTime;
+                            let endTime = booking.endTime || booking['結束時間'] || booking.EndTime;
+                            
+                            if (startTime && typeof startTime === 'string' && startTime.includes('T')) {
+                                // 從 ISO 時間字串中提取時間部分
+                                const timeMatch = startTime.match(/T(\d{2}):(\d{2})/);
+                                if (timeMatch) {
+                                    startTime = `${timeMatch[1]}:${timeMatch[2]}`;
+                                }
+                            }
+                            
+                            if (endTime && typeof endTime === 'string' && endTime.includes('T')) {
+                                // 從 ISO 時間字串中提取時間部分
+                                const timeMatch = endTime.match(/T(\d{2}):(\d{2})/);
+                                if (timeMatch) {
+                                    endTime = `${timeMatch[1]}:${timeMatch[2]}`;
+                                }
+                            }
+                            
                             return {
-                                date: booking.date || booking['日期'] || booking.Date,
+                                date: dateValue,
                                 room: booking.room || booking['會議地點'] || booking.Room,
-                                startTime: booking.startTime || booking['開始時間'] || booking.StartTime,
-                                endTime: booking.endTime || booking['結束時間'] || booking.EndTime,
+                                startTime: startTime,
+                                endTime: endTime,
                                 title: booking.title || booking['會議主題'] || booking.Title,
                                 organizer: booking.organizer || booking['登記者'] || booking.Organizer
                             };
