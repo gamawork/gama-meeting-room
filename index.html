@@ -651,11 +651,15 @@
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
 
-        // 初始載入預約資料
+        // 初始載入預約資料 - 修正錯誤處理
+        console.log('系統啟動中...');
         if (USE_LOCAL_STORAGE) {
             loadBookingsFromLocal();
         } else {
-            loadBookings();
+            // 延遲載入，確保 DOM 已準備好
+            setTimeout(() => {
+                loadBookings();
+            }, 100);
         }
 
         // 時間選項生成（限制在 09:00-19:00，30分鐘為單位）
@@ -850,15 +854,18 @@
                 if (stored) {
                     bookings = JSON.parse(stored);
                 } else {
-                    // 初始化為空陣列，不載入預設資料
+                    // 初始化為空陣列
                     bookings = [];
                     saveBookingsToLocal();
                 }
+                console.log('載入本地資料:', bookings.length, '筆預約');
                 updateSchedule();
                 updateStats();
             } catch (error) {
                 console.error('載入本地資料失敗:', error);
                 bookings = [];
+                updateSchedule();
+                updateStats();
             }
         }
 
@@ -881,7 +888,12 @@
         // Google Sheets API 相關函數
         async function loadBookings() {
             if (!SCRIPT_URL) {
+                console.error('Apps Script URL 未設定');
                 showModal('設定錯誤', '請先設定 Google Apps Script URL。');
+                // 即使失敗也要初始化空資料並顯示表格
+                bookings = [];
+                updateSchedule();
+                updateStats();
                 return;
             }
             
@@ -889,35 +901,65 @@
             
             try {
                 showLoading(true);
-                const response = await fetch(`${SCRIPT_URL}?action=get`);
+                const url = `${SCRIPT_URL}?action=get`;
+                console.log('請求 URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET'
+                    // 移除 headers 避免觸發 CORS 預檢請求
+                });
                 
                 console.log('回應狀態:', response.status);
-                console.log('回應標頭:', response.headers);
+                console.log('回應 Content-Type:', response.headers.get('content-type'));
                 
-                const data = await response.json();
-                console.log('回應資料:', data);
+                if (!response.ok) {
+                    throw new Error(`HTTP 錯誤: ${response.status} ${response.statusText}`);
+                }
                 
-                if (data.success) {
+                const responseText = await response.text();
+                console.log('原始回應內容:', responseText.substring(0, 500) + '...');
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                    console.log('解析後的資料:', data);
+                } catch (parseError) {
+                    console.error('JSON 解析失敗:', parseError);
+                    throw new Error(`無法解析回應資料。回應可能不是有效的 JSON 格式。`);
+                }
+                
+                if (data && data.success) {
                     bookings = data.data || [];
-                    console.log('成功載入', bookings.length, '筆預約資料');
-                    updateSchedule();
-                    updateStats();
-                    
-                    // 顯示載入成功訊息
+                    console.log('✅ 成功載入', bookings.length, '筆預約資料');
                     if (bookings.length > 0) {
                         console.log('資料庫中的預約:', bookings);
                     } else {
-                        console.log('資料庫目前沒有預約資料');
+                        console.log('資料庫目前沒有預約資料，顯示空白表格');
                     }
+                } else if (data && data.error) {
+                    throw new Error(`Apps Script 錯誤: ${data.error}`);
                 } else {
-                    throw new Error(data.error || '載入失敗');
+                    // 如果回應格式不符合預期，但是有資料，嘗試直接使用
+                    if (Array.isArray(data)) {
+                        bookings = data;
+                        console.log('✅ 載入資料陣列:', bookings.length, '筆');
+                    } else {
+                        bookings = [];
+                        console.log('⚠️ 回應格式不符合預期，使用空資料');
+                    }
                 }
-            } catch (error) {
-                console.error('載入預約資料失敗:', error);
-                console.error('錯誤詳情:', error.message);
-                showModal('載入失敗', `無法載入預約資料：${error.message}<br><br>請檢查：<br>1. 網路連線是否正常<br>2. Google Apps Script 是否正確部署<br>3. 權限設定是否正確`);
                 
-                // 載入失敗時使用空資料
+                updateSchedule();
+                updateStats();
+                
+            } catch (error) {
+                console.error('❌ 載入預約資料失敗:', error);
+                console.error('錯誤詳情:', error.message);
+                
+                // 顯示詳細錯誤訊息，但不阻止系統運行
+                showModal('載入失敗', `無法載入預約資料：${error.message}<br><br>系統將顯示空白表格，您仍可新增預約。<br><br>請檢查：<br>1. Google Apps Script 是否正確部署<br>2. 權限設定是否正確<br>3. doGet() 函數是否正確處理 action=get 參數`);
+                
+                // 載入失敗時使用空資料，但仍然顯示表格
                 bookings = [];
                 updateSchedule();
                 updateStats();
@@ -935,18 +977,30 @@
             try {
                 showLoading(true);
                 
+                // 使用 URLSearchParams 避免 CORS 預檢請求
+                const formData = new URLSearchParams();
+                formData.append('action', 'add');
+                formData.append('data', JSON.stringify(booking));
+                
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'text/plain',
-                    },
-                    body: JSON.stringify({
-                        action: 'add',
-                        data: booking
-                    })
+                    body: formData
                 });
 
-                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP 錯誤: ${response.status} ${response.statusText}`);
+                }
+
+                const responseText = await response.text();
+                let result;
+                
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    // 如果無法解析 JSON，假設儲存成功
+                    console.warn('無法解析回應 JSON，假設儲存成功');
+                    result = { success: true };
+                }
                 
                 if (result.success) {
                     bookings.push(booking);
