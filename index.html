@@ -923,11 +923,29 @@ function formatDateFull(date) {
                     });
                 }
             });
+        }Minutes(b.startTime);
+                    });
+                    
+                    dayBookings.forEach((booking, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${formatDate(date)}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
+                            <td class="room-cell">${booking.room}</td>
+                            <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
+                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
+                                <div class="meeting-title">${booking.title}</div>
+                            </td>
+                            <td>${booking.organizer}</td>
+                        `;
+                        scheduleBody.appendChild(row);
+                    });
+                }
+            });
         }
 
         function quickBook(date) {
             document.getElementById('meetingDate').value = date;
-            document.getElementById('dateDisplay').textContent = formatDateDisplay(date);
             document.getElementById('meetingTitle').focus();
         }
 
