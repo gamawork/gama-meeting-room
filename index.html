@@ -473,24 +473,15 @@
 
         <div class="main-content">
             <div class="sidebar">
-                <div class="quick-stats">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalRooms">6</div>
-                        <div class="stat-label">會議室總數</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="weekBookings">0</div>
-                        <div class="stat-label">本週預約</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="todayBookings">0</div>
-                        <div class="stat-label">今日預約</div>
-                    </div>
-                </div>
-
                 <div class="booking-form">
                     <h3 style="margin-bottom: 20px; color: #2d3748;">新增預約</h3>
                     <div id="bookingForm">
+                        <div class="form-group">
+                            <label for="meetingDate">日期</label>
+                            <div class="date-display" id="dateDisplay" onclick="openDatePicker()">請選擇日期</div>
+                            <input type="date" id="meetingDate" class="hidden-input">
+                        </div>
+                        
                         <div class="form-group">
                             <label for="meetingTitle">會議主題</label>
                             <input type="text" id="meetingTitle" placeholder="請輸入會議主題">
@@ -507,12 +498,6 @@
                                 <option value="街口辦公室">街口辦公室</option>
                                 <option value="會客區">會客區</option>
                             </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="meetingDate">日期</label>
-                            <div class="date-display" id="dateDisplay" onclick="openDatePicker()">請選擇日期</div>
-                            <input type="date" id="meetingDate" class="hidden-input">
                         </div>
                         
                         <div class="form-group">
@@ -909,10 +894,15 @@
                 const dateStr = formatDate(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
                 
+                // 格式化日期顯示為月日格式
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const shortDateDisplay = `${month}/${day}`;
+                
                 if (dayBookings.length === 0) {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td class="date-cell">${dateStr}</td>
+                        <td class="date-cell">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="4" onclick="quickBook('${dateStr}')">
                             點擊快速預約
@@ -927,7 +917,7 @@
                     dayBookings.forEach((booking, index) => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${dateStr}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="room-cell">${booking.room}</td>
                             <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
@@ -1067,17 +1057,7 @@
         }
 
         function updateStats() {
-            const weekDates = getWeekDates(currentWeekStart);
-            const weekBookingsCount = bookings.filter(booking => {
-                return weekDates.some(date => formatDate(date) === booking.date);
-            }).length;
-            
-            const todayBookingsCount = bookings.filter(booking => 
-                booking.date === formatDate(currentWeekStart)
-            ).length;
-            
-            document.getElementById('weekBookings').textContent = weekBookingsCount;
-            document.getElementById('todayBookings').textContent = todayBookingsCount;
+            // 統計功能已移除
         }
 
         // 關閉模態框
