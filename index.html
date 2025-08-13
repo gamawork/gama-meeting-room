@@ -931,8 +931,27 @@
                 if (data && data.success) {
                     bookings = data.data || [];
                     console.log('✅ 成功載入', bookings.length, '筆預約資料');
+                    console.log('原始資料結構:', bookings);
+                    
+                    // 檢查資料格式並標準化
                     if (bookings.length > 0) {
-                        console.log('資料庫中的預約:', bookings);
+                        console.log('第一筆資料範例:', bookings[0]);
+                        console.log('資料欄位:', Object.keys(bookings[0]));
+                        
+                        // 標準化資料格式
+                        bookings = bookings.map(booking => {
+                            // 處理可能的欄位名稱變化
+                            return {
+                                date: booking.date || booking['日期'] || booking.Date,
+                                room: booking.room || booking['會議地點'] || booking.Room,
+                                startTime: booking.startTime || booking['開始時間'] || booking.StartTime,
+                                endTime: booking.endTime || booking['結束時間'] || booking.EndTime,
+                                title: booking.title || booking['會議主題'] || booking.Title,
+                                organizer: booking.organizer || booking['登記者'] || booking.Organizer
+                            };
+                        });
+                        
+                        console.log('標準化後的資料:', bookings);
                     } else {
                         console.log('資料庫目前沒有預約資料，顯示空白表格');
                     }
@@ -1062,14 +1081,23 @@
         }
 
         function updateSchedule() {
+            console.log('更新時間表，目前預約數量:', bookings.length);
+            console.log('當前週開始日期:', currentWeekStart);
+            
             const scheduleBody = document.getElementById('scheduleBody');
             scheduleBody.innerHTML = '';
             
             const weekDates = getWeekDates(currentWeekStart);
+            console.log('本週日期:', weekDates.map(d => formatDate(d)));
             
             weekDates.forEach(date => {
                 const dateStr = formatDate(date);
-                const dayBookings = bookings.filter(booking => booking.date === dateStr);
+                const dayBookings = bookings.filter(booking => {
+                    console.log(`比較日期: ${booking.date} vs ${dateStr}`);
+                    return booking.date === dateStr;
+                });
+                
+                console.log(`${dateStr} 的預約:`, dayBookings);
                 
                 // 格式化日期顯示為月日格式
                 const month = date.getMonth() + 1;
@@ -1107,6 +1135,8 @@
                     });
                 }
             });
+            
+            console.log('時間表更新完成');
         }
 
         function quickBook(date) {
