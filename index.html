@@ -645,8 +645,8 @@
         // Google Apps Script URL
         let SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
         
-        // 使用本地儲存模式以確保能看到測試資料
-        const USE_LOCAL_STORAGE = true;
+        // 使用 Google Sheets 模式連接資料庫
+        const USE_LOCAL_STORAGE = false;
         
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
@@ -832,25 +832,8 @@
                 if (stored) {
                     bookings = JSON.parse(stored);
                 } else {
-                    // 載入預設測試資料
-                    bookings = [
-                        {
-                            date: '2025-08-11',
-                            room: '小會議室',
-                            startTime: '13:00',
-                            endTime: '14:00',
-                            title: 'Jimmy第一個月報告',
-                            organizer: 'Fred'
-                        },
-                        {
-                            date: '2025-08-11',
-                            room: '大會議室',
-                            startTime: '16:00',
-                            endTime: '17:00',
-                            title: 'Ace主管分享',
-                            organizer: 'Jackal'
-                        }
-                    ];
+                    // 初始化為空陣列，不載入預設資料
+                    bookings = [];
                     saveBookingsToLocal();
                 }
                 updateSchedule();
