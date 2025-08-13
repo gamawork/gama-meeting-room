@@ -501,7 +501,7 @@
                         <div class="form-group">
                             <label for="meetingDate">日期</label>
                             <div class="date-display" id="dateDisplay" onclick="openDatePicker()">請選擇日期</div>
-                            <input type="date" id="meetingDate" class="hidden-input">
+                            <input type="date" id="meetingDate" class="hidden-input" onchange="updateDateDisplay()">
                         </div>
                         
                         <div class="form-group">
@@ -718,7 +718,21 @@
 
         // 開啟日期選擇器
         function openDatePicker() {
-            document.getElementById('meetingDate').showPicker();
+            const dateInput = document.getElementById('meetingDate');
+            try {
+                // 嘗試使用 showPicker() 方法（較新的瀏覽器支援）
+                if (dateInput.showPicker) {
+                    dateInput.showPicker();
+                } else {
+                    // 備用方案：直接點擊日期輸入框
+                    dateInput.click();
+                    dateInput.focus();
+                }
+            } catch (error) {
+                // 如果 showPicker() 失敗，使用備用方案
+                dateInput.click();
+                dateInput.focus();
+            }
         }
 
         // 格式化日期顯示（只顯示月日）
@@ -730,12 +744,16 @@
             return `${month}月${day}日`;
         }
 
+        // 更新日期顯示
+        function updateDateDisplay() {
+            const dateInput = document.getElementById('meetingDate');
+            const dateDisplay = document.getElementById('dateDisplay');
+            dateDisplay.textContent = formatDateDisplay(dateInput.value);
+        }
+
         // 監聽日期變更
         function setupDateListener() {
-            document.getElementById('meetingDate').addEventListener('change', function() {
-                const dateDisplay = document.getElementById('dateDisplay');
-                dateDisplay.textContent = formatDateDisplay(this.value);
-            });
+            document.getElementById('meetingDate').addEventListener('change', updateDateDisplay);
         }
 
         // 監聽開始時間變更，自動設定結束時間
@@ -867,21 +885,42 @@
                 return;
             }
             
+            console.log('正在載入資料庫資料...', SCRIPT_URL);
+            
             try {
                 showLoading(true);
                 const response = await fetch(`${SCRIPT_URL}?action=get`);
+                
+                console.log('回應狀態:', response.status);
+                console.log('回應標頭:', response.headers);
+                
                 const data = await response.json();
+                console.log('回應資料:', data);
                 
                 if (data.success) {
                     bookings = data.data || [];
+                    console.log('成功載入', bookings.length, '筆預約資料');
                     updateSchedule();
                     updateStats();
+                    
+                    // 顯示載入成功訊息
+                    if (bookings.length > 0) {
+                        console.log('資料庫中的預約:', bookings);
+                    } else {
+                        console.log('資料庫目前沒有預約資料');
+                    }
                 } else {
                     throw new Error(data.error || '載入失敗');
                 }
             } catch (error) {
                 console.error('載入預約資料失敗:', error);
-                showModal('載入失敗', '無法載入預約資料，請檢查網路連線或聯繫管理員。');
+                console.error('錯誤詳情:', error.message);
+                showModal('載入失敗', `無法載入預約資料：${error.message}<br><br>請檢查：<br>1. 網路連線是否正常<br>2. Google Apps Script 是否正確部署<br>3. 權限設定是否正確`);
+                
+                // 載入失敗時使用空資料
+                bookings = [];
+                updateSchedule();
+                updateStats();
             } finally {
                 showLoading(false);
             }
