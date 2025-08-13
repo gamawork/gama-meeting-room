@@ -313,6 +313,8 @@
             font-style: italic;
             cursor: pointer;
             transition: all 0.3s ease;
+            text-align: center !important;
+            vertical-align: middle;
         }
 
         .empty-cell:hover {
@@ -556,8 +558,8 @@
                             <th width="80">星期</th>
                             <th width="120">會議地點</th>
                             <th width="120">時間</th>
-                            <th>會議主題</th>
                             <th width="100">登記者</th>
+                            <th>會議主題</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleBody">
@@ -594,16 +596,11 @@
         // Google Apps Script URL - 改為 let 避免重新賦值錯誤
         let SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
         
-        // 測試 Google Sheets 模式（使用簡化的請求格式）
-        const USE_LOCAL_STORAGE = false; // 重新嘗試 Google Sheets 模式
+        // 使用本地儲存模式以確保能看到測試資料
+        const USE_LOCAL_STORAGE = true;
         
         console.log('系統模式:', USE_LOCAL_STORAGE ? '本地儲存模式' : 'Google Sheets 模式（簡化請求）');
         console.log('Apps Script URL:', SCRIPT_URL);
-        
-        console.log('系統模式:', USE_LOCAL_STORAGE ? '本地儲存模式（緊急回退）' : 'Google Sheets 模式');
-        if (!USE_LOCAL_STORAGE) {
-            console.log('Apps Script URL:', SCRIPT_URL);
-        }
         
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
@@ -921,10 +918,10 @@
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="room-cell">${booking.room}</td>
                             <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
+                            <td>${booking.organizer}</td>
                             <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
                                 <div class="meeting-title">${booking.title}</div>
                             </td>
-                            <td>${booking.organizer}</td>
                         `;
                         scheduleBody.appendChild(row);
                     });
