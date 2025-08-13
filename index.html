@@ -981,6 +981,12 @@
                         });
                         
                         console.log('標準化後的資料:', bookings);
+                        
+                        // 強制重新更新時間表
+                        console.log('強制重新更新時間表...');
+                        setTimeout(() => {
+                            updateSchedule();
+                        }, 100);
                     } else {
                         console.log('資料庫目前沒有預約資料，顯示空白表格');
                     }
@@ -1110,10 +1116,16 @@
         }
 
         function updateSchedule() {
+            console.log('=== 開始更新時間表 ===');
             console.log('更新時間表，目前預約數量:', bookings.length);
+            console.log('完整預約資料:', bookings);
             console.log('當前週開始日期:', currentWeekStart);
             
             const scheduleBody = document.getElementById('scheduleBody');
+            if (!scheduleBody) {
+                console.error('找不到 scheduleBody 元素');
+                return;
+            }
             scheduleBody.innerHTML = '';
             
             const weekDates = getWeekDates(currentWeekStart);
@@ -1121,12 +1133,18 @@
             
             weekDates.forEach(date => {
                 const dateStr = formatDate(date);
+                console.log(`檢查日期: ${dateStr}`);
+                
                 const dayBookings = bookings.filter(booking => {
-                    console.log(`比較日期: ${booking.date} vs ${dateStr}`);
-                    return booking.date === dateStr;
+                    const match = booking.date === dateStr;
+                    console.log(`  比較: "${booking.date}" === "${dateStr}" = ${match}`);
+                    return match;
                 });
                 
-                console.log(`${dateStr} 的預約:`, dayBookings);
+                console.log(`${dateStr} 的預約數量:`, dayBookings.length);
+                if (dayBookings.length > 0) {
+                    console.log(`${dateStr} 的預約詳情:`, dayBookings);
+                }
                 
                 // 格式化日期顯示為月日格式
                 const month = date.getMonth() + 1;
@@ -1134,6 +1152,7 @@
                 const shortDateDisplay = `${month}/${day}`;
                 
                 if (dayBookings.length === 0) {
+                    console.log(`  → 顯示空白行: ${shortDateDisplay}`);
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td class="date-cell">${shortDateDisplay}</td>
@@ -1144,20 +1163,22 @@
                     `;
                     scheduleBody.appendChild(row);
                 } else {
+                    console.log(`  → 顯示預約行: ${shortDateDisplay}，共 ${dayBookings.length} 筆`);
                     dayBookings.sort((a, b) => {
                         return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
                     });
                     
                     dayBookings.forEach((booking, index) => {
+                        console.log(`    預約 ${index + 1}:`, booking);
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
-                            <td class="room-cell">${booking.room}</td>
-                            <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
-                            <td>${booking.organizer}</td>
+                            <td class="room-cell">${booking.room || '未知'}</td>
+                            <td class="time-cell">${booking.startTime || '?'}-${booking.endTime || '?'}</td>
+                            <td>${booking.organizer || '未知'}</td>
                             <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
-                                <div class="meeting-title">${booking.title}</div>
+                                <div class="meeting-title">${booking.title || '無標題'}</div>
                             </td>
                         `;
                         scheduleBody.appendChild(row);
@@ -1165,7 +1186,7 @@
                 }
             });
             
-            console.log('時間表更新完成');
+            console.log('=== 時間表更新完成 ===');
         }
 
         function quickBook(date) {
