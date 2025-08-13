@@ -1,9 +1,4 @@
-function formatDateFull(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -18,7 +13,7 @@ function formatDateFull(date) {
 
         body {
             font-family: 'Microsoft JhengHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2d4874 0%, #1a2e4a 100%);
             min-height: 100vh;
             padding: 20px;
         }
@@ -33,7 +28,7 @@ function formatDateFull(date) {
         }
 
         .header {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #2d4874 0%, #1a2e4a 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -127,8 +122,8 @@ function formatDateFull(date) {
 
         .time-dropdown:focus {
             outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            border-color: #2d4874;
+            box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
         .date-display {
@@ -145,8 +140,8 @@ function formatDateFull(date) {
 
         .date-display:focus {
             outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            border-color: #2d4874;
+            box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
         .hidden-input {
@@ -156,12 +151,12 @@ function formatDateFull(date) {
         .form-group select:focus,
         .form-group input:focus {
             outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            border-color: #2d4874;
+            box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
         .btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            background: linear-gradient(135deg, #2d4874 0%, #1a2e4a 100%);
             color: white;
             border: none;
             padding: 12px 24px;
@@ -175,7 +170,7 @@ function formatDateFull(date) {
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+            box-shadow: 0 5px 15px rgba(45, 72, 116, 0.4);
         }
 
         .btn:disabled {
@@ -203,7 +198,7 @@ function formatDateFull(date) {
         }
 
         .date-nav button {
-            background: #667eea;
+            background: #2d4874;
             color: white;
             border: none;
             width: 40px;
@@ -217,7 +212,7 @@ function formatDateFull(date) {
         }
 
         .date-nav button:hover {
-            background: #5a67d8;
+            background: #1a2e4a;
             transform: translateY(-2px);
         }
 
@@ -240,7 +235,7 @@ function formatDateFull(date) {
         }
 
         .schedule-table th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2d4874 0%, #1a2e4a 100%);
             color: white;
             padding: 15px 12px;
             font-weight: 600;
@@ -294,7 +289,7 @@ function formatDateFull(date) {
         }
 
         .meeting-cell {
-            background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+            background: linear-gradient(135deg, #b3c5e8 0%, #8db0e6 100%);
             color: #1f2937;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -303,7 +298,7 @@ function formatDateFull(date) {
 
         .meeting-cell:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(110, 231, 183, 0.4);
+            box-shadow: 0 5px 15px rgba(45, 72, 116, 0.3);
         }
 
         .meeting-title {
@@ -321,8 +316,8 @@ function formatDateFull(date) {
         }
 
         .empty-cell:hover {
-            background: #e6f3ff;
-            color: #4facfe;
+            background: #e8f0fd;
+            color: #2d4874;
         }
 
         .quick-stats {
@@ -343,7 +338,7 @@ function formatDateFull(date) {
         .stat-number {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #4facfe;
+            color: #2d4874;
         }
 
         .stat-label {
@@ -385,13 +380,13 @@ function formatDateFull(date) {
         }
 
         .available { background: #f8f9fa; }
-        .booked-legend { background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%); }
+        .booked-legend { background: linear-gradient(135deg, #b3c5e8 0%, #8db0e6 100%); }
 
         .loading {
             display: none;
             text-align: center;
             padding: 20px;
-            color: #667eea;
+            color: #2d4874;
         }
 
         .setup-notice {
@@ -635,24 +630,39 @@ function formatDateFull(date) {
             loadBookings();
         }
 
-        // 時間選項生成（30分鐘為單位）
+        // 時間選項生成（限制在 09:00-19:00，30分鐘為單位）
         function generateTimeOptions() {
             const times = [];
-            for (let hour = 0; hour < 24; hour++) {
-                times.push(`${String(hour).padStart(2, '0')}:00`);
-                times.push(`${String(hour).padStart(2, '0')}:30`);
+            for (let hour = 9; hour <= 19; hour++) {
+                if (hour < 19) { // 19:00 是最後一個開始時間，不包含 19:30
+                    times.push(`${String(hour).padStart(2, '0')}:00`);
+                    times.push(`${String(hour).padStart(2, '0')}:30`);
+                } else {
+                    times.push(`${String(hour).padStart(2, '0')}:00`); // 只加入 19:00
+                }
             }
             return times;
         }
 
-        // 獲取當前最接近的30分鐘時間
+        // 獲取當前最接近的30分鐘時間（限制在 09:00-19:00）
         function getNearestHalfHourTime() {
             const now = new Date();
+            let hour = now.getHours();
             const minutes = now.getMinutes();
             const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
-            const hour = minutes >= 45 ? now.getHours() + 1 : now.getHours();
             
-            return `${String(hour % 24).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
+            if (minutes >= 45) {
+                hour += 1;
+            }
+            
+            // 限制在 09:00-19:00 範圍內
+            if (hour < 9) {
+                return '09:00';
+            } else if (hour >= 19) {
+                return '19:00';
+            }
+            
+            return `${String(hour).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
         }
 
         // 初始化時間選項
@@ -668,12 +678,16 @@ function formatDateFull(date) {
             // 添加時間選項
             times.forEach(time => {
                 startSelect.innerHTML += `<option value="${time}">${time}</option>`;
-                endSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                // 結束時間最晚到 19:30（允許19:00開始的會議延續到19:30）
+                if (time <= '19:30') {
+                    endSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                }
             });
             
-            // 設定預設結束時間
-            const defaultEndTime = getNearestHalfHourTime();
-            endSelect.value = defaultEndTime;
+            // 為結束時間添加 19:30 選項
+            endSelect.innerHTML += `<option value="19:30">19:30</option>`;
+            
+            // 不設定預設結束時間，讓使用者自己選擇
         }
 
         // 開啟日期選擇器
@@ -698,25 +712,27 @@ function formatDateFull(date) {
             });
         }
 
-        // 監聽開始時間變更，自動設定結束時間為最接近的30分或00分
+        // 監聽開始時間變更，自動設定結束時間
         function setupTimeListener() {
             document.getElementById('startTime').addEventListener('change', function() {
                 const startTime = this.value;
                 if (startTime) {
                     const [hour, minute] = startTime.split(':').map(Number);
-                    
-                    // 計算最接近的下一個 00 或 30 分
                     let endHour = hour;
-                    let endMinute;
+                    let endMinute = minute + 30;
                     
-                    if (minute < 30) {
-                        endMinute = 30; // 到下一個 30 分
-                    } else {
-                        endMinute = 0;  // 到下一個 00 分
+                    if (endMinute >= 60) {
                         endHour += 1;
+                        endMinute = 0;
                     }
                     
-                    const endTime = `${String(endHour % 24).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+                    // 確保結束時間不超過 19:30
+                    if (endHour > 19 || (endHour === 19 && endMinute > 30)) {
+                        endHour = 19;
+                        endMinute = 30;
+                    }
+                    
+                    const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
                     document.getElementById('endTime').value = endTime;
                 }
             });
@@ -847,9 +863,10 @@ function formatDateFull(date) {
         }
 
         function formatDate(date) {
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            return `${month}/${day}`;
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function getDayName(date) {
@@ -889,13 +906,13 @@ function formatDateFull(date) {
             const weekDates = getWeekDates(currentWeekStart);
             
             weekDates.forEach(date => {
-                const dateStr = formatDateFull(date);
+                const dateStr = formatDate(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
                 
                 if (dayBookings.length === 0) {
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td class="date-cell">${formatDate(date)}</td>
+                        <td class="date-cell">${dateStr}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="4" onclick="quickBook('${dateStr}')">
                             點擊快速預約
@@ -910,26 +927,7 @@ function formatDateFull(date) {
                     dayBookings.forEach((booking, index) => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${formatDate(date)}</td>` : ''}
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
-                            <td class="room-cell">${booking.room}</td>
-                            <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
-                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
-                                <div class="meeting-title">${booking.title}</div>
-                            </td>
-                            <td>${booking.organizer}</td>
-                        `;
-                        scheduleBody.appendChild(row);
-                    });
-                }
-            });
-        }Minutes(b.startTime);
-                    });
-                    
-                    dayBookings.forEach((booking, index) => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${formatDate(date)}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${dateStr}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="room-cell">${booking.room}</td>
                             <td class="time-cell">${booking.startTime}-${booking.endTime}</td>
@@ -946,6 +944,7 @@ function formatDateFull(date) {
 
         function quickBook(date) {
             document.getElementById('meetingDate').value = date;
+            document.getElementById('dateDisplay').textContent = formatDateDisplay(date);
             document.getElementById('meetingTitle').focus();
         }
 
@@ -1038,7 +1037,8 @@ function formatDateFull(date) {
                 document.getElementById('startTime').value = '';
                 document.getElementById('endTime').value = '';
                 document.getElementById('organizer').value = '';
-                document.getElementById('meetingDate').value = formatDate(currentWeekStart);
+                document.getElementById('meetingDate').value = '';
+                document.getElementById('dateDisplay').textContent = '請選擇日期';
             }
         }
 
@@ -1069,11 +1069,11 @@ function formatDateFull(date) {
         function updateStats() {
             const weekDates = getWeekDates(currentWeekStart);
             const weekBookingsCount = bookings.filter(booking => {
-                return weekDates.some(date => formatDateFull(date) === booking.date);
+                return weekDates.some(date => formatDate(date) === booking.date);
             }).length;
             
             const todayBookingsCount = bookings.filter(booking => 
-                booking.date === formatDateFull(currentWeekStart)
+                booking.date === formatDate(currentWeekStart)
             ).length;
             
             document.getElementById('weekBookings').textContent = weekBookingsCount;
@@ -1096,8 +1096,9 @@ function formatDateFull(date) {
             updateWeekDisplay();
             updateSchedule();
             updateStats();
-            document.getElementById('meetingDate').value = formatDateFull(currentWeekStart);
-            document.getElementById('dateDisplay').textContent = formatDateDisplay(formatDateFull(currentWeekStart));
+            // 不自動設定日期，讓使用者自己選擇
+            // document.getElementById('meetingDate').value = formatDate(currentWeekStart);
+            // document.getElementById('dateDisplay').textContent = formatDateDisplay(formatDate(currentWeekStart));
         });
     </script>
 </body>
