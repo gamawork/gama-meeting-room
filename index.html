@@ -1,44 +1,4 @@
-// 生成週期預約日期
-        function generateRecurringDates(startDate, recurringType, weeks) {
-            const dates = [];
-            const baseDate = new Date(startDate);
-            
-            for (let i = 0; i < weeks; i++) {
-                const nextDate = new Date(baseDate);
-                
-                if (recurringType === 'weekly') {
-                    nextDate.setDate(baseDate.getDate() + (i * 7));
-                } else if (recurringType === 'monthly') {
-                    nextDate.setMonth(baseDate.getMonth() + i);
-                }
-                
-                dates.push(formatDate(nextDate));
-            }
-            
-            return dates;
-        }
-
-        // 檢查週期預約衝突
-        function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
-            const conflicts = [];
-            
-            recurringDates.forEach(date => {
-                const conflictBooking = bookings.find(b => 
-                    b.date === date && 
-                    b.room === room && 
-                    timeOverlap(b.startTime, b.endTime, startTime, endTime)
-                );
-                
-                if (conflictBooking) {
-                    conflicts.push({
-                        date: date,
-                        booking: conflictBooking
-                    });
-                }
-            });
-            
-            return conflicts;
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -193,6 +153,26 @@
             outline: none;
             border-color: #2d4874;
             box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
+        }
+
+        /* 週期預約勾選框樣式 - 修正左對齊 */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-start;
+            cursor: pointer;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .checkbox-group span {
+            font-weight: 600;
+            color: #2d3748;
         }
 
         .btn {
@@ -562,8 +542,8 @@
                         </div>
                         
                         <div class="form-group">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" id="recurringBooking" style="cursor: pointer;">
+                            <label class="checkbox-group">
+                                <input type="checkbox" id="recurringBooking">
                                 <span>週期預約</span>
                             </label>
                         </div>
@@ -579,6 +559,7 @@
                         <div class="form-group" id="recurringPeriod" style="display: none;">
                             <label for="recurringWeeks">持續期間</label>
                             <select id="recurringWeeks">
+                                <option value="unlimited">不限</option>
                                 <option value="2">2週</option>
                                 <option value="3">3週</option>
                                 <option value="4">4週</option>
@@ -661,14 +642,11 @@
     </div>
 
     <script>
-        // Google Apps Script URL - 改為 let 避免重新賦值錯誤
+        // Google Apps Script URL
         let SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
         
         // 使用本地儲存模式以確保能看到測試資料
         const USE_LOCAL_STORAGE = true;
-        
-        console.log('系統模式:', USE_LOCAL_STORAGE ? '本地儲存模式' : 'Google Sheets 模式（簡化請求）');
-        console.log('Apps Script URL:', SCRIPT_URL);
         
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
@@ -736,8 +714,6 @@
             
             // 為結束時間添加 19:30 選項
             endSelect.innerHTML += `<option value="19:30">19:30</option>`;
-            
-            // 不設定預設結束時間，讓使用者自己選擇
         }
 
         // 開啟日期選擇器
@@ -802,6 +778,51 @@
                     recurringPeriod.style.display = 'none';
                 }
             });
+        }
+
+        // 生成週期預約日期
+        function generateRecurringDates(startDate, recurringType, weeks) {
+            const dates = [];
+            const baseDate = new Date(startDate);
+            
+            // 如果選擇"不限"，預設為156週（三年）
+            const actualWeeks = weeks === 'unlimited' ? 156 : weeks;
+            
+            for (let i = 0; i < actualWeeks; i++) {
+                const nextDate = new Date(baseDate);
+                
+                if (recurringType === 'weekly') {
+                    nextDate.setDate(baseDate.getDate() + (i * 7));
+                } else if (recurringType === 'monthly') {
+                    nextDate.setMonth(baseDate.getMonth() + i);
+                }
+                
+                dates.push(formatDate(nextDate));
+            }
+            
+            return dates;
+        }
+
+        // 檢查週期預約衝突
+        function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
+            const conflicts = [];
+            
+            recurringDates.forEach(date => {
+                const conflictBooking = bookings.find(b => 
+                    b.date === date && 
+                    b.room === room && 
+                    timeOverlap(b.startTime, b.endTime, startTime, endTime)
+                );
+                
+                if (conflictBooking) {
+                    conflicts.push({
+                        date: date,
+                        booking: conflictBooking
+                    });
+                }
+            });
+            
+            return conflicts;
         }
 
         // 本地儲存相關函數（測試用）
@@ -892,7 +913,6 @@
             try {
                 showLoading(true);
                 
-                // 使用簡化的請求格式避免 CORS 問題
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     headers: {
@@ -1029,8 +1049,6 @@
         }
 
         async function submitBooking() {
-            console.log('開始提交預約...');
-            
             const title = document.getElementById('meetingTitle').value.trim();
             const room = document.getElementById('meetingRoom').value;
             const date = document.getElementById('meetingDate').value;
@@ -1039,7 +1057,7 @@
             const organizer = document.getElementById('organizer').value.trim();
             const isRecurring = document.getElementById('recurringBooking').checked;
             const recurringType = document.getElementById('recurringType').value;
-            const recurringWeeks = parseInt(document.getElementById('recurringWeeks').value);
+            const recurringWeeks = document.getElementById('recurringWeeks').value === 'unlimited' ? 156 : parseInt(document.getElementById('recurringWeeks').value);
             
             // 驗證必填欄位
             if (!title) {
@@ -1117,7 +1135,8 @@
             if (successCount > 0) {
                 let successMessage;
                 if (isRecurring) {
-                    successMessage = `成功預約 ${successCount} 場週期會議！<br>會議主題: ${title}<br>時間: ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}<br>頻率: ${recurringType === 'weekly' ? '每週' : '每月'}`;
+                    const periodText = document.getElementById('recurringWeeks').value === 'unlimited' ? '不限期間（三年）' : `${recurringWeeks}週`;
+                    successMessage = `成功預約 ${successCount} 場週期會議！<br>會議主題: ${title}<br>時間: ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}<br>頻率: ${recurringType === 'weekly' ? '每週' : '每月'}<br>期間: ${periodText}`;
                 } else {
                     successMessage = `會議主題: ${title}<br>時間: ${date} ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}`;
                 }
@@ -1183,9 +1202,6 @@
             updateWeekDisplay();
             updateSchedule();
             updateStats();
-            // 不自動設定日期，讓使用者自己選擇
-            // document.getElementById('meetingDate').value = formatDate(currentWeekStart);
-            // document.getElementById('dateDisplay').textContent = formatDateDisplay(formatDate(currentWeekStart));
         });
     </script>
 </body>
