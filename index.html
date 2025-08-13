@@ -651,15 +651,11 @@
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
 
-        // 初始載入預約資料 - 修正錯誤處理
-        console.log('系統啟動中...');
+        // 初始載入預約資料 - 優化啟動
         if (USE_LOCAL_STORAGE) {
             loadBookingsFromLocal();
         } else {
-            // 延遲載入，確保 DOM 已準備好
-            setTimeout(() => {
-                loadBookings();
-            }, 100);
+            loadBookings();
         }
 
         // 時間選項生成（限制在 09:00-19:00，30分鐘為單位）
@@ -1125,43 +1121,21 @@
         }
 
         function updateSchedule() {
-            console.log('=== 開始更新時間表 ===');
-            console.log('更新時間表，目前預約數量:', bookings.length);
-            console.log('完整預約資料:', bookings);
-            console.log('當前週開始日期:', currentWeekStart);
-            
             const scheduleBody = document.getElementById('scheduleBody');
-            if (!scheduleBody) {
-                console.error('找不到 scheduleBody 元素');
-                return;
-            }
-            scheduleBody.innerHTML = '';
+            if (!scheduleBody) return;
             
+            scheduleBody.innerHTML = '';
             const weekDates = getWeekDates(currentWeekStart);
-            console.log('本週日期:', weekDates.map(d => formatDate(d)));
             
             weekDates.forEach(date => {
                 const dateStr = formatDate(date);
-                console.log(`檢查日期: ${dateStr}`);
+                const dayBookings = bookings.filter(booking => booking.date === dateStr);
                 
-                const dayBookings = bookings.filter(booking => {
-                    const match = booking.date === dateStr;
-                    console.log(`  比較: "${booking.date}" === "${dateStr}" = ${match}`);
-                    return match;
-                });
-                
-                console.log(`${dateStr} 的預約數量:`, dayBookings.length);
-                if (dayBookings.length > 0) {
-                    console.log(`${dateStr} 的預約詳情:`, dayBookings);
-                }
-                
-                // 格式化日期顯示為月日格式
                 const month = date.getMonth() + 1;
                 const day = date.getDate();
                 const shortDateDisplay = `${month}/${day}`;
                 
                 if (dayBookings.length === 0) {
-                    console.log(`  → 顯示空白行: ${shortDateDisplay}`);
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td class="date-cell">${shortDateDisplay}</td>
@@ -1172,13 +1146,9 @@
                     `;
                     scheduleBody.appendChild(row);
                 } else {
-                    console.log(`  → 顯示預約行: ${shortDateDisplay}，共 ${dayBookings.length} 筆`);
-                    dayBookings.sort((a, b) => {
-                        return timeToMinutes(a.startTime) - timeToMinutes(b.startTime);
-                    });
+                    dayBookings.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
                     
                     dayBookings.forEach((booking, index) => {
-                        console.log(`    預約 ${index + 1}:`, booking);
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
@@ -1194,8 +1164,6 @@
                     });
                 }
             });
-            
-            console.log('=== 時間表更新完成 ===');
         }
 
         function quickBook(date) {
@@ -1347,7 +1315,7 @@
         }
 
         function updateStats() {
-            // 統計功能已移除
+            // 統計功能暫時移除以提升效能
         }
 
         // 關閉模態框
