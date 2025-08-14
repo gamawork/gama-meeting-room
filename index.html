@@ -46,6 +46,41 @@
             font-size: 1.1rem;
         }
 
+        .control-buttons {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .cache-status {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
         .main-content {
             display: grid;
             grid-template-columns: 300px 1fr;
@@ -89,43 +124,6 @@
             font-family: inherit;
         }
 
-        .form-group input[type="date"],
-        .form-group input[type="time"] {
-            text-align: left;
-            direction: ltr;
-            padding-left: 40px;
-            position: relative;
-        }
-
-        .form-group input[type="date"]::-webkit-calendar-picker-indicator,
-        .form-group input[type="time"]::-webkit-calendar-picker-indicator {
-            position: absolute;
-            left: 12px;
-            right: auto;
-            cursor: pointer;
-        }
-
-        .time-selector {
-            position: relative;
-        }
-
-        .time-dropdown {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 14px;
-            font-family: inherit;
-            background: white;
-            cursor: pointer;
-        }
-
-        .time-dropdown:focus {
-            outline: none;
-            border-color: #2d4874;
-            box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
-        }
-
         .date-display {
             width: 100%;
             padding: 12px;
@@ -155,7 +153,6 @@
             box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
-        /* 週期預約勾選框樣式 - 修正左對齊 */
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -342,33 +339,6 @@
             color: #2d4874;
         }
 
-        .quick-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #2d4874;
-        }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 5px;
-        }
-
         .legend {
             margin-top: 20px;
             padding: 20px;
@@ -411,62 +381,16 @@
             color: #2d4874;
         }
 
-        .setup-notice {
-            background: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #ffc107;
-            display: none;
-        }
-
-        /* 新增：Debug 控制台樣式 */
-        .debug-console {
+        .loading-indicator {
             position: fixed;
             top: 10px;
             right: 10px;
-            width: 300px;
-            max-height: 200px;
-            background: rgba(0,0,0,0.9);
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: 8px;
-            overflow-y: auto;
-            z-index: 2000;
-            display: none;
-        }
-
-        .debug-console.visible {
-            display: block;
-        }
-
-        .debug-toggle {
-            position: fixed;
-            top: 10px;
-            right: 320px;
-            background: #2d4874;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 2001;
-            font-size: 12px;
-        }
-
-        .performance-indicator {
-            position: fixed;
-            top: 50px;
-            right: 320px;
             background: rgba(45, 72, 116, 0.9);
             color: white;
-            padding: 5px 10px;
+            padding: 10px 15px;
             border-radius: 5px;
-            font-size: 12px;
-            z-index: 2001;
+            font-size: 14px;
+            z-index: 1000;
             display: none;
         }
 
@@ -484,20 +408,12 @@
                 padding: 20px;
             }
 
-            .debug-console {
+            .control-buttons {
                 position: relative;
                 top: auto;
                 right: auto;
-                width: 100%;
-                margin: 10px 0;
-            }
-
-            .debug-toggle, .performance-indicator {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin: 5px 0;
-                display: block;
+                margin-top: 15px;
+                justify-content: center;
             }
         }
 
@@ -552,15 +468,17 @@
     </style>
 </head>
 <body>
-    <!-- Debug 控制台 -->
-    <button class="debug-toggle" onclick="toggleDebugConsole()">Debug</button>
-    <div class="performance-indicator" id="performanceIndicator">載入中...</div>
-    <div class="debug-console" id="debugConsole"></div>
+    <div class="loading-indicator" id="loadingIndicator">載入中...</div>
 
     <div class="container">
         <div class="header">
             <h1>Gama 會議室預約系統</h1>
             <p>Conference Room Booking System</p>
+            
+            <div class="control-buttons">
+                <button class="control-btn" onclick="forceReload()">🔄 重新載入</button>
+                <div class="cache-status" id="cacheStatus">📦 無快取</div>
+            </div>
         </div>
 
         <div class="main-content">
@@ -594,14 +512,14 @@
                         
                         <div class="form-group">
                             <label for="startTime">開始時間</label>
-                            <select id="startTime" class="time-dropdown">
+                            <select id="startTime">
                                 <option value="">請選擇時間</option>
                             </select>
                         </div>
                         
                         <div class="form-group">
                             <label for="endTime">結束時間</label>
-                            <select id="endTime" class="time-dropdown">
+                            <select id="endTime">
                                 <option value="">請選擇時間</option>
                             </select>
                         </div>
@@ -699,591 +617,125 @@
         </div>
     </div>
 
-    <!-- Setup Instructions Modal -->
-    <div id="setupModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 700px;">
-            <span class="close" onclick="closeSetupModal()">&times;</span>
-            <h3>系統資訊</h3>
-            <div class="modal-message">
-                <p>此系統已與 Google Sheets 整合，所有預約資料會自動儲存。</p>
-                <p>如有任何問題，請聯繫系統管理員。</p>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Google Apps Script URL
-        let SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
-        
-        // 使用 Google Sheets 模式連接資料庫
+        // 設定參數
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
         const USE_LOCAL_STORAGE = false;
+        const CACHE_DURATION = 300000; // 5分鐘快取
         
+        // 全域變數
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
+        let cachedBookings = null;
+        let cacheTimestamp = 0;
 
-        // ===== 新增：Debug 和效能監控系統 =====
-        let debugConsoleVisible = false;
-        let performanceStart = Date.now();
-        let loadingSteps = [];
-
-        function debugLog(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const elapsed = Date.now() - performanceStart;
-            const logMessage = `[${timestamp}] (+${elapsed}ms) ${message}`;
-            
-            // 控制台輸出
-            if (type === 'error') {
-                console.error(logMessage);
-            } else if (type === 'warn') {
-                console.warn(logMessage);
-            } else {
-                console.log(logMessage);
-            }
-            
-            // 添加到 debug 控制台
-            const debugConsole = document.getElementById('debugConsole');
-            if (debugConsole) {
-                const div = document.createElement('div');
-                div.style.color = type === 'error' ? '#ff6666' : type === 'warn' ? '#ffff66' : '#00ff00';
-                div.textContent = logMessage;
-                debugConsole.appendChild(div);
-                debugConsole.scrollTop = debugConsole.scrollHeight;
-                
-                // 限制最多顯示 50 行
-                while (debugConsole.children.length > 50) {
-                    debugConsole.removeChild(debugConsole.firstChild);
-                }
-            }
-            
-            // 記錄載入步驟
-            loadingSteps.push({
-                time: elapsed,
-                message: message,
-                type: type
-            });
+        // 快取和載入系統
+        function showLoadingIndicator(message) {
+            const indicator = document.getElementById('loadingIndicator');
+            indicator.textContent = message;
+            indicator.style.display = 'block';
         }
 
-        function updatePerformanceIndicator(message) {
-            const indicator = document.getElementById('performanceIndicator');
-            if (indicator) {
-                const elapsed = Date.now() - performanceStart;
-                indicator.textContent = `${message} (${elapsed}ms)`;
-                indicator.style.display = 'block';
-            }
+        function hideLoadingIndicator() {
+            document.getElementById('loadingIndicator').style.display = 'none';
         }
 
-        function hidePerformanceIndicator() {
-            const indicator = document.getElementById('performanceIndicator');
-            if (indicator) {
-                indicator.style.display = 'none';
-            }
-        }
-
-        function toggleDebugConsole() {
-            const debugConsole = document.getElementById('debugConsole');
-            debugConsoleVisible = !debugConsoleVisible;
-            if (debugConsoleVisible) {
-                debugConsole.classList.add('visible');
-            } else {
-                debugConsole.classList.remove('visible');
-            }
-        }
-
-        function showLoadingAnalysis() {
-            let analysis = '=== 載入時間分析 ===\n';
-            loadingSteps.forEach((step, index) => {
-                const prevTime = index > 0 ? loadingSteps[index - 1].time : 0;
-                const stepTime = step.time - prevTime;
-                analysis += `步驟 ${index + 1}: ${stepTime}ms - ${step.message}\n`;
-            });
-            analysis += `總時間: ${Date.now() - performanceStart}ms`;
-            
-            debugLog(analysis, 'info');
-            alert(analysis);
-        }
-
-        // ===== 原有功能優化版 =====
-
-        // 初始載入預約資料 - 優化啟動
-        debugLog('🚀 系統初始化開始');
-        updatePerformanceIndicator('初始化中...');
-
-        if (USE_LOCAL_STORAGE) {
-            debugLog('📱 使用本地儲存模式');
-            loadBookingsFromLocal();
-        } else {
-            debugLog('☁️ 使用 Google Sheets 模式');
-            loadBookings();
-        }
-
-        // 時間選項生成（限制在 09:00-19:00，30分鐘為單位）
-        function generateTimeOptions() {
-            debugLog('⏰ 開始生成時間選項');
-            const start = performance.now();
-            
-            const times = [];
-            for (let hour = 9; hour <= 19; hour++) {
-                if (hour < 19) { // 19:00 是最後一個開始時間，不包含 19:30
-                    times.push(`${String(hour).padStart(2, '0')}:00`);
-                    times.push(`${String(hour).padStart(2, '0')}:30`);
-                } else {
-                    times.push(`${String(hour).padStart(2, '0')}:00`); // 只加入 19:00
-                }
-            }
-            
-            const elapsed = performance.now() - start;
-            debugLog(`⏰ 時間選項生成完成，耗時 ${elapsed.toFixed(2)}ms，共 ${times.length} 個選項`);
-            return times;
-        }
-
-        // 獲取當前最接近的30分鐘時間（限制在 09:00-19:00）
-        function getNearestHalfHourTime() {
-            const now = new Date();
-            let hour = now.getHours();
-            const minutes = now.getMinutes();
-            const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
-            
-            if (minutes >= 45) {
-                hour += 1;
-            }
-            
-            // 限制在 09:00-19:00 範圍內
-            if (hour < 9) {
-                return '09:00';
-            } else if (hour >= 19) {
-                return '19:00';
-            }
-            
-            return `${String(hour).padStart(2, '0')}:${String(roundedMinutes).padStart(2, '0')}`;
-        }
-
-        // 初始化時間選項 - 優化版
-        function initializeTimeSelects() {
-            debugLog('🎯 開始初始化時間選項');
-            const start = performance.now();
-            
-            const times = generateTimeOptions();
-            const startSelect = document.getElementById('startTime');
-            const endSelect = document.getElementById('endTime');
-            
-            if (!startSelect || !endSelect) {
-                debugLog('❌ 找不到時間選擇元素', 'error');
-                return;
-            }
-            
-            // 清空現有選項
-            startSelect.innerHTML = '<option value="">請選擇時間</option>';
-            endSelect.innerHTML = '<option value="">請選擇時間</option>';
-            
-            // 批量添加時間選項 - 優化 DOM 操作
-            let startOptions = '';
-            let endOptions = '';
-            
-            times.forEach(time => {
-                startOptions += `<option value="${time}">${time}</option>`;
-                // 結束時間最晚到 19:30（允許19:00開始的會議延續到19:30）
-                if (time <= '19:30') {
-                    endOptions += `<option value="${time}">${time}</option>`;
-                }
-            });
-            
-            // 為結束時間添加 19:30 選項
-            endOptions += `<option value="19:30">19:30</option>`;
-            
-            // 一次性更新 DOM
-            startSelect.innerHTML += startOptions;
-            endSelect.innerHTML += endOptions;
-            
-            const elapsed = performance.now() - start;
-            debugLog(`🎯 時間選項初始化完成，耗時 ${elapsed.toFixed(2)}ms`);
-        }
-
-        // 開啟日期選擇器
-        function openDatePicker() {
-            debugLog('📅 開啟日期選擇器');
-            const dateInput = document.getElementById('meetingDate');
-            try {
-                // 嘗試使用 showPicker() 方法（較新的瀏覽器支援）
-                if (dateInput.showPicker) {
-                    dateInput.showPicker();
-                } else {
-                    // 備用方案：直接點擊日期輸入框
-                    dateInput.click();
-                    dateInput.focus();
-                }
-            } catch (error) {
-                debugLog(`📅 日期選擇器開啟失敗: ${error.message}`, 'warn');
-                // 如果 showPicker() 失敗，使用備用方案
-                dateInput.click();
-                dateInput.focus();
-            }
-        }
-
-        // 格式化日期顯示（只顯示月日）
-        function formatDateDisplay(dateString) {
-            if (!dateString) return '請選擇日期';
-            const date = new Date(dateString);
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            return `${month}月${day}日`;
-        }
-
-        // 更新日期顯示
-        function updateDateDisplay() {
-            const dateInput = document.getElementById('meetingDate');
-            const dateDisplay = document.getElementById('dateDisplay');
-            dateDisplay.textContent = formatDateDisplay(dateInput.value);
-        }
-
-        // 監聽日期變更
-        function setupDateListener() {
-            debugLog('📅 設定日期監聽器');
-            document.getElementById('meetingDate').addEventListener('change', updateDateDisplay);
-        }
-
-        // 監聽開始時間變更，自動設定結束時間
-        function setupTimeListener() {
-            debugLog('⏰ 設定時間監聽器');
-            document.getElementById('startTime').addEventListener('change', function() {
-                const startTime = this.value;
-                if (startTime) {
-                    const [hour, minute] = startTime.split(':').map(Number);
-                    let endHour = hour;
-                    let endMinute = minute + 30;
-                    
-                    if (endMinute >= 60) {
-                        endHour += 1;
-                        endMinute = 0;
-                    }
-                    
-                    // 確保結束時間不超過 19:30
-                    if (endHour > 19 || (endHour === 19 && endMinute > 30)) {
-                        endHour = 19;
-                        endMinute = 30;
-                    }
-                    
-                    const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
-                    document.getElementById('endTime').value = endTime;
-                }
-            });
-        }
-
-        // 監聽週期預約勾選
-        function setupRecurringListener() {
-            debugLog('🔄 設定週期預約監聽器');
-            document.getElementById('recurringBooking').addEventListener('change', function() {
-                const recurringOptions = document.getElementById('recurringOptions');
-                const recurringPeriod = document.getElementById('recurringPeriod');
-                
-                if (this.checked) {
-                    recurringOptions.style.display = 'block';
-                    recurringPeriod.style.display = 'block';
-                } else {
-                    recurringOptions.style.display = 'none';
-                    recurringPeriod.style.display = 'none';
-                }
-            });
-        }
-
-        // 生成週期預約日期
-        function generateRecurringDates(startDate, recurringType, weeks) {
-            debugLog(`🔄 生成週期預約日期: ${recurringType}, ${weeks}週`);
-            const start = performance.now();
-            
-            const dates = [];
-            const baseDate = new Date(startDate);
-            
-            // 如果選擇"不限"，預設為156週（三年）
-            const actualWeeks = weeks === 'unlimited' ? 156 : weeks;
-            
-            for (let i = 0; i < actualWeeks; i++) {
-                const nextDate = new Date(baseDate);
-                
-                if (recurringType === 'weekly') {
-                    nextDate.setDate(baseDate.getDate() + (i * 7));
-                } else if (recurringType === 'monthly') {
-                    nextDate.setMonth(baseDate.getMonth() + i);
-                }
-                
-                dates.push(formatDate(nextDate));
-            }
-            
-            const elapsed = performance.now() - start;
-            debugLog(`🔄 週期日期生成完成，生成 ${dates.length} 個日期，耗時 ${elapsed.toFixed(2)}ms`);
-            return dates;
-        }
-
-        // 檢查週期預約衝突
-        function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
-            debugLog(`🔍 檢查週期預約衝突，檢查 ${recurringDates.length} 個日期`);
-            const start = performance.now();
-            
-            const conflicts = [];
-            
-            recurringDates.forEach(date => {
-                const conflictBooking = bookings.find(b => 
-                    b.date === date && 
-                    b.room === room && 
-                    timeOverlap(b.startTime, b.endTime, startTime, endTime)
-                );
-                
-                if (conflictBooking) {
-                    conflicts.push({
-                        date: date,
-                        booking: conflictBooking
-                    });
-                }
-            });
-            
-            const elapsed = performance.now() - start;
-            debugLog(`🔍 衝突檢查完成，發現 ${conflicts.length} 個衝突，耗時 ${elapsed.toFixed(2)}ms`);
-            return conflicts;
-        }
-
-        // 本地儲存相關函數（測試用）
-        function loadBookingsFromLocal() {
-            debugLog('📱 從本地儲存載入資料');
-            const start = performance.now();
-            updatePerformanceIndicator('載入本地資料...');
-            
-            try {
-                const stored = localStorage.getItem('gamaBookings');
-                if (stored) {
-                    bookings = JSON.parse(stored);
-                } else {
-                    // 初始化為空陣列
-                    bookings = [];
-                    saveBookingsToLocal();
-                }
-                
-                const elapsed = performance.now() - start;
-                debugLog(`📱 本地資料載入完成，載入 ${bookings.length} 筆預約，耗時 ${elapsed.toFixed(2)}ms`);
-                
-                updateSchedule();
-                updateStats();
-                hidePerformanceIndicator();
-            } catch (error) {
-                debugLog(`📱 載入本地資料失敗: ${error.message}`, 'error');
-                bookings = [];
-                updateSchedule();
-                updateStats();
-                hidePerformanceIndicator();
-            }
-        }
-
-        function saveBookingsToLocal() {
-            try {
-                localStorage.setItem('gamaBookings', JSON.stringify(bookings));
-            } catch (error) {
-                debugLog(`📱 儲存本地資料失敗: ${error.message}`, 'error');
-            }
-        }
-
-        function saveBookingLocal(booking) {
-            bookings.push(booking);
-            saveBookingsToLocal();
-            updateSchedule();
-            updateStats();
-            return true;
-        }
-
-        // Google Sheets API 相關函數 - 大幅優化版
-        async function loadBookings() {
+        async function loadBookings(useCache = true) {
             if (!SCRIPT_URL) {
-                debugLog('❌ Apps Script URL 未設定', 'error');
                 showModal('設定錯誤', '請先設定 Google Apps Script URL。');
-                // 即使失敗也要初始化空資料並顯示表格
                 bookings = [];
                 updateSchedule();
-                updateStats();
-                hidePerformanceIndicator();
+                return;
+            }
+
+            // 檢查快取
+            const now = Date.now();
+            if (useCache && cachedBookings && (now - cacheTimestamp) < CACHE_DURATION) {
+                bookings = [...cachedBookings];
+                updateSchedule();
+                updateCacheStatus();
                 return;
             }
             
-            debugLog('☁️ 開始載入 Google Sheets 資料');
-            debugLog(`🔗 請求 URL: ${SCRIPT_URL}`);
-            updatePerformanceIndicator('連接 Google Sheets...');
-            
-            const loadStart = performance.now();
+            showLoadingIndicator('連接資料庫...');
             
             try {
                 showLoading(true);
                 
-                debugLog('📡 發送 GET 請求...');
-                const requestStart = performance.now();
-                
-                const url = `${SCRIPT_URL}?action=get&_t=${Date.now()}`;  // 添加時間戳避免快取
-                debugLog(`🔗 實際請求 URL: ${url}`);
-                
-                // 添加請求超時控制
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => {
-                    controller.abort();
-                    debugLog('⏰ 請求超時 (10秒)', 'warn');
-                }, 10000);
-                
-                const response = await fetch(url, {
-                    method: 'GET',
-                    signal: controller.signal,
-                    cache: 'no-cache'  // 禁用快取
-                });
-                
-                clearTimeout(timeoutId);
-                const requestElapsed = performance.now() - requestStart;
-                debugLog(`📡 網路請求完成，耗時 ${requestElapsed.toFixed(2)}ms`);
-                debugLog(`📊 回應狀態: ${response.status} ${response.statusText}`);
-                debugLog(`📋 回應 Content-Type: ${response.headers.get('content-type')}`);
-                
-                updatePerformanceIndicator('處理回應資料...');
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP 錯誤: ${response.status} ${response.statusText}`);
-                }
-                
-                debugLog('📄 讀取回應內容...');
-                const textStart = performance.now();
-                const responseText = await response.text();
-                const textElapsed = performance.now() - textStart;
-                debugLog(`📄 回應內容讀取完成，耗時 ${textElapsed.toFixed(2)}ms`);
-                debugLog(`📏 回應大小: ${responseText.length} 字元`);
-                debugLog(`📝 回應內容預覽: ${responseText.substring(0, 200)}...`);
-                
-                debugLog('🔍 解析 JSON 資料...');
-                const parseStart = performance.now();
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                    const parseElapsed = performance.now() - parseStart;
-                    debugLog(`🔍 JSON 解析完成，耗時 ${parseElapsed.toFixed(2)}ms`);
-                    debugLog(`📊 解析後的資料結構:`, data);
-                } catch (parseError) {
-                    debugLog(`❌ JSON 解析失敗: ${parseError.message}`, 'error');
-                    debugLog(`📝 無法解析的內容: ${responseText}`, 'error');
-                    throw new Error(`無法解析回應資料。回應可能不是有效的 JSON 格式。`);
-                }
-                
-                updatePerformanceIndicator('資料標準化中...');
-                
-                if (data && data.success) {
-                    debugLog('✅ 資料載入成功');
-                    bookings = data.data || [];
-                    debugLog(`📊 原始資料: ${bookings.length} 筆預約`);
-                    
-                    // 檢查資料格式並標準化
-                    if (bookings.length > 0) {
-                        debugLog('🔍 檢查資料格式...');
-                        debugLog(`📝 第一筆資料範例:`, bookings[0]);
-                        debugLog(`🏷️ 資料欄位: ${Object.keys(bookings[0]).join(', ')}`);
+                // 重試機制
+                let lastError;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        const timeout = attempt === 1 ? 8000 : attempt === 2 ? 12000 : 20000;
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), timeout);
                         
-                        // 標準化資料格式
-                        debugLog('🔧 開始標準化資料格式...');
-                        const normalizeStart = performance.now();
-                        
-                        bookings = bookings.map((booking, index) => {
-                            // 處理日期格式 - 修正時區問題
-                            let dateValue = booking.date || booking['日期'] || booking.Date;
-                            if (dateValue && typeof dateValue === 'string' && dateValue.includes('T')) {
-                                // 如果包含時間戳記，需要正確處理時區
-                                const date = new Date(dateValue);
-                                // 使用台灣時區 (UTC+8) 來格式化日期
-                                const taiwanDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-                                const year = taiwanDate.getUTCFullYear();
-                                const month = String(taiwanDate.getUTCMonth() + 1).padStart(2, '0');
-                                const day = String(taiwanDate.getUTCDate()).padStart(2, '0');
-                                dateValue = `${year}-${month}-${day}`;
-                            } else if (dateValue instanceof Date) {
-                                // 如果是 Date 物件，也要考慮時區
-                                const taiwanDate = new Date(dateValue.getTime() + (8 * 60 * 60 * 1000));
-                                dateValue = formatDate(taiwanDate);
-                            }
-                            
-                            // 處理時間格式 - 也要考慮時區
-                            let startTime = booking.startTime || booking['開始時間'] || booking.StartTime;
-                            let endTime = booking.endTime || booking['結束時間'] || booking.EndTime;
-                            
-                            if (startTime && typeof startTime === 'string' && startTime.includes('T')) {
-                                // 從 ISO 時間字串中提取時間部分，並調整為台灣時區
-                                const date = new Date(startTime);
-                                const taiwanDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-                                const hours = String(taiwanDate.getUTCHours()).padStart(2, '0');
-                                const minutes = String(taiwanDate.getUTCMinutes()).padStart(2, '0');
-                                startTime = `${hours}:${minutes}`;
-                            }
-                            
-                            if (endTime && typeof endTime === 'string' && endTime.includes('T')) {
-                                // 從 ISO 時間字串中提取時間部分，並調整為台灣時區
-                                const date = new Date(endTime);
-                                const taiwanDate = new Date(date.getTime() + (8 * 60 * 60 * 1000));
-                                const hours = String(taiwanDate.getUTCHours()).padStart(2, '0');
-                                const minutes = String(taiwanDate.getUTCMinutes()).padStart(2, '0');
-                                endTime = `${hours}:${minutes}`;
-                            }
-                            
-                            return {
-                                date: dateValue,
-                                room: booking.room || booking['會議地點'] || booking.Room,
-                                startTime: startTime,
-                                endTime: endTime,
-                                title: booking.title || booking['會議主題'] || booking.Title,
-                                organizer: booking.organizer || booking['登記者'] || booking.Organizer
-                            };
+                        const url = `${SCRIPT_URL}?action=get&sheet=read&_t=${Date.now()}`;
+                        const response = await fetch(url, {
+                            method: 'GET',
+                            signal: controller.signal,
+                            cache: 'no-cache'
                         });
                         
-                        const normalizeElapsed = performance.now() - normalizeStart;
-                        debugLog(`🔧 資料標準化完成，耗時 ${normalizeElapsed.toFixed(2)}ms`);
-                        debugLog(`📊 標準化後的資料:`, bookings);
+                        clearTimeout(timeoutId);
                         
-                    } else {
-                        debugLog('📋 資料庫目前沒有預約資料，顯示空白表格');
-                    }
-                } else if (data && data.error) {
-                    throw new Error(`Apps Script 錯誤: ${data.error}`);
-                } else {
-                    // 如果回應格式不符合預期，但是有資料，嘗試直接使用
-                    if (Array.isArray(data)) {
-                        bookings = data;
-                        debugLog(`✅ 載入資料陣列: ${bookings.length} 筆`);
-                    } else {
-                        bookings = [];
-                        debugLog('⚠️ 回應格式不符合預期，使用空資料', 'warn');
+                        if (!response.ok) {
+                            throw new Error(`HTTP 錯誤: ${response.status}`);
+                        }
+                        
+                        const responseText = await response.text();
+                        const data = JSON.parse(responseText);
+                        
+                        if (data && data.success) {
+                            bookings = data.data || [];
+                            
+                            // 標準化資料格式
+                            bookings = bookings.map(booking => ({
+                                date: formatDateFromResponse(booking.date),
+                                room: booking.room || booking['會議地點'] || booking.Room,
+                                startTime: formatTimeFromResponse(booking.startTime),
+                                endTime: formatTimeFromResponse(booking.endTime),
+                                title: booking.title || booking['會議主題'] || booking.Title,
+                                organizer: booking.organizer || booking['登記者'] || booking.Organizer
+                            }));
+                            
+                            // 更新快取
+                            cachedBookings = [...bookings];
+                            cacheTimestamp = Date.now();
+                            
+                            break;
+                        } else {
+                            throw new Error(data.error || '資料格式錯誤');
+                        }
+                        
+                    } catch (error) {
+                        lastError = error;
+                        if (attempt === 3) throw lastError;
+                        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
                     }
                 }
                 
-                updatePerformanceIndicator('更新界面中...');
-                
-                debugLog('🎨 開始更新界面...');
-                const uiStart = performance.now();
                 updateSchedule();
-                updateStats();
-                const uiElapsed = performance.now() - uiStart;
-                debugLog(`🎨 界面更新完成，耗時 ${uiElapsed.toFixed(2)}ms`);
-                
-                const totalElapsed = performance.now() - loadStart;
-                debugLog(`🎉 資料載入流程完成！總耗時 ${totalElapsed.toFixed(2)}ms`);
-                hidePerformanceIndicator();
+                updateCacheStatus();
                 
             } catch (error) {
-                const totalElapsed = performance.now() - loadStart;
-                debugLog(`❌ 載入預約資料失敗，總耗時 ${totalElapsed.toFixed(2)}ms`, 'error');
-                debugLog(`❌ 錯誤詳情: ${error.message}`, 'error');
+                console.error('載入失敗:', error);
                 
-                if (error.name === 'AbortError') {
-                    debugLog('⏰ 請求被取消（超時）', 'error');
+                // 嘗試使用快取
+                if (cachedBookings && cachedBookings.length > 0) {
+                    bookings = [...cachedBookings];
+                    updateSchedule();
+                    showModal('使用快取資料', `網路連線問題，已載入快取資料 (${bookings.length} 筆預約)。`);
+                } else {
+                    bookings = [];
+                    updateSchedule();
+                    showModal('載入失敗', '無法載入預約資料，請檢查網路連線或稍後再試。');
                 }
                 
-                // 顯示詳細錯誤訊息，但不阻止系統運行
-                showModal('載入失敗', `無法載入預約資料：${error.message}<br><br>系統將顯示空白表格，您仍可新增預約。<br><br>請檢查：<br>1. Google Apps Script 是否正確部署<br>2. 權限設定是否正確<br>3. doGet() 函數是否正確處理 action=get 參數<br>4. 網路連線是否正常`);
-                
-                // 載入失敗時使用空資料，但仍然顯示表格
-                bookings = [];
-                updateSchedule();
-                updateStats();
-                hidePerformanceIndicator();
-                
-                // 顯示載入時間分析
-                setTimeout(showLoadingAnalysis, 1000);
+                updateCacheStatus();
             } finally {
                 showLoading(false);
+                hideLoadingIndicator();
             }
         }
 
@@ -1293,26 +745,22 @@
                 return false;
             }
 
-            debugLog('💾 開始儲存預約資料');
-            const start = performance.now();
-
             try {
                 showLoading(true);
+                showLoadingIndicator('儲存資料...');
                 
-                debugLog('📡 準備 POST 請求...');
-                // 使用 URLSearchParams 避免 CORS 預檢請求
                 const formData = new URLSearchParams();
                 formData.append('action', 'add');
+                formData.append('sheet', 'write');
                 formData.append('data', JSON.stringify(booking));
                 
-                debugLog('📡 發送 POST 請求...');
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     body: formData
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP 錯誤: ${response.status} ${response.statusText}`);
+                    throw new Error(`HTTP 錯誤: ${response.status}`);
                 }
 
                 const responseText = await response.text();
@@ -1321,35 +769,81 @@
                 try {
                     result = JSON.parse(responseText);
                 } catch (parseError) {
-                    // 如果無法解析 JSON，假設儲存成功
-                    debugLog('⚠️ 無法解析回應 JSON，假設儲存成功', 'warn');
                     result = { success: true };
                 }
                 
                 if (result.success) {
                     bookings.push(booking);
                     updateSchedule();
-                    updateStats();
                     
-                    const elapsed = performance.now() - start;
-                    debugLog(`💾 預約儲存成功，耗時 ${elapsed.toFixed(2)}ms`);
+                    // 清除快取以確保下次載入最新資料
+                    cachedBookings = null;
+                    cacheTimestamp = 0;
+                    updateCacheStatus();
+                    
                     return true;
                 } else {
                     throw new Error(result.error || '儲存失敗');
                 }
             } catch (error) {
-                const elapsed = performance.now() - start;
-                debugLog(`❌ 儲存預約失敗，耗時 ${elapsed.toFixed(2)}ms: ${error.message}`, 'error');
-                showModal('儲存失敗', '無法儲存預約，請稍後再試或聯繫管理員。');
+                console.error('儲存失敗:', error);
+                showModal('儲存失敗', '無法儲存預約，請稍後再試。');
                 return false;
             } finally {
                 showLoading(false);
+                hideLoadingIndicator();
             }
         }
 
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-            document.getElementById('submitBtn').disabled = show;
+        function forceReload() {
+            cachedBookings = null;
+            cacheTimestamp = 0;
+            loadBookings(false);
+        }
+
+        function updateCacheStatus() {
+            const cacheStatus = document.getElementById('cacheStatus');
+            if (cacheStatus) {
+                if (cachedBookings) {
+                    const cacheAge = Date.now() - cacheTimestamp;
+                    const ageText = cacheAge < 60000 ? 
+                        `${Math.round(cacheAge/1000)}秒前` : 
+                        `${Math.round(cacheAge/60000)}分鐘前`;
+                    cacheStatus.textContent = `📦 快取 ${ageText}`;
+                    cacheStatus.style.background = cacheAge < CACHE_DURATION ? 
+                        'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)';
+                } else {
+                    cacheStatus.textContent = '📦 無快取';
+                    cacheStatus.style.background = 'rgba(255,255,255,0.2)';
+                }
+            }
+        }
+
+        // 工具函數
+        function formatDateFromResponse(dateValue) {
+            if (!dateValue) return '';
+            
+            if (typeof dateValue === 'string' && dateValue.includes('T')) {
+                const date = new Date(dateValue);
+                return formatDate(date);
+            } else if (dateValue instanceof Date) {
+                return formatDate(dateValue);
+            }
+            
+            return dateValue;
+        }
+
+        function formatTimeFromResponse(timeValue) {
+            if (!timeValue) return '';
+            
+            if (typeof timeValue === 'string' && timeValue.includes('T')) {
+                const date = new Date(timeValue);
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+            
+            return timeValue;
         }
 
         function formatDate(date) {
@@ -1374,36 +868,44 @@
             return dates;
         }
 
-        function changeWeek(direction) {
-            debugLog(`📅 切換週次: ${direction > 0 ? '下一週' : '上一週'}`);
-            currentWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
-            updateWeekDisplay();
-            updateSchedule();
-        }
-
-        function updateWeekDisplay() {
-            const startStr = `${currentWeekStart.getFullYear()}年${currentWeekStart.getMonth() + 1}月${currentWeekStart.getDate()}日`;
-            const endDate = new Date(currentWeekStart);
-            endDate.setDate(currentWeekStart.getDate() + 6);
-            const endStr = `${endDate.getMonth() + 1}月${endDate.getDate()}日`;
-            
-            document.getElementById('currentWeek').textContent = `${startStr} - ${endStr}`;
-        }
-
-        function updateSchedule() {
-            debugLog('🎨 開始更新時間表');
-            const start = performance.now();
-            
-            const scheduleBody = document.getElementById('scheduleBody');
-            if (!scheduleBody) {
-                debugLog('❌ 找不到時間表元素', 'error');
-                return;
+        function generateTimeOptions() {
+            const times = [];
+            for (let hour = 9; hour <= 19; hour++) {
+                if (hour < 19) {
+                    times.push(`${String(hour).padStart(2, '0')}:00`);
+                    times.push(`${String(hour).padStart(2, '0')}:30`);
+                } else {
+                    times.push(`${String(hour).padStart(2, '0')}:00`);
+                }
             }
+            return times;
+        }
+
+        function initializeTimeSelects() {
+            const times = generateTimeOptions();
+            const startSelect = document.getElementById('startTime');
+            const endSelect = document.getElementById('endTime');
+            
+            startSelect.innerHTML = '<option value="">請選擇時間</option>';
+            endSelect.innerHTML = '<option value="">請選擇時間</option>';
+            
+            times.forEach(time => {
+                startSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                if (time <= '19:30') {
+                    endSelect.innerHTML += `<option value="${time}">${time}</option>`;
+                }
+            });
+            
+            endSelect.innerHTML += `<option value="19:30">19:30</option>`;
+        }
+
+        // 界面更新函數
+        function updateSchedule() {
+            const scheduleBody = document.getElementById('scheduleBody');
+            if (!scheduleBody) return;
             
             scheduleBody.innerHTML = '';
             const weekDates = getWeekDates(currentWeekStart);
-            
-            debugLog(`📊 處理 ${weekDates.length} 天的資料，共 ${bookings.length} 筆預約`);
             
             weekDates.forEach(date => {
                 const dateStr = formatDate(date);
@@ -1442,13 +944,60 @@
                     });
                 }
             });
+        }
+
+        function changeWeek(direction) {
+            currentWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
+            updateWeekDisplay();
+            updateSchedule();
             
-            const elapsed = performance.now() - start;
-            debugLog(`🎨 時間表更新完成，耗時 ${elapsed.toFixed(2)}ms`);
+            // 檢查快取是否需要更新
+            const cacheAge = Date.now() - cacheTimestamp;
+            if (cacheAge > CACHE_DURATION) {
+                loadBookings(false);
+            }
+        }
+
+        function updateWeekDisplay() {
+            const startStr = `${currentWeekStart.getFullYear()}年${currentWeekStart.getMonth() + 1}月${currentWeekStart.getDate()}日`;
+            const endDate = new Date(currentWeekStart);
+            endDate.setDate(currentWeekStart.getDate() + 6);
+            const endStr = `${endDate.getMonth() + 1}月${endDate.getDate()}日`;
+            
+            document.getElementById('currentWeek').textContent = `${startStr} - ${endStr}`;
+        }
+
+        // 表單處理函數
+        function openDatePicker() {
+            const dateInput = document.getElementById('meetingDate');
+            try {
+                if (dateInput.showPicker) {
+                    dateInput.showPicker();
+                } else {
+                    dateInput.click();
+                    dateInput.focus();
+                }
+            } catch (error) {
+                dateInput.click();
+                dateInput.focus();
+            }
+        }
+
+        function formatDateDisplay(dateString) {
+            if (!dateString) return '請選擇日期';
+            const date = new Date(dateString);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `${month}月${day}日`;
+        }
+
+        function updateDateDisplay() {
+            const dateInput = document.getElementById('meetingDate');
+            const dateDisplay = document.getElementById('dateDisplay');
+            dateDisplay.textContent = formatDateDisplay(dateInput.value);
         }
 
         function quickBook(date) {
-            debugLog(`⚡ 快速預約: ${date}`);
             document.getElementById('meetingDate').value = date;
             document.getElementById('dateDisplay').textContent = formatDateDisplay(date);
             document.getElementById('meetingTitle').focus();
@@ -1463,10 +1012,8 @@
             `);
         }
 
+        // 預約提交函數
         async function submitBooking() {
-            debugLog('📝 開始提交預約');
-            const start = performance.now();
-            
             const title = document.getElementById('meetingTitle').value.trim();
             const room = document.getElementById('meetingRoom').value;
             const date = document.getElementById('meetingDate').value;
@@ -1477,33 +1024,13 @@
             const recurringType = document.getElementById('recurringType').value;
             const recurringWeeks = document.getElementById('recurringWeeks').value === 'unlimited' ? 156 : parseInt(document.getElementById('recurringWeeks').value);
             
-            debugLog(`📝 預約資訊: ${title} @ ${room}, ${date} ${startTime}-${endTime}, 登記者: ${organizer}`);
-            
             // 驗證必填欄位
-            if (!title) {
-                showModal('預約失敗', '請填寫會議主題。');
-                return;
-            }
-            if (!room) {
-                showModal('預約失敗', '請選擇會議室。');
-                return;
-            }
-            if (!date) {
-                showModal('預約失敗', '請選擇日期。');
-                return;
-            }
-            if (!startTime) {
-                showModal('預約失敗', '請選擇開始時間。');
-                return;
-            }
-            if (!endTime) {
-                showModal('預約失敗', '請選擇結束時間。');
-                return;
-            }
-            if (!organizer) {
-                showModal('預約失敗', '請填寫登記者。');
-                return;
-            }
+            if (!title) { showModal('預約失敗', '請填寫會議主題。'); return; }
+            if (!room) { showModal('預約失敗', '請選擇會議室。'); return; }
+            if (!date) { showModal('預約失敗', '請選擇日期。'); return; }
+            if (!startTime) { showModal('預約失敗', '請選擇開始時間。'); return; }
+            if (!endTime) { showModal('預約失敗', '請選擇結束時間。'); return; }
+            if (!organizer) { showModal('預約失敗', '請填寫登記者。'); return; }
             
             // 驗證時間邏輯
             if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
@@ -1517,7 +1044,7 @@
                 datesToBook = generateRecurringDates(date, recurringType, recurringWeeks);
             }
             
-            // 檢查所有日期的衝突
+            // 檢查衝突
             const conflicts = checkRecurringConflicts(datesToBook, room, startTime, endTime);
             if (conflicts.length > 0) {
                 let conflictMessage = '以下日期有衝突，無法預約：<br>';
@@ -1529,7 +1056,6 @@
             }
             
             // 批量儲存預約
-            debugLog(`💾 開始批量儲存 ${datesToBook.length} 筆預約`);
             let successCount = 0;
             for (const bookingDate of datesToBook) {
                 const booking = {
@@ -1541,16 +1067,8 @@
                     organizer: organizer
                 };
                 
-                let success;
-                if (USE_LOCAL_STORAGE) {
-                    success = saveBookingLocal(booking);
-                } else {
-                    success = await saveBooking(booking);
-                }
-                
-                if (success) {
-                    successCount++;
-                }
+                const success = await saveBooking(booking);
+                if (success) successCount++;
             }
             
             if (successCount > 0) {
@@ -1563,24 +1081,24 @@
                 }
                 
                 showModal('預約成功！', successMessage);
-                
-                // 重設表單
-                document.getElementById('meetingTitle').value = '';
-                document.getElementById('meetingRoom').value = '';
-                document.getElementById('startTime').value = '';
-                document.getElementById('endTime').value = '';
-                document.getElementById('organizer').value = '';
-                document.getElementById('meetingDate').value = '';
-                document.getElementById('dateDisplay').textContent = '請選擇日期';
-                document.getElementById('recurringBooking').checked = false;
-                document.getElementById('recurringOptions').style.display = 'none';
-                document.getElementById('recurringPeriod').style.display = 'none';
-                
-                const elapsed = performance.now() - start;
-                debugLog(`📝 預約提交完成，總耗時 ${elapsed.toFixed(2)}ms`);
+                resetForm();
             }
         }
 
+        function resetForm() {
+            document.getElementById('meetingTitle').value = '';
+            document.getElementById('meetingRoom').value = '';
+            document.getElementById('startTime').value = '';
+            document.getElementById('endTime').value = '';
+            document.getElementById('organizer').value = '';
+            document.getElementById('meetingDate').value = '';
+            document.getElementById('dateDisplay').textContent = '請選擇日期';
+            document.getElementById('recurringBooking').checked = false;
+            document.getElementById('recurringOptions').style.display = 'none';
+            document.getElementById('recurringPeriod').style.display = 'none';
+        }
+
+        // 工具函數
         function timeToMinutes(timeStr) {
             const [hours, minutes] = timeStr.split(':').map(Number);
             return hours * 60 + minutes;
@@ -1595,6 +1113,48 @@
             return s1 < e2 && s2 < e1;
         }
 
+        function generateRecurringDates(startDate, recurringType, weeks) {
+            const dates = [];
+            const baseDate = new Date(startDate);
+            const actualWeeks = weeks === 'unlimited' ? 156 : weeks;
+            
+            for (let i = 0; i < actualWeeks; i++) {
+                const nextDate = new Date(baseDate);
+                
+                if (recurringType === 'weekly') {
+                    nextDate.setDate(baseDate.getDate() + (i * 7));
+                } else if (recurringType === 'monthly') {
+                    nextDate.setMonth(baseDate.getMonth() + i);
+                }
+                
+                dates.push(formatDate(nextDate));
+            }
+            
+            return dates;
+        }
+
+        function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
+            const conflicts = [];
+            
+            recurringDates.forEach(date => {
+                const conflictBooking = bookings.find(b => 
+                    b.date === date && 
+                    b.room === room && 
+                    timeOverlap(b.startTime, b.endTime, startTime, endTime)
+                );
+                
+                if (conflictBooking) {
+                    conflicts.push({
+                        date: date,
+                        booking: conflictBooking
+                    });
+                }
+            });
+            
+            return conflicts;
+        }
+
+        // 模態框函數
         function showModal(title, message) {
             document.querySelector('#bookingModal h3').textContent = title;
             document.getElementById('modalMessage').innerHTML = message;
@@ -1605,128 +1165,93 @@
             document.getElementById('bookingModal').style.display = 'none';
         }
 
-        function updateStats() {
-            // 統計功能暫時移除以提升效能
-            debugLog('📊 統計功能已優化移除');
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('submitBtn').disabled = show;
         }
 
-        // 關閉模態框
-        document.querySelector('.close').addEventListener('click', closeModal);
-        document.getElementById('bookingModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
+        // 事件監聽器設定
+        function setupEventListeners() {
+            // 日期變更監聽
+            document.getElementById('meetingDate').addEventListener('change', updateDateDisplay);
+            
+            // 開始時間變更，自動設定結束時間
+            document.getElementById('startTime').addEventListener('change', function() {
+                const startTime = this.value;
+                if (startTime) {
+                    const [hour, minute] = startTime.split(':').map(Number);
+                    let endHour = hour;
+                    let endMinute = minute + 30;
+                    
+                    if (endMinute >= 60) {
+                        endHour += 1;
+                        endMinute = 0;
+                    }
+                    
+                    if (endHour > 19 || (endHour === 19 && endMinute > 30)) {
+                        endHour = 19;
+                        endMinute = 30;
+                    }
+                    
+                    const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
+                    document.getElementById('endTime').value = endTime;
+                }
+            });
+            
+            // 週期預約勾選監聽
+            document.getElementById('recurringBooking').addEventListener('change', function() {
+                const recurringOptions = document.getElementById('recurringOptions');
+                const recurringPeriod = document.getElementById('recurringPeriod');
+                
+                if (this.checked) {
+                    recurringOptions.style.display = 'block';
+                    recurringPeriod.style.display = 'block';
+                } else {
+                    recurringOptions.style.display = 'none';
+                    recurringPeriod.style.display = 'none';
+                }
+            });
+            
+            // 模態框關閉監聽
+            document.querySelector('.close').addEventListener('click', closeModal);
+            document.getElementById('bookingModal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+        }
 
-        // 初始化 - 優化版
-        document.addEventListener('DOMContentLoaded', function() {
-            debugLog('🎯 DOM 載入完成，開始初始化');
-            performanceStart = Date.now(); // 重設效能計時起點
-            
-            const initStart = performance.now();
-            
-            debugLog('🔧 初始化時間選項...');
+        // 初始化函數
+        function initialize() {
             initializeTimeSelects();
-            
-            debugLog('👂 設定事件監聽器...');
-            setupDateListener();
-            setupTimeListener();
-            setupRecurringListener();
-            
-            debugLog('📅 更新週次顯示...');
+            setupEventListeners();
             updateWeekDisplay();
-            
-            debugLog('🎨 初始化時間表...');
             updateSchedule();
             
-            debugLog('📊 初始化統計...');
-            updateStats();
+            // 定期更新快取狀態
+            setInterval(updateCacheStatus, 30000);
             
-            const initElapsed = performance.now() - initStart;
-            debugLog(`🎯 初始化完成，耗時 ${initElapsed.toFixed(2)}ms`);
-            
-            // 顯示初始化完成後的載入分析
-            setTimeout(() => {
-                if (loadingSteps.length > 5) {
-                    debugLog('📈 系統載入完成，可點擊 Debug 按鈕查看詳細時間分析');
-                }
-            }, 500);
-        });
-
-        // 額外的 Debug 功能
-        function clearDebugLog() {
-            const debugConsole = document.getElementById('debugConsole');
-            debugConsole.innerHTML = '';
-            loadingSteps = [];
-            debugLog('🧹 Debug 記錄已清空');
+            // 載入資料
+            if (USE_LOCAL_STORAGE) {
+                // 本地模式 (測試用)
+                bookings = JSON.parse(localStorage.getItem('gamaBookings') || '[]');
+                updateSchedule();
+            } else {
+                loadBookings();
+            }
         }
 
-        function exportDebugLog() {
-            const logData = loadingSteps.map(step => 
-                `${step.time}ms - ${step.type.toUpperCase()} - ${step.message}`
-            ).join('\n');
-            
-            const blob = new Blob([logData], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `gama-booking-debug-${Date.now()}.txt`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            debugLog('📁 Debug 記錄已匯出');
-        }
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', initialize);
 
-        // 鍵盤快速鍵
-        document.addEventListener('keydown', function(e) {
-            // Ctrl+Shift+D 開啟/關閉 Debug
-            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-                e.preventDefault();
-                toggleDebugConsole();
-            }
-            
-            // Ctrl+Shift+C 清空 Debug 記錄
-            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-                e.preventDefault();
-                clearDebugLog();
-            }
-            
-            // Ctrl+Shift+E 匯出 Debug 記錄
-            if (e.ctrlKey && e.shiftKey && e.key === 'E') {
-                e.preventDefault();
-                exportDebugLog();
-            }
-            
-            // Ctrl+Shift+A 顯示載入分析
-            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                e.preventDefault();
-                showLoadingAnalysis();
-            }
-        });
-
-        // 新增：網路狀態監控
+        // 網路狀態監控
         window.addEventListener('online', function() {
-            debugLog('🌐 網路連線恢復', 'info');
+            console.log('網路連線恢復');
+            if (!cachedBookings || (Date.now() - cacheTimestamp) > CACHE_DURATION) {
+                loadBookings(false);
+            }
         });
 
         window.addEventListener('offline', function() {
-            debugLog('📴 網路連線中斷', 'warn');
-        });
-
-        // 新增：視覺化效能指標
-        function updatePerformanceMetrics() {
-            const navigation = performance.getEntriesByType('navigation')[0];
-            if (navigation) {
-                debugLog(`📊 頁面載入時間: ${navigation.loadEventEnd - navigation.loadEventStart}ms`);
-                debugLog(`📊 DOM 解析時間: ${navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart}ms`);
-                debugLog(`📊 DNS 查找時間: ${navigation.domainLookupEnd - navigation.domainLookupStart}ms`);
-                debugLog(`📊 TCP 連接時間: ${navigation.connectEnd - navigation.connectStart}ms`);
-            }
-        }
-
-        // 頁面載入完成後顯示效能指標
-        window.addEventListener('load', function() {
-            setTimeout(updatePerformanceMetrics, 100);
+            console.log('網路連線中斷');
         });
     </script>
 </body>
