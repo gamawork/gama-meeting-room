@@ -46,40 +46,7 @@
             font-size: 1.1rem;
         }
 
-        .control-buttons {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
 
-        .control-btn {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-
-        .control-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .cache-status {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 12px;
-            backdrop-filter: blur(10px);
-        }
 
         .main-content {
             display: grid;
@@ -408,13 +375,7 @@
                 padding: 20px;
             }
 
-            .control-buttons {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-top: 15px;
-                justify-content: center;
-            }
+
         }
 
         .modal {
@@ -474,11 +435,6 @@
         <div class="header">
             <h1>Gama 會議室預約系統</h1>
             <p>Conference Room Booking System</p>
-            
-            <div class="control-buttons">
-                <button class="control-btn" onclick="forceReload()">🔄 重新載入</button>
-                <div class="cache-status" id="cacheStatus">📦 無快取</div>
-            </div>
         </div>
 
         <div class="main-content">
@@ -653,7 +609,6 @@
             if (useCache && cachedBookings && (now - cacheTimestamp) < CACHE_DURATION) {
                 bookings = [...cachedBookings];
                 updateSchedule();
-                updateCacheStatus();
                 return;
             }
             
@@ -731,8 +686,6 @@
                     updateSchedule();
                     showModal('載入失敗', '無法載入預約資料，請檢查網路連線或稍後再試。');
                 }
-                
-                updateCacheStatus();
             } finally {
                 showLoading(false);
                 hideLoadingIndicator();
@@ -779,7 +732,6 @@
                     // 清除快取以確保下次載入最新資料
                     cachedBookings = null;
                     cacheTimestamp = 0;
-                    updateCacheStatus();
                     
                     return true;
                 } else {
@@ -799,24 +751,6 @@
             cachedBookings = null;
             cacheTimestamp = 0;
             loadBookings(false);
-        }
-
-        function updateCacheStatus() {
-            const cacheStatus = document.getElementById('cacheStatus');
-            if (cacheStatus) {
-                if (cachedBookings) {
-                    const cacheAge = Date.now() - cacheTimestamp;
-                    const ageText = cacheAge < 60000 ? 
-                        `${Math.round(cacheAge/1000)}秒前` : 
-                        `${Math.round(cacheAge/60000)}分鐘前`;
-                    cacheStatus.textContent = `📦 快取 ${ageText}`;
-                    cacheStatus.style.background = cacheAge < CACHE_DURATION ? 
-                        'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)';
-                } else {
-                    cacheStatus.textContent = '📦 無快取';
-                    cacheStatus.style.background = 'rgba(255,255,255,0.2)';
-                }
-            }
         }
 
         // 工具函數
@@ -1225,9 +1159,6 @@
             setupEventListeners();
             updateWeekDisplay();
             updateSchedule();
-            
-            // 定期更新快取狀態
-            setInterval(updateCacheStatus, 30000);
             
             // 載入資料
             if (USE_LOCAL_STORAGE) {
