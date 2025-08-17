@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gama 會議室預約系統</title>
+    <title>Gama 會議室預約系統 - Supabase 版</title>
     <style>
         * {
             margin: 0;
@@ -46,7 +46,33 @@
             font-size: 1.1rem;
         }
 
+        .status-indicator {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
 
+        .status-connected {
+            background: rgba(34, 197, 94, 0.3);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: white;
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: white;
+        }
+
+        .status-loading {
+            background: rgba(251, 191, 36, 0.3);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            color: white;
+        }
 
         .main-content {
             display: grid;
@@ -348,18 +374,7 @@
             color: #2d4874;
         }
 
-        .loading-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(45, 72, 116, 0.9);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 1000;
-            display: none;
-        }
+
 
         @media (max-width: 1024px) {
             .main-content {
@@ -374,8 +389,6 @@
             .schedule-area {
                 padding: 20px;
             }
-
-
         }
 
         .modal {
@@ -429,12 +442,11 @@
     </style>
 </head>
 <body>
-    <div class="loading-indicator" id="loadingIndicator">載入中...</div>
-
     <div class="container">
         <div class="header">
             <h1>Gama 會議室預約系統</h1>
-            <p>Conference Room Booking System</p>
+            <p>Conference Room Booking System - Powered by Supabase</p>
+            <div class="status-indicator" id="statusIndicator">🔄 連接中...</div>
         </div>
 
         <div class="main-content">
@@ -573,213 +585,256 @@
         </div>
     </div>
 
+    <!-- 直接載入 Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
+
     <script>
-        // 設定參數
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzy37YcVMpLYtqvGY5Do4YyQ86SnWbaaSB1aOtZOq7R29zXBR0bq8VveZvRnmfDiPJuxA/exec';
-        const USE_LOCAL_STORAGE = false;
-        const CACHE_DURATION = 300000; // 5分鐘快取
+        // Supabase 設定 - 直接設定連線資訊
+        const SUPABASE_URL = 'https://vicvccudnqluufsgyznk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY3ZjY3VkbnFsdXVmc2d5em5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMzkyMDMsImV4cCI6MjA3MDcxNTIwM30.55ZG0B_L6UVJOUteqZ7sPXGHm8DG6K5Qk4xcQ9lF01U';
         
         // 全域變數
         let currentWeekStart = new Date('2025-08-11');
         let bookings = [];
-        let cachedBookings = null;
-        let cacheTimestamp = 0;
+        let supabaseClient = null;
+        let realtimeSubscription = null;
 
-        // 快取和載入系統
-        function showLoadingIndicator(message) {
-            const indicator = document.getElementById('loadingIndicator');
+        // 初始化 Supabase 連接
+        function initializeSupabase() {
+            try {
+                updateStatus('connecting', '🔄 連接中...');
+                console.log('開始初始化 Supabase...');
+                console.log('Supabase object:', typeof supabase);
+                
+                // 檢查 Supabase SDK 是否可用
+                if (typeof supabase === 'undefined') {
+                    throw new Error('Supabase SDK 未載入');
+                }
+                
+                // 建立 Supabase 客戶端
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase 客戶端建立成功:', supabaseClient);
+                
+                // 測試連線
+                testConnection();
+                
+            } catch (error) {
+                console.error('Supabase 初始化失敗:', error);
+                updateStatus('error', '❌ 初始化失敗');
+                showModal('初始化失敗', `無法初始化 Supabase：${error.message}`);
+            }
+        }
+
+        // 測試連線
+        async function testConnection() {
+            try {
+                console.log('開始測試資料庫連線...');
+                
+                // 修正查詢語法 - 使用簡單的 select 而不是 count(*)
+                const { data, error } = await supabaseClient
+                    .from('bookings')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    console.error('資料庫查詢錯誤:', error);
+                    throw error;
+                }
+                
+                console.log('資料庫連線測試成功:', data);
+                updateStatus('connected', '✅ 已連接');
+                
+                // 載入資料
+                loadBookings();
+                
+                // 設定即時更新
+                setupRealtimeSubscription();
+                
+            } catch (error) {
+                console.error('連線測試失敗:', error);
+                updateStatus('error', '❌ 連線測試失敗');
+                showModal('連線測試失敗', `無法連接到資料庫：${error.message}<br><br>可能原因：<br>1. 網路連線問題<br>2. 資料表 'bookings' 不存在<br>3. RLS 政策未正確設定<br><br>請檢查 Supabase 設定。`);
+            }
+        }
+
+        // 更新狀態指示器
+        function updateStatus(status, message) {
+            const indicator = document.getElementById('statusIndicator');
             indicator.textContent = message;
-            indicator.style.display = 'block';
+            indicator.className = 'status-indicator status-' + status;
         }
 
-        function hideLoadingIndicator() {
-            document.getElementById('loadingIndicator').style.display = 'none';
-        }
-
-        async function loadBookings(useCache = true) {
-            if (!SCRIPT_URL) {
-                showModal('設定錯誤', '請先設定 Google Apps Script URL。');
-                bookings = [];
-                updateSchedule();
-                return;
-            }
-
-            // 檢查快取
-            const now = Date.now();
-            if (useCache && cachedBookings && (now - cacheTimestamp) < CACHE_DURATION) {
-                bookings = [...cachedBookings];
-                updateSchedule();
-                return;
+        // 設定即時更新訂閱
+        function setupRealtimeSubscription() {
+            if (realtimeSubscription) {
+                realtimeSubscription.unsubscribe();
             }
             
-            showLoadingIndicator('連接資料庫...');
-            
-            try {
-                showLoading(true);
-                
-                // 重試機制
-                let lastError;
-                for (let attempt = 1; attempt <= 3; attempt++) {
-                    try {
-                        const timeout = attempt === 1 ? 8000 : attempt === 2 ? 12000 : 20000;
-                        const controller = new AbortController();
-                        const timeoutId = setTimeout(() => controller.abort(), timeout);
+            realtimeSubscription = supabaseClient
+                .channel('bookings-changes')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'bookings' },
+                    (payload) => {
+                        console.log('即時更新:', payload);
                         
-                        const url = `${SCRIPT_URL}?action=get&sheet=read&_t=${Date.now()}`;
-                        const response = await fetch(url, {
-                            method: 'GET',
-                            signal: controller.signal,
-                            cache: 'no-cache'
-                        });
-                        
-                        clearTimeout(timeoutId);
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP 錯誤: ${response.status}`);
+                        if (payload.eventType === 'INSERT') {
+                            // 新增預約
+                            const newBooking = formatBookingFromDB(payload.new);
+                            bookings.push(newBooking);
+                            updateSchedule();
+                            
+                            // 顯示通知
+                            if (payload.new.organizer !== getCurrentUser()) {
+                                showNotification(`新預約：${payload.new.title} (${payload.new.organizer})`);
+                            }
+                        } else if (payload.eventType === 'DELETE') {
+                            // 刪除預約
+                            bookings = bookings.filter(b => b.id !== payload.old.id);
+                            updateSchedule();
+                        } else if (payload.eventType === 'UPDATE') {
+                            // 更新預約
+                            const index = bookings.findIndex(b => b.id === payload.new.id);
+                            if (index !== -1) {
+                                bookings[index] = formatBookingFromDB(payload.new);
+                                updateSchedule();
+                            }
                         }
-                        
-                        const responseText = await response.text();
-                        const data = JSON.parse(responseText);
-                        
-                        if (data && data.success) {
-                            bookings = data.data || [];
-                            
-                            // 標準化資料格式
-                            bookings = bookings.map(booking => ({
-                                date: formatDateFromResponse(booking.date),
-                                room: booking.room || booking['會議地點'] || booking.Room,
-                                startTime: formatTimeFromResponse(booking.startTime),
-                                endTime: formatTimeFromResponse(booking.endTime),
-                                title: booking.title || booking['會議主題'] || booking.Title,
-                                organizer: booking.organizer || booking['登記者'] || booking.Organizer
-                            }));
-                            
-                            // 更新快取
-                            cachedBookings = [...bookings];
-                            cacheTimestamp = Date.now();
-                            
-                            break;
-                        } else {
-                            throw new Error(data.error || '資料格式錯誤');
-                        }
-                        
-                    } catch (error) {
-                        lastError = error;
-                        if (attempt === 3) throw lastError;
-                        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
                     }
-                }
-                
-                updateSchedule();
-                updateCacheStatus();
-                
-            } catch (error) {
-                console.error('載入失敗:', error);
-                
-                // 嘗試使用快取
-                if (cachedBookings && cachedBookings.length > 0) {
-                    bookings = [...cachedBookings];
-                    updateSchedule();
-                    showModal('使用快取資料', `網路連線問題，已載入快取資料 (${bookings.length} 筆預約)。`);
-                } else {
-                    bookings = [];
-                    updateSchedule();
-                    showModal('載入失敗', '無法載入預約資料，請檢查網路連線或稍後再試。');
-                }
-            } finally {
-                showLoading(false);
-                hideLoadingIndicator();
-            }
+                )
+                .subscribe((status) => {
+                    console.log('即時訂閱狀態:', status);
+                });
         }
 
-        async function saveBooking(booking) {
-            if (!SCRIPT_URL) {
-                showModal('系統錯誤', '請聯繫管理員設定系統。');
-                return false;
+        // 載入預約資料
+        async function loadBookings() {
+            if (!supabaseClient) {
+                showModal('未連接', '資料庫連線尚未建立');
+                return;
             }
-
+            
             try {
                 showLoading(true);
-                showLoadingIndicator('儲存資料...');
+                updateStatus('loading', '🔄 載入資料...');
                 
-                const formData = new URLSearchParams();
-                formData.append('action', 'add');
-                formData.append('sheet', 'write');
-                formData.append('data', JSON.stringify(booking));
+                // 計算查詢範圍（當前週的前後各一個月）
+                const startDate = new Date(currentWeekStart);
+                startDate.setDate(startDate.getDate() - 30);
+                const endDate = new Date(currentWeekStart);
+                endDate.setDate(endDate.getDate() + 37);
                 
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP 錯誤: ${response.status}`);
-                }
-
-                const responseText = await response.text();
-                let result;
+                const { data, error } = await supabaseClient
+                    .from('bookings')
+                    .select('*')
+                    .gte('date', formatDateForDB(startDate))
+                    .lte('date', formatDateForDB(endDate))
+                    .order('date', { ascending: true })
+                    .order('start_time', { ascending: true });
                 
-                try {
-                    result = JSON.parse(responseText);
-                } catch (parseError) {
-                    result = { success: true };
+                if (error) {
+                    throw error;
                 }
                 
-                if (result.success) {
-                    bookings.push(booking);
-                    updateSchedule();
-                    
-                    // 清除快取以確保下次載入最新資料
-                    cachedBookings = null;
-                    cacheTimestamp = 0;
-                    
-                    return true;
-                } else {
-                    throw new Error(result.error || '儲存失敗');
-                }
+                // 格式化資料
+                bookings = data.map(formatBookingFromDB);
+                
+                updateSchedule();
+                updateStatus('connected', '✅ 已連接');
+                
+                console.log(`載入 ${bookings.length} 筆預約資料`);
+                
             } catch (error) {
-                console.error('儲存失敗:', error);
-                showModal('儲存失敗', '無法儲存預約，請稍後再試。');
+                console.error('載入資料失敗:', error);
+                updateStatus('error', '❌ 載入失敗');
+                showModal('載入失敗', `無法載入預約資料: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 新增預約
+        async function saveBooking(booking) {
+            if (!supabaseClient) {
+                showModal('未連接', '資料庫連線尚未建立');
+                return false;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const { data, error } = await supabaseClient
+                    .from('bookings')
+                    .insert([{
+                        date: booking.date,
+                        room: booking.room,
+                        start_time: booking.startTime,
+                        end_time: booking.endTime,
+                        title: booking.title,
+                        organizer: booking.organizer
+                    }])
+                    .select();
+                
+                if (error) {
+                    throw error;
+                }
+                
+                console.log('預約儲存成功:', data[0]);
+                return true;
+                
+            } catch (error) {
+                console.error('儲存預約失敗:', error);
+                showModal('儲存失敗', `無法儲存預約: ${error.message}`);
                 return false;
             } finally {
                 showLoading(false);
-                hideLoadingIndicator();
             }
         }
 
-        function forceReload() {
-            cachedBookings = null;
-            cacheTimestamp = 0;
-            loadBookings(false);
-        }
-
-        // 工具函數
-        function formatDateFromResponse(dateValue) {
-            if (!dateValue) return '';
-            
-            if (typeof dateValue === 'string' && dateValue.includes('T')) {
-                const date = new Date(dateValue);
-                return formatDate(date);
-            } else if (dateValue instanceof Date) {
-                return formatDate(dateValue);
-            }
-            
-            return dateValue;
-        }
-
-        function formatTimeFromResponse(timeValue) {
+        // 格式化時間顯示 - 只顯示 HH:MM
+        function formatTimeDisplay(timeValue) {
             if (!timeValue) return '';
             
-            if (typeof timeValue === 'string' && timeValue.includes('T')) {
+            console.log('格式化時間:', timeValue, typeof timeValue);
+            
+            // 如果是字串且包含冒號，處理 HH:MM:SS 格式
+            if (typeof timeValue === 'string' && timeValue.includes(':')) {
+                // 直接截取前 5 個字元 (HH:MM)
+                const formatted = timeValue.substring(0, 5);
+                console.log('時間格式化結果:', timeValue, '->', formatted);
+                return formatted;
+            }
+            
+            // 如果是 Date 物件或 ISO 字串
+            if (timeValue instanceof Date || (typeof timeValue === 'string' && timeValue.includes('T'))) {
                 const date = new Date(timeValue);
                 const hours = String(date.getHours()).padStart(2, '0');
                 const minutes = String(date.getMinutes()).padStart(2, '0');
-                return `${hours}:${minutes}`;
+                const formatted = `${hours}:${minutes}`;
+                console.log('時間格式化結果:', timeValue, '->', formatted);
+                return formatted;
             }
             
             return timeValue;
         }
 
+        // 資料格式化函數
+        function formatBookingFromDB(dbRecord) {
+            return {
+                id: dbRecord.id,
+                date: dbRecord.date,
+                room: dbRecord.room,
+                startTime: dbRecord.start_time,
+                endTime: dbRecord.end_time,
+                title: dbRecord.title,
+                organizer: dbRecord.organizer
+            };
+        }
+
+        function formatDateForDB(date) {
+            return date.toISOString().split('T')[0];
+        }
+
+        // 工具函數
         function formatDate(date) {
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -868,9 +923,9 @@
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="room-cell">${booking.room || '未知'}</td>
-                            <td class="time-cell">${booking.startTime || '?'}-${booking.endTime || '?'}</td>
+                            <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
                             <td>${booking.organizer || '未知'}</td>
-                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
+                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}', '${booking.id}')">
                                 <div class="meeting-title">${booking.title || '無標題'}</div>
                             </td>
                         `;
@@ -885,10 +940,15 @@
             updateWeekDisplay();
             updateSchedule();
             
-            // 檢查快取是否需要更新
-            const cacheAge = Date.now() - cacheTimestamp;
-            if (cacheAge > CACHE_DURATION) {
-                loadBookings(false);
+            // 如果切換到沒有資料的週，重新載入
+            const weekDates = getWeekDates(currentWeekStart);
+            const hasDataForWeek = weekDates.some(date => {
+                const dateStr = formatDate(date);
+                return bookings.some(booking => booking.date === dateStr);
+            });
+            
+            if (!hasDataForWeek && supabaseClient) {
+                loadBookings();
             }
         }
 
@@ -937,13 +997,48 @@
             document.getElementById('meetingTitle').focus();
         }
 
-        function showMeetingDetails(title, organizer, time, room, date) {
+        function showMeetingDetails(title, organizer, time, room, date, id) {
             showModal('會議詳情', `
                 <strong>會議主題:</strong> ${title}<br>
                 <strong>時間:</strong> ${date} ${time}<br>
                 <strong>地點:</strong> ${room}<br>
-                <strong>登記者:</strong> ${organizer}
+                <strong>登記者:</strong> ${organizer}<br><br>
+                <button onclick="deleteBooking('${id}')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer;">刪除預約</button>
             `);
+        }
+
+        // 刪除預約
+        async function deleteBooking(bookingId) {
+            if (!supabaseClient) {
+                showModal('未連接', '資料庫連線尚未建立');
+                return;
+            }
+            
+            if (!confirm('確定要刪除這個預約嗎？')) {
+                return;
+            }
+            
+            try {
+                showLoading(true);
+                
+                const { error } = await supabaseClient
+                    .from('bookings')
+                    .delete()
+                    .eq('id', bookingId);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                closeModal();
+                showNotification('預約已刪除');
+                
+            } catch (error) {
+                console.error('刪除預約失敗:', error);
+                showModal('刪除失敗', `無法刪除預約: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
         }
 
         // 預約提交函數
@@ -979,7 +1074,7 @@
             }
             
             // 檢查衝突
-            const conflicts = checkRecurringConflicts(datesToBook, room, startTime, endTime);
+            const conflicts = await checkRecurringConflicts(datesToBook, room, startTime, endTime);
             if (conflicts.length > 0) {
                 let conflictMessage = '以下日期有衝突，無法預約：<br>';
                 conflicts.forEach(conflict => {
@@ -1016,6 +1111,11 @@
                 
                 showModal('預約成功！', successMessage);
                 resetForm();
+                
+                // 重新載入資料以確保同步
+                setTimeout(() => {
+                    loadBookings();
+                }, 1000);
             }
         }
 
@@ -1030,6 +1130,40 @@
             document.getElementById('recurringBooking').checked = false;
             document.getElementById('recurringOptions').style.display = 'none';
             document.getElementById('recurringPeriod').style.display = 'none';
+        }
+
+        // 衝突檢查（即時查詢資料庫）
+        async function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
+            if (!supabase) return [];
+            
+            try {
+                const { data, error } = await supabase
+                    .from('bookings')
+                    .select('*')
+                    .in('date', recurringDates)
+                    .eq('room', room);
+                
+                if (error) {
+                    console.error('衝突檢查失敗:', error);
+                    return [];
+                }
+                
+                const conflicts = [];
+                data.forEach(booking => {
+                    if (timeOverlap(booking.start_time, booking.end_time, startTime, endTime)) {
+                        conflicts.push({
+                            date: booking.date,
+                            booking: formatBookingFromDB(booking)
+                        });
+                    }
+                });
+                
+                return conflicts;
+                
+            } catch (error) {
+                console.error('衝突檢查錯誤:', error);
+                return [];
+            }
         }
 
         // 工具函數
@@ -1067,25 +1201,31 @@
             return dates;
         }
 
-        function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
-            const conflicts = [];
+        function getCurrentUser() {
+            return document.getElementById('organizer').value || '系統';
+        }
+
+        // 通知函數
+        function showNotification(message) {
+            // 簡單的通知實作
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 2000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
             
-            recurringDates.forEach(date => {
-                const conflictBooking = bookings.find(b => 
-                    b.date === date && 
-                    b.room === room && 
-                    timeOverlap(b.startTime, b.endTime, startTime, endTime)
-                );
-                
-                if (conflictBooking) {
-                    conflicts.push({
-                        date: date,
-                        booking: conflictBooking
-                    });
-                }
-            });
-            
-            return conflicts;
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
         }
 
         // 模態框函數
@@ -1160,29 +1300,18 @@
             updateWeekDisplay();
             updateSchedule();
             
-            // 載入資料
-            if (USE_LOCAL_STORAGE) {
-                // 本地模式 (測試用)
-                bookings = JSON.parse(localStorage.getItem('gamaBookings') || '[]');
-                updateSchedule();
-            } else {
-                loadBookings();
-            }
+            // 直接初始化 Supabase
+            initializeSupabase();
         }
 
         // 頁面載入完成後初始化
         document.addEventListener('DOMContentLoaded', initialize);
 
-        // 網路狀態監控
-        window.addEventListener('online', function() {
-            console.log('網路連線恢復');
-            if (!cachedBookings || (Date.now() - cacheTimestamp) > CACHE_DURATION) {
-                loadBookings(false);
+        // 頁面卸載時清理訂閱
+        window.addEventListener('beforeunload', () => {
+            if (realtimeSubscription) {
+                realtimeSubscription.unsubscribe();
             }
-        });
-
-        window.addEventListener('offline', function() {
-            console.log('網路連線中斷');
         });
     </script>
 </body>
