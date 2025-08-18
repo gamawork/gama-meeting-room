@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gama 會議室預約系統 - Supabase 版</title>
+    <title>Gama 會議室預約系統</title>
     <style>
         * {
             margin: 0;
@@ -372,6 +372,11 @@
             padding: 8px;
         }
 
+        .empty-action-cell {
+            background: #f8f9fa;
+            padding: 8px;
+        }
+
         .delete-btn {
             background: #dc3545;
             color: white;
@@ -674,8 +679,14 @@
                             <label for="recurringType">重複頻率</label>
                             <select id="recurringType">
                                 <option value="weekly">每週</option>
-                                <option value="monthly">每月</option>
+                                <option value="monthly">每月 (每月第幾個週幾)</option>
                             </select>
+                        </div>
+                        
+                        <div class="form-group" id="monthlyModeOption" style="display: none;">
+                            <div class="mode-explanation" id="modeExplanation" style="margin-top: 8px; font-size: 12px; color: #666; line-height: 1.4;">
+                                相對週日模式 (例如：每月第二個週二)
+                            </div>
                         </div>
                         
                         <div class="form-group" id="recurringPeriod" style="display: none;">
@@ -1022,11 +1033,15 @@
         function updateRecurringPeriodOptions() {
             const recurringType = document.getElementById('recurringType').value;
             const recurringWeeksSelect = document.getElementById('recurringWeeks');
+            const monthlyModeOption = document.getElementById('monthlyModeOption');
             
             // 清空現有選項
             recurringWeeksSelect.innerHTML = '';
             
             if (recurringType === 'weekly') {
+                // 隱藏月模式選項
+                monthlyModeOption.style.display = 'none';
+                
                 // 每週重複的選項
                 const weeklyOptions = [
                     { value: 2, text: '2週' },
@@ -1051,6 +1066,10 @@
                 recurringWeeksSelect.value = '12';
                 
             } else if (recurringType === 'monthly') {
+                // 顯示月模式選項
+                monthlyModeOption.style.display = 'block';
+                updateModeExplanation(); // 更新說明文字
+                
                 // 每月重複的選項 (內部仍使用週數計算)
                 const monthlyOptions = [
                     { value: 9, text: '2個月' },        // 約9週
@@ -1073,6 +1092,76 @@
             }
             
             console.log(`持續期間選項已更新為：${recurringType}`);
+        }
+
+        // 更新模式說明文字
+        function updateModeExplanation() {
+            const dateInput = document.getElementById('meetingDate');
+            const explanation = document.getElementById('modeExplanation');
+            
+            if (!dateInput.value) {
+                explanation.textContent = '';
+                return;
+            }
+            
+            const selectedDate = new Date(dateInput.value);
+            const day = selectedDate.getDate();
+            const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+            const dayName = dayNames[selectedDate.getDay()];
+            
+            // 直接使用相對週日模式
+            const weekOfMonth = Math.ceil(day / 7);
+            const weekNames = ['', '第一個', '第二個', '第三個', '第四個', '第五個'];
+            explanation.textContent = `相對週日模式：每月${weekNames[weekOfMonth]}${dayName}`;
+            explanation.style.color = '#2d4874';
+        }
+
+        // 相對週日日期計算
+        function calculateRelativeWeeklyDate(baseDate, monthsToAdd) {
+            // 計算是第幾週的週幾
+            const weekOfMonth = Math.ceil(baseDate.getDate() / 7);
+            const dayOfWeek = baseDate.getDay();
+            
+            console.log(`基準日期 ${baseDate.toDateString()}: 第${weekOfMonth}週的週${dayOfWeek}`);
+            
+            // 計算目標月份
+            const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthsToAdd, 1);
+            
+            // 找到該月第1個指定週幾的日期
+            const firstWeekday = targetDate.getDay();
+            const daysToFirstTarget = (dayOfWeek - firstWeekday + 7) % 7;
+            
+            // 計算第N個指定週幾的日期
+            const targetDay = 1 + daysToFirstTarget + (weekOfMonth - 1) * 7;
+            
+            // 檢查該日期是否存在於該月
+            const lastDayOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+            
+            if (targetDay <= lastDayOfMonth) {
+                targetDate.setDate(targetDay);
+                return targetDate;
+            } else {
+                // 如果該月沒有第N個週X，回到上一週
+                const fallbackDay = targetDay - 7;
+                targetDate.setDate(fallbackDay);
+                console.log(`該月沒有第${weekOfMonth}週${dayOfWeek}，調整為第${weekOfMonth-1}週`);
+                return targetDate;
+            }
+        }
+
+        // 固定日期計算 (智慧調整)
+        function calculateFixedDate(baseDate, monthsToAdd) {
+            const originalDay = baseDate.getDate();
+            const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthsToAdd, 1);
+            
+            // 取得目標月份的最後一天
+            const lastDayOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+            
+            // 如果原日期超過該月天數，調整到月末
+            const finalDay = Math.min(originalDay, lastDayOfMonth);
+            targetDate.setDate(finalDay);
+            
+            return targetDate;
         }
         function formatDate(date) {
             const year = date.getFullYear();
@@ -1148,9 +1237,10 @@
                     row.innerHTML = `
                         <td class="date-cell">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
-                        <td class="empty-cell" colspan="5" onclick="quickBook('${dateStr}')">
+                        <td class="empty-cell" colspan="4" onclick="quickBook('${dateStr}')">
                             點擊快速預約
                         </td>
+                        <td class="empty-action-cell"></td>
                     `;
                     scheduleBody.appendChild(row);
                 } else {
@@ -1673,6 +1763,7 @@
             document.getElementById('recurringBooking').checked = false;
             document.getElementById('recurringOptions').style.display = 'none';
             document.getElementById('recurringPeriod').style.display = 'none';
+            document.getElementById('monthlyModeOption').style.display = 'none';
         }
 
         // 衝突檢查（即時查詢資料庫）
@@ -1728,18 +1819,31 @@
             const dates = [];
             const baseDate = new Date(startDate);
             
-            for (let i = 0; i < weeks; i++) {
-                const nextDate = new Date(baseDate);
-                
-                if (recurringType === 'weekly') {
+            // 每月模式預設使用相對週日邏輯
+            const isRelativeMode = (recurringType === 'monthly');
+            
+            console.log(`生成週期日期 - 模式: ${recurringType}, 期間: ${weeks}週, 相對週日: ${isRelativeMode}`);
+            
+            if (recurringType === 'weekly') {
+                // 每週邏輯不變
+                for (let i = 0; i < weeks; i++) {
+                    const nextDate = new Date(baseDate);
                     nextDate.setDate(baseDate.getDate() + (i * 7));
-                } else if (recurringType === 'monthly') {
-                    nextDate.setMonth(baseDate.getMonth() + i);
+                    dates.push(formatDate(nextDate));
                 }
+            } else if (recurringType === 'monthly') {
+                // 每月預設使用相對週日模式
+                const totalMonths = Math.round(weeks / 4.33); // 將週數轉換為大概的月數
                 
-                dates.push(formatDate(nextDate));
+                for (let i = 0; i < totalMonths; i++) {
+                    // 使用相對週日模式：每月第N個週X
+                    const nextDate = calculateRelativeWeeklyDate(baseDate, i);
+                    dates.push(formatDate(nextDate));
+                    console.log(`月份 ${i}: ${nextDate.toDateString()}`);
+                }
             }
             
+            console.log(`總共生成 ${dates.length} 個日期:`, dates);
             return dates;
         }
 
@@ -1841,6 +1945,27 @@
                     console.log('重複頻率已變更為:', this.value);
                     updateRecurringPeriodOptions();
                 });
+            }
+            
+            // 相對週日模式切換監聽 (已移除，因為預設使用相對週日)
+            
+            // 日期變更時更新模式說明
+            const meetingDateInput = document.getElementById('meetingDate');
+            if (meetingDateInput) {
+                const originalUpdateDateDisplay = () => {
+                    const dateInput = document.getElementById('meetingDate');
+                    const dateDisplay = document.getElementById('dateDisplay');
+                    dateDisplay.textContent = formatDateDisplay(dateInput.value);
+                    
+                    // 如果是月模式且已勾選週期預約，更新說明
+                    const recurringType = document.getElementById('recurringType').value;
+                    if (recurringType === 'monthly' && document.getElementById('recurringBooking').checked) {
+                        updateModeExplanation();
+                    }
+                };
+                
+                meetingDateInput.removeEventListener('change', updateDateDisplay);
+                meetingDateInput.addEventListener('change', originalUpdateDateDisplay);
             }
             
             // 模態框關閉監聽
