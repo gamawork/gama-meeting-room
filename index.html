@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gama 會議室預約系統</title>
+    <title>Gama 會議室預約系統 - Supabase 版</title>
     <style>
         * {
             margin: 0;
@@ -377,6 +377,32 @@
             padding: 8px;
         }
 
+        .calendar-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 5px;
+        }
+
+        .calendar-btn:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+        }
+
+        .calendar-btn:disabled {
+            cursor: not-allowed;
+            background: #6c757d;
+            transform: none;
+            box-shadow: none;
+        }
+
         .delete-btn {
             background: #dc3545;
             color: white;
@@ -387,7 +413,6 @@
             font-size: 12px;
             font-weight: 600;
             transition: all 0.3s ease;
-            min-width: 50px;
         }
 
         .delete-btn:hover:not(:disabled) {
@@ -401,6 +426,12 @@
             background: #6c757d;
             transform: none;
             box-shadow: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            align-items: center;
         }
 
         .legend {
@@ -721,8 +752,8 @@
                             <th width="120">時間</th>
                             <th width="100">會議地點</th>
                             <th width="80">登記者</th>
-                            <th width="220">會議主題</th>
-                            <th width="40">動作</th>
+                            <th width="460">會議主題</th>
+                            <th width="80">動作</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleBody">
@@ -1258,7 +1289,10 @@
                                 <div class="meeting-title">${booking.title || '無標題'}</div>
                             </td>
                             <td class="action-cell">
-                                <button class="delete-btn" onclick="deleteBooking('${booking.id}', event)">刪除</button>
+                                <div class="action-buttons">
+                                    <button class="calendar-btn" onclick="addToGoogleCalendar('${booking.id}', event)">日曆</button>
+                                    <button class="delete-btn" onclick="deleteBooking('${booking.id}', event)">刪除</button>
+                                </div>
                             </td>
                         `;
                         scheduleBody.appendChild(row);
@@ -1632,6 +1666,100 @@
                 }
             } finally {
                 showLoading(false);
+            }
+        }
+
+        // 加入 Google 日曆
+        async function addToGoogleCalendar(bookingId, event) {
+            // 防止事件冒泡
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            // 找到預約資料
+            const booking = bookings.find(b => b.id === bookingId);
+            if (!booking) {
+                showNotification('找不到預約資料');
+                return;
+            }
+            
+            console.log('原始預約資料:', booking);
+            
+            try {
+                // 處理時間格式 - 確保是 HH:MM 格式
+                let startTime = booking.startTime;
+                let endTime = booking.endTime;
+                
+                // 如果時間包含秒數，移除秒數部分
+                if (startTime && startTime.length > 5) {
+                    startTime = startTime.substring(0, 5);
+                }
+                if (endTime && endTime.length > 5) {
+                    endTime = endTime.substring(0, 5);
+                }
+                
+                console.log('處理後的時間:', { startTime, endTime });
+                
+                // 建立完整的日期時間字串 (ISO 格式)
+                const startDateTimeStr = `${booking.date}T${startTime}:00`;
+                const endDateTimeStr = `${booking.date}T${endTime}:00`;
+                
+                console.log('ISO 日期時間字串:', { start: startDateTimeStr, end: endDateTimeStr });
+                
+                // 建立日期時間物件
+                const startDateTime = new Date(startDateTimeStr);
+                const endDateTime = new Date(endDateTimeStr);
+                
+                console.log('建立的日期物件:', { 
+                    start: startDateTime, 
+                    end: endDateTime,
+                    startValid: !isNaN(startDateTime.getTime()),
+                    endValid: !isNaN(endDateTime.getTime())
+                });
+                
+                // 檢查日期是否有效
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                    throw new Error(`無效的日期時間格式 - 日期: ${booking.date}, 開始: ${startTime}, 結束: ${endTime}`);
+                }
+                
+                // 格式化為 Google Calendar 需要的格式 (YYYYMMDDTHHMMSS)
+                const formatGoogleDate = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    
+                    return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+                };
+                
+                const startFormatted = formatGoogleDate(startDateTime);
+                const endFormatted = formatGoogleDate(endDateTime);
+                
+                console.log('Google Calendar 格式化時間:', { start: startFormatted, end: endFormatted });
+                
+                // 建立 Google Calendar URL
+                const params = new URLSearchParams({
+                    action: 'TEMPLATE',
+                    text: booking.title || '會議',
+                    dates: `${startFormatted}/${endFormatted}`,
+                    location: booking.room || '',
+                    details: `登記者: ${booking.organizer || '未知'}\n\n透過 Gama 會議室預約系統建立`
+                });
+                
+                const googleCalendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
+                
+                console.log('完整的 Google Calendar URL:', googleCalendarUrl);
+                
+                // 在新視窗開啟 Google Calendar
+                window.open(googleCalendarUrl, '_blank');
+                
+                showNotification('已開啟 Google 日曆');
+                
+            } catch (error) {
+                console.error('加入 Google 日曆失敗:', error);
+                showNotification(`加入日曆失敗: ${error.message}`);
             }
         }
 
