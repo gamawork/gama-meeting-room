@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gama 會議室預約系統 - Supabase 版</title>
+    <title>Gama 會議室預約系統</title>
     <style>
         * {
             margin: 0;
@@ -303,7 +303,7 @@
         }
 
         .date-cell {
-            background: #fff5f5;
+            background: #f0fff4;
             font-weight: 600;
             color: #2d3748;
             vertical-align: middle;
@@ -377,7 +377,65 @@
             padding: 8px;
         }
 
-        .calendar-btn {
+        .calendar-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .calendar-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 120px;
+            display: none;
+        }
+
+        .calendar-menu::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 15px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #ddd;
+        }
+
+        .calendar-menu::after {
+            content: '';
+            position: absolute;
+            top: -7px;
+            left: 15px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
+        }
+
+        .calendar-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 12px;
+            transition: background-color 0.2s ease;
+        }
+
+        .calendar-option:hover {
+            background: #f5f5f5;
+        }
+
+        .calendar-option:last-child {
+            border-bottom: none;
+        }
+
+        .calendar-btn-dropdown {
             background: #28a745;
             color: white;
             border: none;
@@ -388,15 +446,16 @@
             font-weight: 600;
             transition: all 0.3s ease;
             margin-right: 5px;
+            position: relative;
         }
 
-        .calendar-btn:hover:not(:disabled) {
+        .calendar-btn-dropdown:hover:not(:disabled) {
             background: #218838;
             transform: translateY(-1px);
             box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
         }
 
-        .calendar-btn:disabled {
+        .calendar-btn-dropdown:disabled {
             cursor: not-allowed;
             background: #6c757d;
             transform: none;
@@ -752,8 +811,8 @@
                             <th width="120">時間</th>
                             <th width="100">會議地點</th>
                             <th width="80">登記者</th>
-                            <th width="460">會議主題</th>
-                            <th width="80">動作</th>
+                            <th width="430">會議主題</th>
+                            <th width="110">動作</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleBody">
@@ -1218,33 +1277,39 @@
 
         function generateTimeOptions() {
             const times = [];
-            for (let hour = 9; hour <= 19; hour++) {
-                if (hour < 19) {
-                    times.push(`${String(hour).padStart(2, '0')}:00`);
+            for (let hour = 9; hour <= 18; hour++) {
+                times.push(`${String(hour).padStart(2, '0')}:00`);
+                if (hour < 18) {
                     times.push(`${String(hour).padStart(2, '0')}:30`);
-                } else {
-                    times.push(`${String(hour).padStart(2, '0')}:00`);
                 }
             }
             return times;
         }
 
         function initializeTimeSelects() {
-            const times = generateTimeOptions();
             const startSelect = document.getElementById('startTime');
             const endSelect = document.getElementById('endTime');
             
+            // 開始時間：09:00 - 18:00
             startSelect.innerHTML = '<option value="">請選擇時間</option>';
-            endSelect.innerHTML = '<option value="">請選擇時間</option>';
-            
-            times.forEach(time => {
-                startSelect.innerHTML += `<option value="${time}">${time}</option>`;
-                if (time <= '19:30') {
-                    endSelect.innerHTML += `<option value="${time}">${time}</option>`;
+            for (let hour = 9; hour <= 18; hour++) {
+                startSelect.innerHTML += `<option value="${String(hour).padStart(2, '0')}:00">${String(hour).padStart(2, '0')}:00</option>`;
+                if (hour < 18) {
+                    startSelect.innerHTML += `<option value="${String(hour).padStart(2, '0')}:30">${String(hour).padStart(2, '0')}:30</option>`;
                 }
-            });
+            }
             
-            endSelect.innerHTML += `<option value="19:30">19:30</option>`;
+            // 結束時間：09:30 - 18:30
+            endSelect.innerHTML = '<option value="">請選擇時間</option>';
+            for (let hour = 9; hour <= 18; hour++) {
+                if (hour === 9) {
+                    // 9點只有30分
+                    endSelect.innerHTML += `<option value="09:30">09:30</option>`;
+                } else {
+                    endSelect.innerHTML += `<option value="${String(hour).padStart(2, '0')}:00">${String(hour).padStart(2, '0')}:00</option>`;
+                    endSelect.innerHTML += `<option value="${String(hour).padStart(2, '0')}:30">${String(hour).padStart(2, '0')}:30</option>`;
+                }
+            }
         }
 
         // 界面更新函數
@@ -1290,7 +1355,19 @@
                             </td>
                             <td class="action-cell">
                                 <div class="action-buttons">
-                                    <button class="calendar-btn" onclick="addToGoogleCalendar('${booking.id}', event)">日曆</button>
+                                    <div class="calendar-dropdown">
+                                        <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')">
+                                            日曆 ▼
+                                        </button>
+                                        <div class="calendar-menu" id="menu-${booking.id}">
+                                            <div class="calendar-option" onclick="addToGoogleCalendar('${booking.id}')">
+                                                Google 日曆
+                                            </div>
+                                            <div class="calendar-option" onclick="addToAppleCalendar('${booking.id}')">
+                                                Apple & Outlook 日曆
+                                            </div>
+                                        </div>
+                                    </div>
                                     <button class="delete-btn" onclick="deleteBooking('${booking.id}', event)">刪除</button>
                                 </div>
                             </td>
@@ -1669,28 +1746,13 @@
             }
         }
 
-        // 加入 Google 日曆
-        async function addToGoogleCalendar(bookingId, event) {
-            // 防止事件冒泡
-            if (event) {
-                event.stopPropagation();
-            }
-            
-            // 找到預約資料
-            const booking = bookings.find(b => b.id === bookingId);
-            if (!booking) {
-                showNotification('找不到預約資料');
-                return;
-            }
-            
-            console.log('原始預約資料:', booking);
-            
+        // 階段1：ICS 檔案生成函數
+        function generateICS(booking) {
             try {
-                // 處理時間格式 - 確保是 HH:MM 格式
+                // 處理時間格式
                 let startTime = booking.startTime;
                 let endTime = booking.endTime;
                 
-                // 如果時間包含秒數，移除秒數部分
                 if (startTime && startTime.length > 5) {
                     startTime = startTime.substring(0, 5);
                 }
@@ -1698,31 +1760,204 @@
                     endTime = endTime.substring(0, 5);
                 }
                 
-                console.log('處理後的時間:', { startTime, endTime });
-                
-                // 建立完整的日期時間字串 (ISO 格式)
-                const startDateTimeStr = `${booking.date}T${startTime}:00`;
-                const endDateTimeStr = `${booking.date}T${endTime}:00`;
-                
-                console.log('ISO 日期時間字串:', { start: startDateTimeStr, end: endDateTimeStr });
-                
                 // 建立日期時間物件
-                const startDateTime = new Date(startDateTimeStr);
-                const endDateTime = new Date(endDateTimeStr);
-                
-                console.log('建立的日期物件:', { 
-                    start: startDateTime, 
-                    end: endDateTime,
-                    startValid: !isNaN(startDateTime.getTime()),
-                    endValid: !isNaN(endDateTime.getTime())
-                });
+                const startDateTime = new Date(`${booking.date}T${startTime}:00`);
+                const endDateTime = new Date(`${booking.date}T${endTime}:00`);
                 
                 // 檢查日期是否有效
                 if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-                    throw new Error(`無效的日期時間格式 - 日期: ${booking.date}, 開始: ${startTime}, 結束: ${endTime}`);
+                    throw new Error('無效的日期時間格式');
                 }
                 
-                // 格式化為 Google Calendar 需要的格式 (YYYYMMDDTHHMMSS)
+                // 格式化為 ICS 格式 (YYYYMMDDTHHMMSS)
+                const formatICSDateTime = (date) => {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    
+                    return `${year}${month}${day}T${hours}${minutes}${seconds}`;
+                };
+                
+                const now = new Date();
+                const startFormatted = formatICSDateTime(startDateTime);
+                const endFormatted = formatICSDateTime(endDateTime);
+                const nowFormatted = formatICSDateTime(now);
+                
+                // 生成 ICS 內容
+                const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Gama//會議室預約系統//TW
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:${booking.id}@gama-booking.com
+DTSTAMP:${nowFormatted}
+DTSTART:${startFormatted}
+DTEND:${endFormatted}
+SUMMARY:${booking.title || '會議'}
+LOCATION:${booking.room || ''}
+DESCRIPTION:登記者: ${booking.organizer || '未知'}\\n\\n透過 Gama 會議室預約系統建立
+CATEGORIES:會議
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:會議提醒
+TRIGGER:-PT15M
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+                
+                return icsContent;
+                
+            } catch (error) {
+                console.error('ICS 生成失敗:', error);
+                throw error;
+            }
+        }
+
+        // 階段1：檔案下載功能
+        function downloadICS(icsContent, filename) {
+            try {
+                // 建立 Blob 物件
+                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                
+                // 建立下載連結
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                
+                // 觸發下載
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // 清理 URL
+                URL.revokeObjectURL(url);
+                
+                console.log('ICS 檔案下載成功:', filename);
+                
+            } catch (error) {
+                console.error('檔案下載失敗:', error);
+                throw error;
+            }
+        }
+
+        // 階段2：設備偵測
+        function detectDevice() {
+            const userAgent = navigator.userAgent;
+            return {
+                isIOS: /iPad|iPhone|iPod/.test(userAgent),
+                isMac: /Macintosh/.test(userAgent),
+                isAndroid: /Android/.test(userAgent),
+                isWindows: /Windows/.test(userAgent),
+                isAppleDevice: /iPad|iPhone|iPod|Macintosh/.test(userAgent)
+            };
+        }
+
+        // 階段2：智慧提示訊息
+        function showSmartNotification(message, type = 'info', duration = 3000) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 2000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                max-width: 300px;
+                font-size: 14px;
+                line-height: 1.4;
+            `;
+            
+            // 根據類型設定顏色
+            switch(type) {
+                case 'success':
+                    notification.style.background = '#28a745';
+                    notification.style.color = 'white';
+                    break;
+                case 'info':
+                    notification.style.background = '#17a2b8';
+                    notification.style.color = 'white';
+                    break;
+                case 'warning':
+                    notification.style.background = '#ffc107';
+                    notification.style.color = '#212529';
+                    break;
+                default:
+                    notification.style.background = '#28a745';
+                    notification.style.color = 'white';
+            }
+            
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, duration);
+        }
+
+        // 階段2：下拉選單整合
+        function toggleCalendarMenu(event, bookingId) {
+            event.stopPropagation();
+            
+            // 隱藏其他開啟的選單
+            document.querySelectorAll('.calendar-menu').forEach(menu => {
+                if (menu.id !== `menu-${bookingId}`) {
+                    menu.style.display = 'none';
+                }
+            });
+            
+            // 切換當前選單
+            const menu = document.getElementById(`menu-${bookingId}`);
+            if (menu) {
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            }
+        }
+
+        // 隱藏所有選單
+        function hideAllCalendarMenus() {
+            document.querySelectorAll('.calendar-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+
+        // 修改原有的 Google 日曆函數
+        async function addToGoogleCalendar(bookingId) {
+            hideAllCalendarMenus();
+            
+            // 找到預約資料
+            const booking = bookings.find(b => b.id === bookingId);
+            if (!booking) {
+                showSmartNotification('找不到預約資料', 'warning');
+                return;
+            }
+            
+            try {
+                // 處理時間格式
+                let startTime = booking.startTime;
+                let endTime = booking.endTime;
+                
+                if (startTime && startTime.length > 5) {
+                    startTime = startTime.substring(0, 5);
+                }
+                if (endTime && endTime.length > 5) {
+                    endTime = endTime.substring(0, 5);
+                }
+                
+                // 建立日期時間物件
+                const startDateTime = new Date(`${booking.date}T${startTime}:00`);
+                const endDateTime = new Date(`${booking.date}T${endTime}:00`);
+                
+                if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                    throw new Error(`無效的日期時間格式`);
+                }
+                
+                // 格式化為 Google Calendar 格式
                 const formatGoogleDate = (date) => {
                     const year = date.getFullYear();
                     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -1737,8 +1972,6 @@
                 const startFormatted = formatGoogleDate(startDateTime);
                 const endFormatted = formatGoogleDate(endDateTime);
                 
-                console.log('Google Calendar 格式化時間:', { start: startFormatted, end: endFormatted });
-                
                 // 建立 Google Calendar URL
                 const params = new URLSearchParams({
                     action: 'TEMPLATE',
@@ -1750,16 +1983,53 @@
                 
                 const googleCalendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
                 
-                console.log('完整的 Google Calendar URL:', googleCalendarUrl);
-                
                 // 在新視窗開啟 Google Calendar
                 window.open(googleCalendarUrl, '_blank');
                 
-                showNotification('已開啟 Google 日曆');
+                showSmartNotification('已開啟 Google 日曆', 'success');
                 
             } catch (error) {
                 console.error('加入 Google 日曆失敗:', error);
-                showNotification(`加入日曆失敗: ${error.message}`);
+                showSmartNotification(`加入 Google 日曆失敗: ${error.message}`, 'warning');
+            }
+        }
+
+        // 新增 Apple 日曆函數
+        function addToAppleCalendar(bookingId) {
+            hideAllCalendarMenus();
+            
+            // 找到預約資料
+            const booking = bookings.find(b => b.id === bookingId);
+            if (!booking) {
+                showSmartNotification('找不到預約資料', 'warning');
+                return;
+            }
+            
+            try {
+                // 設備偵測
+                const device = detectDevice();
+                
+                // 生成 ICS 檔案
+                const icsContent = generateICS(booking);
+                const filename = `${booking.title || '會議'}_${booking.date}.ics`;
+                
+                // 下載檔案
+                downloadICS(icsContent, filename);
+                
+                // 顯示智慧提示
+                if (device.isAppleDevice) {
+                    showSmartNotification('檔案已下載，請點擊檔案加入日曆', 'success', 5000);
+                } else if (device.isAndroid) {
+                    showSmartNotification('檔案已下載，請用日曆 App 開啟', 'info', 5000);
+                } else {
+                    showSmartNotification('ICS 檔案已下載，請用日曆軟體開啟', 'info', 5000);
+                }
+                
+                console.log('Apple 日曆 ICS 檔案生成成功:', filename);
+                
+            } catch (error) {
+                console.error('加入 Apple 日曆失敗:', error);
+                showSmartNotification(`加入 Apple 日曆失敗: ${error.message}`, 'warning');
             }
         }
 
@@ -2036,9 +2306,9 @@
                         endMinute = 0;
                     }
                     
-                    if (endHour > 19 || (endHour === 19 && endMinute > 30)) {
-                        endHour = 19;
-                        endMinute = 30;
+                    if (endHour > 18) {
+                        endHour = 18;
+                        endMinute = 0;
                     }
                     
                     const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
@@ -2116,6 +2386,13 @@
                     if (e.target === this) closeRecurringModal();
                 });
             }
+            
+            // 點擊外部關閉日曆選單
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.calendar-dropdown')) {
+                    hideAllCalendarMenus();
+                }
+            });
             
             console.log('所有事件監聽器已設定完成');
         }
