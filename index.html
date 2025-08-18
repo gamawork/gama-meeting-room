@@ -437,7 +437,27 @@
         }
 
         .close:hover {
-            color: #e53e3e;
+            color: #ef4444;
+        }
+
+        /* 自訂滾動條 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #94a3b8, #64748b);
         }
     </style>
 </head>
@@ -446,7 +466,6 @@
         <div class="header">
             <h1>Gama 會議室預約系統</h1>
             <p>Conference Room Booking System - Powered by Supabase</p>
-            <div class="status-indicator" id="statusIndicator">🔄 連接中...</div>
         </div>
 
         <div class="main-content">
@@ -527,20 +546,6 @@
                         </div>
                         
                         <button type="button" class="btn" id="submitBtn" onclick="submitBooking()">確認預約</button>
-                    </div>
-                </div>
-
-                <div class="legend">
-                    <div class="legend-title">圖例說明</div>
-                    <div class="legend-items">
-                        <div class="legend-item">
-                            <div class="legend-color available"></div>
-                            <span>可預約</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color booked-legend"></div>
-                            <span>已預約</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -657,11 +662,9 @@
             }
         }
 
-        // 更新狀態指示器
+        // 更新狀態指示器 (移除顯示，只保留 Console 輸出)
         function updateStatus(status, message) {
-            const indicator = document.getElementById('statusIndicator');
-            indicator.textContent = message;
-            indicator.className = 'status-indicator status-' + status;
+            console.log(`狀態更新: ${status} - ${message}`);
         }
 
         // 設定即時更新訂閱
