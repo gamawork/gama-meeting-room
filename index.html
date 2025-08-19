@@ -385,7 +385,7 @@
         .calendar-menu {
             position: absolute;
             top: 100%;
-            left: 0;
+            right: 0;
             background: white;
             border: 1px solid #ddd;
             border-radius: 5px;
@@ -400,7 +400,7 @@
             content: '';
             position: absolute;
             top: -8px;
-            left: 15px;
+            right: 15px;
             width: 0;
             height: 0;
             border-left: 8px solid transparent;
@@ -412,7 +412,7 @@
             content: '';
             position: absolute;
             top: -7px;
-            left: 15px;
+            right: 15px;
             width: 0;
             height: 0;
             border-left: 8px solid transparent;
@@ -530,11 +530,62 @@
         .available { background: #f8f9fa; }
         .booked-legend { background: linear-gradient(135deg, #b3c5e8 0%, #8db0e6 100%); }
 
-        .loading {
+        /* 修正載入遮罩樣式 */
+        .table-container {
+            position: relative;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
             display: none;
-            text-align: center;
-            padding: 20px;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+            border-radius: 15px;
+        }
+
+        .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 40px;
+            background: transparent;
+            border-radius: 15px;
+            box-shadow: none;
+            border: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e3f2fd;
+            border-top: 4px solid #2d4874;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            font-size: 16px;
+            font-weight: 600;
             color: #2d4874;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 移除或隱藏原本的 loading 樣式 */
+        .loading {
+            display: none !important;
         }
 
         @media (max-width: 1024px) {
@@ -797,30 +848,37 @@
                 <div class="schedule-header">
                     <div class="date-nav">
                         <button onclick="changeWeek(-1)">◀</button>
-                        <div class="current-week" id="currentWeek">載入中...</div>
+                        <div class="current-week" id="currentWeek">本週</div>
                         <button onclick="changeWeek(1)">▶</button>
                         <button class="today-btn" id="todayBtn" onclick="goToToday()">回到本週</button>
                     </div>
                 </div>
 
-                <div class="loading" id="loading">載入中...</div>
+                <div class="table-container" style="position: relative;">
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-content">
+                            <div class="loading-spinner"></div>
+                            <div class="loading-text">載入中...</div>
+                        </div>
+                    </div>
 
-                <table class="schedule-table">
-                    <thead>
-                        <tr>
-                            <th width="60">日期</th>
-                            <th width="60">星期</th>
-                            <th width="120">時間</th>
-                            <th width="100">會議地點</th>
-                            <th width="80">登記者</th>
-                            <th width="390">會議主題</th>
-                            <th width="150">動作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="scheduleBody">
-                        <!-- 動態生成內容 -->
-                    </tbody>
-                </table>
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th width="60">日期</th>
+                                <th width="60">星期</th>
+                                <th width="120">時間</th>
+                                <th width="100">會議地點</th>
+                                <th width="80">登記者</th>
+                                <th width="390">會議主題</th>
+                                <th width="150">動作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody">
+                            <!-- 動態生成內容 -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -1428,6 +1486,7 @@
             }
         }
 
+        // 更新週別顯示
         function updateWeekDisplay() {
             const year = currentWeekStart.getFullYear();
             const startMonth = currentWeekStart.getMonth() + 1;
@@ -2285,9 +2344,17 @@ END:VCALENDAR`;
             document.getElementById('bookingModal').style.display = 'none';
         }
 
+        // 修正的載入函數
         function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-            document.getElementById('submitBtn').disabled = show;
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = show ? 'flex' : 'none';
+            }
+            
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = show;
+            }
         }
 
         // 事件監聽器設定
@@ -2346,8 +2413,6 @@ END:VCALENDAR`;
                     updateRecurringPeriodOptions();
                 });
             }
-            
-            // 相對週日模式切換監聽 (已移除，因為預設使用相對週日)
             
             // 日期變更時更新模式說明
             const meetingDateInput = document.getElementById('meetingDate');
