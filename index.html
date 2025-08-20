@@ -1407,8 +1407,8 @@ async function loadBookings() {
                 const dateStr = formatDate(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
                 
-                const month = date.getMonth() + 1;
-                const day = date.getDate();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
                 const shortDateDisplay = `${month}/${day}`;
                 
                 if (dayBookings.length === 0) {
@@ -1462,23 +1462,36 @@ async function loadBookings() {
         }
 
         function changeWeek(direction) {
-            currentWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
-            updateWeekDisplay();
-            updateTodayButtonState();
-            updateSchedule();
-            
-            // 如果切換到沒有資料的週，重新載入
-            const weekDates = getWeekDates(currentWeekStart);
-            const hasDataForWeek = weekDates.some(date => {
-                const dateStr = formatDate(date);
-                return bookings.some(booking => booking.date === dateStr);
-            });
-            
-            if (!hasDataForWeek && supabaseClient) {
-                loadBookings();
-            }
-        }
-
+    // 計算新的週開始日期
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
+    
+    // 計算與今天所在週的差距（以週為單位）
+    const weeksDiff = Math.round((newWeekStart - todayWeekStart) / (7 * 24 * 60 * 60 * 1000));
+    
+    // 檢查是否超出範圍：往前最多4週，往後最多20週
+    if (weeksDiff < -4 || weeksDiff > 20) {
+        console.log(`週數限制：目前差距 ${weeksDiff} 週，超出範圍 (-4 到 +20)`);
+        return; // 超出範圍，不執行切換
+    }
+    
+    // 在範圍內，執行切換
+    currentWeekStart = newWeekStart;
+    updateWeekDisplay();
+    updateTodayButtonState();
+    updateSchedule();
+    
+    // 如果切換到沒有資料的週，重新載入
+    const weekDates = getWeekDates(currentWeekStart);
+    const hasDataForWeek = weekDates.some(date => {
+        const dateStr = formatDate(date);
+        return bookings.some(booking => booking.date === dateStr);
+    });
+    
+    if (!hasDataForWeek && supabaseClient) {
+        loadBookings();
+    }
+}
         // 回到本週功能
         function goToToday() {
             currentWeekStart = new Date(todayWeekStart);
