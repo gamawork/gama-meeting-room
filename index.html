@@ -18,14 +18,26 @@
             padding: 20px;
         }
 
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
+.container {
+    max-width: 1600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    
+    /* 增強版：更多層陰影 + 邊框 */
+    box-shadow: 
+        0 20px 40px rgba(0,0,0,0.1),
+        0 8px 24px rgba(0,0,0,0.06),
+        0 2px 8px rgba(0,0,0,0.04),
+        inset 0 0 0 1px rgba(255,255,255,0.05);
+    
+    border: 1px solid rgba(255,255,255,0.01);
+    overflow: hidden;
+    
+    /* 渲染優化 */
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+}
 
         .header {
             background: linear-gradient(135deg, #2d4874 0%, #1a2e4a 100%);
