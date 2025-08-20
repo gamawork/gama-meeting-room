@@ -2171,6 +2171,74 @@ function timeOverlap(start1, end1, start2, end2) {
     return overlap;
 }
 
+// 重設表單函數 - 清空所有表單欄位並恢復預設狀態
+function resetForm() {
+    try {
+        console.log('開始重設表單...');
+        
+        // 清空基本欄位
+        const meetingTitle = document.getElementById('meetingTitle');
+        const meetingRoom = document.getElementById('meetingRoom');
+        const startTime = document.getElementById('startTime');
+        const endTime = document.getElementById('endTime');
+        const organizer = document.getElementById('organizer');
+        const meetingDate = document.getElementById('meetingDate');
+        const dateDisplay = document.getElementById('dateDisplay');
+        
+        if (meetingTitle) meetingTitle.value = '';
+        if (meetingRoom) meetingRoom.value = '';
+        if (startTime) startTime.value = '';
+        if (endTime) endTime.value = '';
+        if (organizer) organizer.value = '';
+        if (meetingDate) meetingDate.value = '';
+        if (dateDisplay) dateDisplay.textContent = '請選擇日期';
+        
+        // 重設週期預約選項
+        const recurringCheckbox = document.getElementById('recurringBooking');
+        const recurringOptions = document.getElementById('recurringOptions');
+        const recurringPeriod = document.getElementById('recurringPeriod');
+        const monthlyModeOption = document.getElementById('monthlyModeOption');
+        
+        if (recurringCheckbox) {
+            recurringCheckbox.checked = false;
+        }
+        
+        // 隱藏週期預約相關選項
+        if (recurringOptions) {
+            recurringOptions.style.display = 'none';
+        }
+        if (recurringPeriod) {
+            recurringPeriod.style.display = 'none';
+        }
+        if (monthlyModeOption) {
+            monthlyModeOption.style.display = 'none';
+        }
+        
+        // 重設週期預約的下拉選單為預設值
+        const recurringType = document.getElementById('recurringType');
+        const recurringWeeks = document.getElementById('recurringWeeks');
+        
+        if (recurringType) {
+            recurringType.value = 'weekly'; // 恢復預設值
+        }
+        if (recurringWeeks) {
+            recurringWeeks.value = '12'; // 恢復預設值
+        }
+        
+        // 清空模式說明文字
+        const modeExplanation = document.getElementById('modeExplanation');
+        if (modeExplanation) {
+            modeExplanation.textContent = '';
+        }
+        
+        console.log('表單重設完成');
+        
+    } catch (error) {
+        console.error('重設表單時發生錯誤:', error);
+        // 即使發生錯誤也不要讓整個流程中斷
+    }
+}
+
 // 預約提交函數 - 完整繁體中文版本
 async function submitBooking() {
     try {
