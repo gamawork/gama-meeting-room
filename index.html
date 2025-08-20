@@ -1063,50 +1063,62 @@
         }
 
         // 載入預約資料
-        async function loadBookings() {
-            if (!supabaseClient) {
-                showModal('未連接', '資料庫連線尚未建立');
-                return;
-            }
-            
-            try {
-                showLoading(true);
-                updateStatus('loading', '🔄 載入資料...');
-                
-                // 計算查詢範圍（當前週的前後各一個月）
-                const startDate = new Date(currentWeekStart);
-                startDate.setDate(startDate.getDate() - 30);
-                const endDate = new Date(currentWeekStart);
-                endDate.setDate(endDate.getDate() + 37);
-                
-                const { data, error } = await supabaseClient
-                    .from('bookings')
-                    .select('*')
-                    .gte('date', formatDateForDB(startDate))
-                    .lte('date', formatDateForDB(endDate))
-                    .order('date', { ascending: true })
-                    .order('start_time', { ascending: true });
-                
-                if (error) {
-                    throw error;
-                }
-                
-                // 格式化資料
-                bookings = data.map(formatBookingFromDB);
-                
-                updateSchedule();
-                updateStatus('connected', '✅ 已連接');
-                
-                console.log(`載入 ${bookings.length} 筆預約資料`);
-                
-            } catch (error) {
-                console.error('載入資料失敗:', error);
-                updateStatus('error', '❌ 載入失敗');
-                showModal('載入失敗', `無法載入預約資料: ${error.message}`);
-            } finally {
-                showLoading(false);
-            }
+        // 修改 loadBookings() 使用累積載入而不是覆蓋
+// 修改 loadBookings() 函數，使用固定的基準點而不是當前週
+async function loadBookings() {
+    if (!supabaseClient) {
+        showModal('未連接', '資料庫連線尚未建立');
+        return;
+    }
+    
+    try {
+        showLoading(true);
+        updateStatus('loading', '🔄 載入資料...');
+        
+        // 🔧 修正：使用今天所在週作為固定基準點，而不是 currentWeekStart
+        const todayWeekStart = getCurrentWeekStart(); // 固定基準
+        
+        // 計算查詢範圍（以今天所在週為中心，前後各擴大範圍）
+        const startDate = new Date(todayWeekStart);
+        startDate.setDate(startDate.getDate() - 30);    // 前30天（約4週）
+        const endDate = new Date(todayWeekStart);
+        endDate.setDate(endDate.getDate() + 150);        // 後150天（約21週）
+        
+        console.log('查詢範圍（固定基準）:', {
+            基準週: formatDate(todayWeekStart),
+            開始日期: formatDate(startDate),
+            結束日期: formatDate(endDate),
+            當前顯示週: formatDate(currentWeekStart)
+        });
+        
+        const { data, error } = await supabaseClient
+            .from('bookings')
+            .select('*')
+            .gte('date', formatDateForDB(startDate))
+            .lte('date', formatDateForDB(endDate))
+            .order('date', { ascending: true })
+            .order('start_time', { ascending: true });
+        
+        if (error) {
+            throw error;
         }
+        
+        // 格式化資料
+        bookings = data.map(formatBookingFromDB);
+        
+        updateSchedule();
+        updateStatus('connected', '✅ 已連接');
+        
+        console.log(`載入 ${bookings.length} 筆預約資料（固定範圍）`);
+        
+    } catch (error) {
+        console.error('載入資料失敗:', error);
+        updateStatus('error', '❌ 載入失敗');
+        showModal('載入失敗', `無法載入預約資料: ${error.message}`);
+    } finally {
+        showLoading(false);
+    }
+}
 
         // 新增預約
         async function saveBooking(booking) {
