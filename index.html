@@ -2100,51 +2100,173 @@ END:VCALENDAR`;
         }
 
         // 預約提交函數
-        async function submitBooking() {
-            const title = document.getElementById('meetingTitle').value.trim();
-            const room = document.getElementById('meetingRoom').value;
-            const date = document.getElementById('meetingDate').value;
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
-            const organizer = document.getElementById('organizer').value.trim();
-            const isRecurring = document.getElementById('recurringBooking').checked;
-            const recurringType = document.getElementById('recurringType').value;
-            const recurringWeeks = parseInt(document.getElementById('recurringWeeks').value);
+        // 衝突檢查（即時查詢資料庫）
+async function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
+    if (!supabaseClient) {
+        console.warn('資料庫客戶端未初始化，跳過衝突檢測');
+        return [];
+    }
+    
+    try {
+        console.log('開始衝突檢測:', { recurringDates, room, startTime, endTime });
+        
+        const { data, error } = await supabaseClient
+            .from('bookings')
+            .select('*')
+            .in('date', recurringDates)
+            .eq('room', room);
+        
+        if (error) {
+            console.error('衝突檢查失敗:', error);
+            throw error; // 改為拋出錯誤而不是默默回傳空陣列
+        }
+        
+        console.log('查詢到的相同會議室預約:', data);
+        
+        const conflicts = [];
+        data.forEach(booking => {
+            // 確保時間格式一致
+            const existingStart = booking.start_time;
+            const existingEnd = booking.end_time;
             
-            // 驗證必填欄位
-            if (!title) { showModal('預約失敗', '請填寫會議主題。'); return; }
-            if (!room) { showModal('預約失敗', '請選擇會議室。'); return; }
-            if (!date) { showModal('預約失敗', '請選擇日期。'); return; }
-            if (!startTime) { showModal('預約失敗', '請選擇開始時間。'); return; }
-            if (!endTime) { showModal('預約失敗', '請選擇結束時間。'); return; }
-            if (!organizer) { showModal('預約失敗', '請填寫登記者。'); return; }
+            console.log('檢查時間重疊:', {
+                existing: `${existingStart}-${existingEnd}`,
+                new: `${startTime}-${endTime}`
+            });
             
-            // 驗證時間邏輯
-            if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-                showModal('預約失敗', '結束時間必須晚於開始時間。');
+            if (timeOverlap(existingStart, existingEnd, startTime, endTime)) {
+                console.log('發現衝突:', booking);
+                conflicts.push({
+                    date: booking.date,
+                    booking: formatBookingFromDB(booking)
+                });
+            }
+        });
+        
+        console.log(`衝突檢測完成，發現 ${conflicts.length} 個衝突`);
+        return conflicts;
+        
+    } catch (error) {
+        console.error('衝突檢查錯誤:', error);
+        // 發生錯誤時應該阻止預約，而不是允許繼續
+        throw new Error(`衝突檢測失敗: ${error.message}`);
+    }
+}
+
+// 時間重疊檢測函數
+function timeOverlap(start1, end1, start2, end2) {
+    const s1 = timeToMinutes(start1);
+    const e1 = timeToMinutes(end1);
+    const s2 = timeToMinutes(start2);
+    const e2 = timeToMinutes(end2);
+    
+    const overlap = s1 < e2 && s2 < e1;
+    
+    console.log('時間重疊檢測:', {
+        time1: `${start1}-${end1} (${s1}-${e1}分鐘)`,
+        time2: `${start2}-${end2} (${s2}-${e2}分鐘)`,
+        overlap: overlap
+    });
+    
+    return overlap;
+}
+
+// 預約提交函數 - 完整繁體中文版本
+async function submitBooking() {
+    try {
+        console.log('開始提交預約...');
+        
+        const title = document.getElementById('meetingTitle').value.trim();
+        const room = document.getElementById('meetingRoom').value;
+        const date = document.getElementById('meetingDate').value;
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
+        const organizer = document.getElementById('organizer').value.trim();
+        const isRecurring = document.getElementById('recurringBooking').checked;
+        const recurringType = document.getElementById('recurringType').value;
+        const recurringWeeks = parseInt(document.getElementById('recurringWeeks').value);
+        
+        console.log('表單資料:', { title, room, date, startTime, endTime, organizer, isRecurring, recurringType, recurringWeeks });
+        
+        // 驗證必填欄位
+        if (!title) { 
+            showModal('預約失敗', '請填寫會議主題。'); 
+            return; 
+        }
+        if (!room) { 
+            showModal('預約失敗', '請選擇會議室。'); 
+            return; 
+        }
+        if (!date) { 
+            showModal('預約失敗', '請選擇日期。'); 
+            return; 
+        }
+        if (!startTime) { 
+            showModal('預約失敗', '請選擇開始時間。'); 
+            return; 
+        }
+        if (!endTime) { 
+            showModal('預約失敗', '請選擇結束時間。'); 
+            return; 
+        }
+        if (!organizer) { 
+            showModal('預約失敗', '請填寫登記者。'); 
+            return; 
+        }
+        
+        // 驗證時間邏輯
+        if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
+            showModal('預約失敗', '結束時間必須晚於開始時間。');
+            return;
+        }
+        
+        // 處理週期預約
+        let datesToBook = [date];
+        if (isRecurring) {
+            if (!recurringType || isNaN(recurringWeeks)) {
+                showModal('預約失敗', '請選擇週期預約的重複頻率和持續期間。');
                 return;
             }
-            
-            // 處理週期預約
-            let datesToBook = [date];
-            if (isRecurring) {
-                datesToBook = generateRecurringDates(date, recurringType, recurringWeeks);
-            }
-            
-            // 檢查衝突
+            console.log('產生週期預約日期...');
+            datesToBook = generateRecurringDates(date, recurringType, recurringWeeks);
+            console.log('週期預約日期:', datesToBook);
+        }
+        
+        if (!datesToBook || datesToBook.length === 0) {
+            showModal('預約失敗', '無法產生預約日期，請檢查日期設定。');
+            return;
+        }
+        
+        // 檢查衝突
+        console.log('開始檢查衝突...');
+        try {
             const conflicts = await checkRecurringConflicts(datesToBook, room, startTime, endTime);
             if (conflicts.length > 0) {
-                let conflictMessage = '以下日期有衝突，無法預約：<br>';
+                let conflictMessage = '以下日期有衝突，無法預約：<br><br>';
                 conflicts.forEach(conflict => {
-                    conflictMessage += `• ${conflict.date}: ${conflict.booking.title}<br>`;
+                    conflictMessage += `📅 <strong>${conflict.date}</strong><br>`;
+                    conflictMessage += `🏢 ${conflict.booking.room}<br>`;
+                    conflictMessage += `⏰ ${formatTimeDisplay(conflict.booking.startTime)}-${formatTimeDisplay(conflict.booking.endTime)}<br>`;
+                    conflictMessage += `📋 ${conflict.booking.title}<br>`;
+                    conflictMessage += `👤 ${conflict.booking.organizer}<br><br>`;
                 });
-                showModal('預約失敗', conflictMessage);
+                showModal('預約失敗 - 時間衝突', conflictMessage);
                 return;
             }
-            
-            // 批量儲存預約
-            let successCount = 0;
-            for (const bookingDate of datesToBook) {
+            console.log('衝突檢查通過');
+        } catch (error) {
+            console.error('衝突檢測失敗:', error);
+            showModal('預約失敗', `衝突檢測時發生錯誤：<br><strong>${error.message}</strong><br><br>可能原因：<br>• 資料庫連線問題<br>• 網路連線不穩定<br><br>請稍後重試或聯絡系統管理員。`);
+            return;
+        }
+        
+        // 批量儲存預約
+        console.log('開始儲存預約...');
+        let successCount = 0;
+        let failedDates = [];
+        
+        for (const bookingDate of datesToBook) {
+            try {
                 const booking = {
                     date: bookingDate,
                     room: room,
@@ -2155,123 +2277,201 @@ END:VCALENDAR`;
                 };
                 
                 const success = await saveBooking(booking);
-                if (success) successCount++;
-            }
-            
-            if (successCount > 0) {
-                let successMessage;
-                if (isRecurring) {
-                    // 智慧顯示期間文字
-                    let periodText;
-                    const recurringTypeValue = document.getElementById('recurringType').value;
-                    
-                    if (recurringTypeValue === 'weekly') {
-                        if (recurringWeeks === 52) {
-                            periodText = '1年';
-                        } else if (recurringWeeks === 156) {
-                            periodText = '3年';
-                        } else if (recurringWeeks === 12) {
-                            periodText = '3個月';
-                        } else if (recurringWeeks === 24) {
-                            periodText = '6個月';
-                        } else {
-                            periodText = `${recurringWeeks}週`;
-                        }
-                    } else if (recurringTypeValue === 'monthly') {
-                        if (recurringWeeks === 52) {
-                            periodText = '1年';
-                        } else if (recurringWeeks === 104) {
-                            periodText = '2年';
-                        } else if (recurringWeeks === 156) {
-                            periodText = '3年';
-                        } else if (recurringWeeks === 9) {
-                            periodText = '2個月';
-                        } else if (recurringWeeks === 13) {
-                            periodText = '3個月';
-                        } else if (recurringWeeks === 26) {
-                            periodText = '6個月';
-                        } else {
-                            periodText = `${recurringWeeks}週`;
-                        }
-                    }
-                    
-                    successMessage = `成功預約 ${successCount} 場週期會議！<br>會議主題: ${title}<br>時間: ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}<br>頻率: ${recurringType === 'weekly' ? '每週' : '每月'}<br>期間: ${periodText}`;
+                if (success) {
+                    successCount++;
+                    console.log(`預約成功: ${bookingDate}`);
                 } else {
-                    successMessage = `會議主題: ${title}<br>時間: ${date} ${startTime}-${endTime}<br>地點: ${room}<br>登記者: ${organizer}`;
+                    failedDates.push(bookingDate);
+                    console.log(`預約失敗: ${bookingDate}`);
                 }
-                
-                showModal('預約成功！', successMessage);
-                resetForm();
-                
-                // 重新載入資料以確保同步
-                setTimeout(() => {
-                    loadBookings();
-                }, 1000);
-            }
-        }
-
-        function resetForm() {
-            document.getElementById('meetingTitle').value = '';
-            document.getElementById('meetingRoom').value = '';
-            document.getElementById('startTime').value = '';
-            document.getElementById('endTime').value = '';
-            document.getElementById('organizer').value = '';
-            document.getElementById('meetingDate').value = '';
-            document.getElementById('dateDisplay').textContent = '請選擇日期';
-            document.getElementById('recurringBooking').checked = false;
-            document.getElementById('recurringOptions').style.display = 'none';
-            document.getElementById('recurringPeriod').style.display = 'none';
-            document.getElementById('monthlyModeOption').style.display = 'none';
-        }
-
-        // 衝突檢查（即時查詢資料庫）
-        async function checkRecurringConflicts(recurringDates, room, startTime, endTime) {
-            if (!supabase) return [];
-            
-            try {
-                const { data, error } = await supabase
-                    .from('bookings')
-                    .select('*')
-                    .in('date', recurringDates)
-                    .eq('room', room);
-                
-                if (error) {
-                    console.error('衝突檢查失敗:', error);
-                    return [];
-                }
-                
-                const conflicts = [];
-                data.forEach(booking => {
-                    if (timeOverlap(booking.start_time, booking.end_time, startTime, endTime)) {
-                        conflicts.push({
-                            date: booking.date,
-                            booking: formatBookingFromDB(booking)
-                        });
-                    }
-                });
-                
-                return conflicts;
-                
             } catch (error) {
-                console.error('衝突檢查錯誤:', error);
-                return [];
+                failedDates.push(bookingDate);
+                console.error(`儲存預約失敗 (${bookingDate}):`, error);
             }
         }
-
-        // 工具函數
-        function timeToMinutes(timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-
-        function timeOverlap(start1, end1, start2, end2) {
-            const s1 = timeToMinutes(start1);
-            const e1 = timeToMinutes(end1);
-            const s2 = timeToMinutes(start2);
-            const e2 = timeToMinutes(end2);
+        
+        // 顯示結果
+        if (successCount > 0) {
+            let successMessage;
+            if (isRecurring) {
+                // 智慧顯示期間文字
+                let periodText;
+                const recurringTypeValue = document.getElementById('recurringType').value;
+                
+                if (recurringTypeValue === 'weekly') {
+                    if (recurringWeeks === 52) {
+                        periodText = '1年';
+                    } else if (recurringWeeks === 156) {
+                        periodText = '3年';
+                    } else if (recurringWeeks === 12) {
+                        periodText = '3個月';
+                    } else if (recurringWeeks === 24) {
+                        periodText = '6個月';
+                    } else {
+                        periodText = `${recurringWeeks}週`;
+                    }
+                } else if (recurringTypeValue === 'monthly') {
+                    if (recurringWeeks === 52) {
+                        periodText = '1年';
+                    } else if (recurringWeeks === 104) {
+                        periodText = '2年';
+                    } else if (recurringWeeks === 156) {
+                        periodText = '3年';
+                    } else if (recurringWeeks === 9) {
+                        periodText = '2個月';
+                    } else if (recurringWeeks === 13) {
+                        periodText = '3個月';
+                    } else if (recurringWeeks === 26) {
+                        periodText = '6個月';
+                    } else {
+                        periodText = `${recurringWeeks}週`;
+                    }
+                }
+                
+                successMessage = `✅ <strong>成功預約 ${successCount} 場週期會議！</strong><br><br>`;
+                successMessage += `📋 <strong>會議主題：</strong>${title}<br>`;
+                successMessage += `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>`;
+                successMessage += `🏢 <strong>地點：</strong>${room}<br>`;
+                successMessage += `👤 <strong>登記者：</strong>${organizer}<br>`;
+                successMessage += `🔁 <strong>頻率：</strong>${recurringType === 'weekly' ? '每週' : '每月'}<br>`;
+                successMessage += `📅 <strong>期間：</strong>${periodText}`;
+                
+                if (failedDates.length > 0) {
+                    successMessage += `<br><br>⚠️ <strong>部分日期預約失敗：</strong><br>${failedDates.join(', ')}`;
+                }
+            } else {
+                successMessage = `✅ <strong>預約成功！</strong><br><br>`;
+                successMessage += `📋 <strong>會議主題：</strong>${title}<br>`;
+                successMessage += `📅 <strong>日期：</strong>${date}<br>`;
+                successMessage += `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>`;
+                successMessage += `🏢 <strong>地點：</strong>${room}<br>`;
+                successMessage += `👤 <strong>登記者：</strong>${organizer}`;
+            }
             
-            return s1 < e2 && s2 < e1;
+            showModal('預約成功！', successMessage);
+            resetForm();
+            
+            // 重新載入資料以確保同步
+            setTimeout(() => {
+                loadBookings();
+            }, 1000);
+        } else {
+            showModal('預約失敗', `所有預約都未能成功建立。<br><br>失敗的日期：<br>${failedDates.join('<br>')}<br><br>請檢查網路連線或稍後重試。`);
         }
+        
+    } catch (error) {
+        console.error('提交預約時發生未預期的錯誤:', error);
+        showModal('系統錯誤', `提交預約時發生未預期的錯誤：<br><strong>${error.message}</strong><br><br>請重新整理頁面後再試，或聯絡系統管理員。`);
+    }
+}
+        function timeOverlap(start1, end1, start2, end2) {
+    const s1 = timeToMinutes(start1);
+    const e1 = timeToMinutes(end1);
+    const s2 = timeToMinutes(start2);
+    const e2 = timeToMinutes(end2);
+    
+    const overlap = s1 < e2 && s2 < e1;
+    
+    console.log('時間重疊檢測:', {
+        time1: `${start1}-${end1} (${s1}-${e1}分鐘)`,
+        time2: `${start2}-${end2} (${s2}-${e2}分鐘)`,
+        overlap: overlap
+    });
+    
+    return overlap;
+}
+// 時間轉換函數 - 將 HH:MM 格式轉換為分鐘數
+function timeToMinutes(timeStr) {
+    if (!timeStr || typeof timeStr !== 'string') {
+        console.warn('無效的時間格式:', timeStr);
+        return 0;
+    }
+    
+    // 處理 HH:MM:SS 格式，只取前面的 HH:MM
+    if (timeStr.includes(':')) {
+        const timeParts = timeStr.split(':');
+        const hours = parseInt(timeParts[0]) || 0;
+        const minutes = parseInt(timeParts[1]) || 0;
+        const totalMinutes = hours * 60 + minutes;
+        
+        console.log(`時間轉換: ${timeStr} -> ${totalMinutes}分鐘`);
+        return totalMinutes;
+    }
+    
+    console.warn('無法解析時間格式:', timeStr);
+    return 0;
+}
+
+// 產生週期預約日期函數
+function generateRecurringDates(startDate, recurringType, weeks) {
+    const dates = [];
+    const baseDate = new Date(startDate);
+    
+    console.log(`產生週期日期 - 模式: ${recurringType}, 期間: ${weeks}週`);
+    
+    if (recurringType === 'weekly') {
+        // 每週邏輯
+        for (let i = 0; i < weeks; i++) {
+            const nextDate = new Date(baseDate);
+            nextDate.setDate(baseDate.getDate() + (i * 7));
+            dates.push(formatDate(nextDate));
+        }
+    } else if (recurringType === 'monthly') {
+        // 每月邏輯 - 使用相對週日模式
+        const totalMonths = Math.round(weeks / 4.33); // 將週數轉換為大概的月數
+        
+        for (let i = 0; i < totalMonths; i++) {
+            // 使用相對週日模式：每月第N個週X
+            const nextDate = calculateRelativeWeeklyDate(baseDate, i);
+            dates.push(formatDate(nextDate));
+            console.log(`月份 ${i}: ${nextDate.toDateString()}`);
+        }
+    }
+    
+    console.log(`總共產生 ${dates.length} 個日期:`, dates);
+    return dates;
+}
+
+// 相對週日日期計算
+function calculateRelativeWeeklyDate(baseDate, monthsToAdd) {
+    // 計算是第幾週的週幾
+    const weekOfMonth = Math.ceil(baseDate.getDate() / 7);
+    const dayOfWeek = baseDate.getDay();
+    
+    console.log(`基準日期 ${baseDate.toDateString()}: 第${weekOfMonth}週的週${dayOfWeek}`);
+    
+    // 計算目標月份
+    const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthsToAdd, 1);
+    
+    // 找到該月第1個指定週幾的日期
+    const firstWeekday = targetDate.getDay();
+    const daysToFirstTarget = (dayOfWeek - firstWeekday + 7) % 7;
+    
+    // 計算第N個指定週幾的日期
+    const targetDay = 1 + daysToFirstTarget + (weekOfMonth - 1) * 7;
+    
+    // 檢查該日期是否存在於該月
+    const lastDayOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
+    
+    if (targetDay <= lastDayOfMonth) {
+        targetDate.setDate(targetDay);
+        return targetDate;
+    } else {
+        // 如果該月沒有第N個週X，回到上一週
+        const fallbackDay = targetDay - 7;
+        targetDate.setDate(fallbackDay);
+        console.log(`該月沒有第${weekOfMonth}週${dayOfWeek}，調整為第${weekOfMonth-1}週`);
+        return targetDate;
+    }
+}
+
+// 日期格式化函數
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
         function generateRecurringDates(startDate, recurringType, weeks) {
             const dates = [];
