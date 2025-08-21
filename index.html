@@ -1748,29 +1748,42 @@ async function loadBookings() {
             }
         }
 
-        // 顯示週期刪除確認模態框
-        function showRecurringDeleteModal(targetBooking, recurringInfo) {
-            const modal = document.getElementById('recurringDeleteModal');
-            const message = document.getElementById('recurringModalMessage');
-            
-            const futureCount = recurringInfo.futureBookings.length;
-            const intervalText = recurringInfo.intervalType === 'weekly' ? '每週' : '每月';
-            
-            message.innerHTML = `
-                偵測到這是${intervalText}重複行程。<br>
-                <strong>將影響 ${futureCount} 個預約</strong><br><br>
-                請選擇刪除範圍：
-            `;
-            
-            // 暫存刪除資訊
-            pendingDeleteBooking = {
-                targetBooking: targetBooking,
-                recurringInfo: recurringInfo
-            };
-            
-            modal.style.display = 'block';
-        }
-
+        
+// 顯示週期刪除確認模態框
+function showRecurringDeleteModal(targetBooking, recurringInfo) {
+    const modal = document.getElementById('recurringDeleteModal');
+    const message = document.getElementById('recurringModalMessage');
+    
+    const futureCount = recurringInfo.futureBookings.length;
+    const intervalText = recurringInfo.intervalType === 'weekly' ? '每週' : '每月';
+    
+    // 找到最後一筆預約的日期
+    const lastBookingDate = recurringInfo.futureBookings[futureCount - 1]?.date;
+    let lastDateText = '';
+    
+    if (lastBookingDate) {
+        // 格式化最後預約日期為 YYYY年MM月DD日
+        const lastDate = new Date(lastBookingDate);
+        const year = lastDate.getFullYear();
+        const month = lastDate.getMonth() + 1;
+        const day = lastDate.getDate();
+        lastDateText = `<br>最後一筆預約日：<strong>${year}年${month}月${day}日</strong>`;
+    }
+    
+    message.innerHTML = `
+        偵測到這是${intervalText}重複行程。<br>
+        <strong>將影響 ${futureCount} 個預約</strong>${lastDateText}<br><br>
+        請選擇刪除範圍：
+    `;
+    
+    // 暫存刪除資訊
+    pendingDeleteBooking = {
+        targetBooking: targetBooking,
+        recurringInfo: recurringInfo
+    };
+    
+    modal.style.display = 'block';
+}
         // 確認週期刪除
         async function confirmRecurringDelete(type) {
             if (!pendingDeleteBooking) return;
