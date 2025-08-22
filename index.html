@@ -861,10 +861,11 @@
                         
                         <div class="form-group" id="recurringOptions" style="display: none;">
                             <label for="recurringType">重複頻率</label>
-                            <select id="recurringType">
-                                <option value="weekly">每週</option>
-                                <option value="monthly">每月 (每月第幾個週幾)</option>
-                            </select>
+				<select id="recurringType">
+   				 <option value="weekly">每週</option>
+   				 <option value="biweekly">每雙週</option>
+    					<option value="monthly">每月 (每月第幾個週幾)</option>
+				</select>
                         </div>
                         
                         <div class="form-group" id="monthlyModeOption" style="display: none;">
@@ -1233,71 +1234,98 @@ async function loadBookings() {
         }
 
         // 動態更新持續期間選項
-        function updateRecurringPeriodOptions() {
-            const recurringType = document.getElementById('recurringType').value;
-            const recurringWeeksSelect = document.getElementById('recurringWeeks');
-            const monthlyModeOption = document.getElementById('monthlyModeOption');
-            
-            // 清空現有選項
-            recurringWeeksSelect.innerHTML = '';
-            
-            if (recurringType === 'weekly') {
-                // 隱藏月模式選項
-                monthlyModeOption.style.display = 'none';
-                
-                // 每週重複的選項
-                const weeklyOptions = [
-                    { value: 2, text: '2週' },
-                    { value: 3, text: '3週' },
-                    { value: 4, text: '4週' },
-                    { value: 6, text: '6週' },
-                    { value: 8, text: '8週' },
-                    { value: 12, text: '12週（3個月）' },
-                    { value: 24, text: '24週（6個月）' },
-                    { value: 52, text: '52週（1年）' },
-                    { value: 156, text: '156週（3年）' }
-                ];
-                
-                weeklyOptions.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option.value;
-                    optionElement.textContent = option.text;
-                    recurringWeeksSelect.appendChild(optionElement);
-                });
-                
-                // 預設選擇12週
-                recurringWeeksSelect.value = '12';
-                
-            } else if (recurringType === 'monthly') {
-                // 顯示月模式選項
-                monthlyModeOption.style.display = 'block';
-                updateModeExplanation(); // 更新說明文字
-                
-                // 每月重複的選項 (內部仍使用週數計算)
-                const monthlyOptions = [
-                    { value: 9, text: '2個月' },        // 約9週
-                    { value: 13, text: '3個月' },       // 約13週
-                    { value: 26, text: '6個月' },       // 約26週
-                    { value: 52, text: '12個月（1年）' }, // 52週
-                    { value: 104, text: '24個月（2年）' }, // 104週
-                    { value: 156, text: '36個月（3年）' }  // 156週
-                ];
-                
-                monthlyOptions.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    optionElement.value = option.value;
-                    optionElement.textContent = option.text;
-                    recurringWeeksSelect.appendChild(optionElement);
-                });
-                
-                // 預設選擇12個月
-                recurringWeeksSelect.value = '52';
-            }
-            
-            console.log(`持續期間選項已更新為：${recurringType}`);
-        }
-
-        // 更新模式說明文字
+// 動態更新持續期間選項
+// 動態更新持續期間選項
+function updateRecurringPeriodOptions() {
+    const recurringType = document.getElementById('recurringType').value;
+    const recurringWeeksSelect = document.getElementById('recurringWeeks');
+    const monthlyModeOption = document.getElementById('monthlyModeOption');
+    
+    // 清空現有選項
+    recurringWeeksSelect.innerHTML = '';
+    
+    if (recurringType === 'weekly') {
+        // 隱藏月模式選項
+        monthlyModeOption.style.display = 'none';
+        
+        // 每週重複的選項
+        const weeklyOptions = [
+            { value: 2, text: '2週' },
+            { value: 3, text: '3週' },
+            { value: 4, text: '4週' },
+            { value: 6, text: '6週' },
+            { value: 8, text: '8週' },
+            { value: 12, text: '12週（3個月）' },
+            { value: 24, text: '24週（6個月）' },
+            { value: 52, text: '52週（1年）' },
+            { value: 156, text: '156週（3年）' }
+        ];
+        
+        weeklyOptions.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            recurringWeeksSelect.appendChild(optionElement);
+        });
+        
+        // 預設選擇12週
+        recurringWeeksSelect.value = '12';
+        
+    } else if (recurringType === 'biweekly') {
+        // 隱藏月模式選項
+        monthlyModeOption.style.display = 'none';
+        
+        // 每雙週重複的選項
+        const biweeklyOptions = [
+            { value: 4, text: '4週' },
+            { value: 6, text: '6週' },
+            { value: 8, text: '8週' },
+            { value: 10, text: '10週' },
+            { value: 12, text: '12週' },
+            { value: 26, text: '6個月（半年）' },
+            { value: 52, text: '12個月（1年）' },
+            { value: 156, text: '36個月（3年）' }
+        ];
+        
+        biweeklyOptions.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            recurringWeeksSelect.appendChild(optionElement);
+        });
+        
+        // 預設選擇12週
+        recurringWeeksSelect.value = '12';
+        
+    } else if (recurringType === 'monthly') {
+        // 顯示月模式選項
+        monthlyModeOption.style.display = 'block';
+        updateModeExplanation(); // 更新說明文字
+        
+        // 每月重複的選項 (內部仍使用週數計算)
+        const monthlyOptions = [
+            { value: 9, text: '2個月' },        // 約9週
+            { value: 13, text: '3個月' },       // 約13週
+            { value: 26, text: '6個月' },       // 約26週
+            { value: 52, text: '12個月（1年）' }, // 52週
+            { value: 104, text: '24個月（2年）' }, // 104週
+            { value: 156, text: '36個月（3年）' }  // 156週
+        ];
+        
+        monthlyOptions.forEach(option => {
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.text;
+            recurringWeeksSelect.appendChild(optionElement);
+        });
+        
+        // 預設選擇12個月
+        recurringWeeksSelect.value = '52';
+    }
+    
+    console.log(`持續期間選項已更新為：${recurringType}`);
+}
+// 更新模式說明文字
         function updateModeExplanation() {
             const dateInput = document.getElementById('meetingDate');
             const explanation = document.getElementById('modeExplanation');
@@ -2451,43 +2479,71 @@ async function submitBooking() {
                 // 智慧顯示期間文字
                 let periodText;
                 const recurringTypeValue = document.getElementById('recurringType').value;
-                
-                if (recurringTypeValue === 'weekly') {
-                    if (recurringWeeks === 52) {
-                        periodText = '1年';
-                    } else if (recurringWeeks === 156) {
-                        periodText = '3年';
-                    } else if (recurringWeeks === 12) {
-                        periodText = '3個月';
-                    } else if (recurringWeeks === 24) {
-                        periodText = '6個月';
-                    } else {
-                        periodText = `${recurringWeeks}週`;
-                    }
-                } else if (recurringTypeValue === 'monthly') {
-                    if (recurringWeeks === 52) {
-                        periodText = '1年';
-                    } else if (recurringWeeks === 104) {
-                        periodText = '2年';
-                    } else if (recurringWeeks === 156) {
-                        periodText = '3年';
-                    } else if (recurringWeeks === 9) {
-                        periodText = '2個月';
-                    } else if (recurringWeeks === 13) {
-                        periodText = '3個月';
-                    } else if (recurringWeeks === 26) {
-                        periodText = '6個月';
-                    } else {
-                        periodText = `${recurringWeeks}週`;
-                    }
-                }
-                
+if (recurringTypeValue === 'weekly') {
+    if (recurringWeeks === 52) {
+        periodText = '1年';
+    } else if (recurringWeeks === 156) {
+        periodText = '3年';
+    } else if (recurringWeeks === 12) {
+        periodText = '3個月';
+    } else if (recurringWeeks === 24) {
+        periodText = '6個月';
+    } else {
+        periodText = `${recurringWeeks}週`;
+    }
+} else if (recurringTypeValue === 'biweekly') {
+    if (recurringWeeks === 52) {
+        periodText = '12個月（1年）';
+    } else if (recurringWeeks === 156) {
+        periodText = '36個月（3年）';
+    } else if (recurringWeeks === 26) {
+        periodText = '6個月（半年）';
+    } else if (recurringWeeks === 12) {
+        periodText = '12週';
+    } else if (recurringWeeks === 10) {
+        periodText = '10週';
+    } else if (recurringWeeks === 8) {
+        periodText = '8週';
+    } else if (recurringWeeks === 6) {
+        periodText = '6週';
+    } else if (recurringWeeks === 4) {
+        periodText = '4週';
+    } else {
+        periodText = `${recurringWeeks}週`;
+    }
+} else if (recurringTypeValue === 'monthly') {
+    if (recurringWeeks === 52) {
+        periodText = '1年';
+    } else if (recurringWeeks === 104) {
+        periodText = '2年';
+    } else if (recurringWeeks === 156) {
+        periodText = '3年';
+    } else if (recurringWeeks === 9) {
+        periodText = '2個月';
+    } else if (recurringWeeks === 13) {
+        periodText = '3個月';
+    } else if (recurringWeeks === 26) {
+        periodText = '6個月';
+    } else {
+        periodText = `${recurringWeeks}週`;
+    }
+}                
                 successMessage = `✅ <strong>成功預約 ${successCount} 場週期會議！</strong><br><br>`;
                 successMessage += `📋 <strong>會議主題：</strong>${title}<br>`;
                 successMessage += `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>`;
                 successMessage += `🏢 <strong>地點：</strong>${room}<br>`;
                 successMessage += `👤 <strong>登記者：</strong>${organizer}<br>`;
-                successMessage += `🔁 <strong>頻率：</strong>${recurringType === 'weekly' ? '每週' : '每月'}<br>`;
+		let frequencyText;
+		if (recurringType === 'weekly') {
+    			frequencyText = '每週';
+		} else if (recurringType === 'biweekly') {
+    			frequencyText = '每雙週';
+		} else if (recurringType === 'monthly') {
+    			frequencyText = '每月';
+		} else {
+    			frequencyText = recurringType;
+		}
+		successMessage += `🔁 <strong>頻率：</strong>${frequencyText}<br>`;
                 successMessage += `📅 <strong>期間：</strong>${periodText}`;
                 
                 if (failedDates.length > 0) {
@@ -2627,38 +2683,43 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-        function generateRecurringDates(startDate, recurringType, weeks) {
-            const dates = [];
-            const baseDate = new Date(startDate);
-            
-            // 每月模式預設使用相對週日邏輯
-            const isRelativeMode = (recurringType === 'monthly');
-            
-            console.log(`生成週期日期 - 模式: ${recurringType}, 期間: ${weeks}週, 相對週日: ${isRelativeMode}`);
-            
-            if (recurringType === 'weekly') {
-                // 每週邏輯不變
-                for (let i = 0; i < weeks; i++) {
-                    const nextDate = new Date(baseDate);
-                    nextDate.setDate(baseDate.getDate() + (i * 7));
-                    dates.push(formatDate(nextDate));
-                }
-            } else if (recurringType === 'monthly') {
-                // 每月預設使用相對週日模式
-                const totalMonths = Math.round(weeks / 4.33); // 將週數轉換為大概的月數
-                
-                for (let i = 0; i < totalMonths; i++) {
-                    // 使用相對週日模式：每月第N個週X
-                    const nextDate = calculateRelativeWeeklyDate(baseDate, i);
-                    dates.push(formatDate(nextDate));
-                    console.log(`月份 ${i}: ${nextDate.toDateString()}`);
-                }
-            }
-            
-            console.log(`總共生成 ${dates.length} 個日期:`, dates);
-            return dates;
+// 產生週期預約日期函數
+function generateRecurringDates(startDate, recurringType, weeks) {
+    const dates = [];
+    const baseDate = new Date(startDate);
+    
+    console.log(`產生週期日期 - 模式: ${recurringType}, 期間: ${weeks}週`);
+    
+    if (recurringType === 'weekly') {
+        // 每週邏輯
+        for (let i = 0; i < weeks; i++) {
+            const nextDate = new Date(baseDate);
+            nextDate.setDate(baseDate.getDate() + (i * 7));
+            dates.push(formatDate(nextDate));
         }
-
+    } else if (recurringType === 'biweekly') {
+        // 每雙週邏輯（每14天）
+        const totalOccurrences = Math.ceil(weeks / 2); // 雙週次數
+        for (let i = 0; i < totalOccurrences; i++) {
+            const nextDate = new Date(baseDate);
+            nextDate.setDate(baseDate.getDate() + (i * 14)); // 每14天
+            dates.push(formatDate(nextDate));
+        }
+    } else if (recurringType === 'monthly') {
+        // 每月邏輯 - 使用相對週日模式
+        const totalMonths = Math.round(weeks / 4.33); // 將週數轉換為大概的月數
+        
+        for (let i = 0; i < totalMonths; i++) {
+            // 使用相對週日模式：每月第N個週X
+            const nextDate = calculateRelativeWeeklyDate(baseDate, i);
+            dates.push(formatDate(nextDate));
+            console.log(`月份 ${i}: ${nextDate.toDateString()}`);
+        }
+    }
+    
+    console.log(`總共產生 ${dates.length} 個日期:`, dates);
+    return dates;
+}
         function getCurrentUser() {
             return document.getElementById('organizer').value || '系統';
         }
