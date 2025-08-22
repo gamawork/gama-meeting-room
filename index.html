@@ -327,35 +327,71 @@
             color: #2d3748;
         }
 
-        .room-cell {
-            background: #fef5e7;
+        /* 移除原本的固定背景色 */
+        .time-cell {
             font-weight: 600;
             color: #2d3748;
         }
 
-        .time-cell {
-            background: #fef5e7;
+        .room-cell {
             font-weight: 600;
             color: #2d3748;
         }
 
         .organizer-cell {
-            background: #fef5e7;
             font-weight: 600;
             color: #2d3748;
         }
 
         .meeting-cell {
-            background: #fef5e7;
             color: #1f2937;
             cursor: pointer;
             transition: all 0.3s ease;
             min-height: 40px;
         }
 
+        .action-cell {
+            padding: 8px;
+        }
+
         .meeting-cell:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(254, 245, 231, 0.5);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 交錯顏色樣式 - 偶數行（黃色，跟原本時間欄位一樣） */
+        .row-even .time-cell,
+        .row-even .room-cell,
+        .row-even .organizer-cell,
+        .row-even .meeting-cell,
+        .row-even .action-cell {
+            background: #fef5e7; /* 跟原本時間欄位一樣的黃色 */
+        }
+
+        /* 交錯顏色樣式 - 奇數行（淡藍色） */
+        .row-odd .time-cell,
+        .row-odd .room-cell,
+        .row-odd .organizer-cell,
+        .row-odd .meeting-cell,
+        .row-odd .action-cell {
+            background: #dbeafe; /* 淡藍色 */
+        }
+
+        /* Hover 效果 */
+        .row-even .time-cell:hover,
+        .row-even .room-cell:hover,
+        .row-even .organizer-cell:hover,
+        .row-even .meeting-cell:hover,
+        .row-even .action-cell:hover {
+            background: #fed7aa; /* 較深的黃色 */
+        }
+
+        .row-odd .time-cell:hover,
+        .row-odd .room-cell:hover,
+        .row-odd .organizer-cell:hover,
+        .row-odd .meeting-cell:hover,
+        .row-odd .action-cell:hover {
+            background: #bfdbfe; /* 較深的藍色 */
         }
 
         .meeting-title {
@@ -377,11 +413,6 @@
         .empty-cell:hover {
             background: #e8f0fd;
             color: #2d4874;
-        }
-
-        .action-cell {
-            background: #fef5e7;
-            padding: 8px;
         }
 
         .empty-action-cell {
@@ -765,8 +796,7 @@
 
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(135deg, #94a3b8, #64748b);
-        }
-    </style>
+        }    </style>
 </head>
 <body>
     <div class="container">
@@ -1417,7 +1447,7 @@ async function loadBookings() {
                         <td class="date-cell">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="4" onclick="quickBook('${dateStr}')">
-                            點擊快速預約
+                            點選此處 帶入預約日期
                         </td>
                         <td class="empty-action-cell"></td>
                     `;
@@ -1425,38 +1455,44 @@ async function loadBookings() {
                 } else {
                     dayBookings.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
                     
-                    dayBookings.forEach((booking, index) => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
-                            <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
-                            <td class="room-cell">${booking.room || '未知'}</td>
-                            <td class="organizer-cell">${booking.organizer || '未知'}</td>
-                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
-                                <div class="meeting-title">${booking.title || '無標題'}</div>
-                            </td>
-                            <td class="action-cell">
-                                <div class="action-buttons">
-                                    <div class="calendar-dropdown">
-                                        <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')">
-                                            日曆 ▼
-                                        </button>
-                                        <div class="calendar-menu" id="menu-${booking.id}">
-                                            <div class="calendar-option" onclick="addToGoogleCalendar('${booking.id}')">
-                                                Google 日曆
-                                            </div>
-                                            <div class="calendar-option" onclick="addToAppleCalendar('${booking.id}')">
-                                                Apple & Outlook 日曆
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button class="delete-btn" onclick="deleteBooking('${booking.id}', event)">刪除</button>
-                                </div>
-                            </td>
-                        `;
-                        scheduleBody.appendChild(row);
-                    });
+		dayBookings.forEach((booking, index) => {
+    const row = document.createElement('tr');
+    // 計算全域行數來決定顏色（跨日期交錯）
+    const globalRowIndex = scheduleBody.children.length;
+    const colorClass = globalRowIndex % 2 === 0 ? 'row-even' : 'row-odd';
+    
+    row.className = colorClass; // 為整行設定 class
+    
+    row.innerHTML = `
+        ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
+        ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
+        <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
+        <td class="room-cell">${booking.room || '未知'}</td>
+        <td class="organizer-cell">${booking.organizer || '未知'}</td>
+        <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
+            <div class="meeting-title">${booking.title || '無標題'}</div>
+        </td>
+        <td class="action-cell">
+            <div class="action-buttons">
+                <div class="calendar-dropdown">
+                    <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')">
+                        日曆 ▼
+                    </button>
+                    <div class="calendar-menu" id="menu-${booking.id}">
+                        <div class="calendar-option" onclick="addToGoogleCalendar('${booking.id}')">
+                            Google 日曆
+                        </div>
+                        <div class="calendar-option" onclick="addToAppleCalendar('${booking.id}')">
+                            Apple & Outlook 日曆
+                        </div>
+                    </div>
+                </div>
+                <button class="delete-btn" onclick="deleteBooking('${booking.id}', event)">刪除</button>
+            </div>
+        </td>
+    `;
+    scheduleBody.appendChild(row);
+});
                 }
             });
         }
