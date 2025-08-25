@@ -124,21 +124,40 @@
             padding: 12px;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 16px; /* 重要：防止手機縮放 */
             transition: all 0.3s ease;
             font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        /* 改進的日期選擇器樣式 */
+        .date-picker-container {
+            position: relative;
+            width: 100%;
         }
 
         .date-display {
             width: 100%;
-            padding: 12px;
+            padding: 12px 40px 12px 12px;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
-            font-size: 14px;
+            font-size: 16px; /* 重要：防止手機縮放 */
             font-family: inherit;
             background: white;
             cursor: pointer;
             text-align: left;
+            color: #2d3748;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            
+            /* 手機優化 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .date-display:focus {
@@ -147,8 +166,42 @@
             box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
+        .date-display:hover {
+            border-color: #2d4874;
+        }
+
+        .date-display.has-value {
+            color: #1a202c;
+            font-weight: 500;
+        }
+
+        .date-display.placeholder {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .date-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            pointer-events: none;
+            font-size: 18px;
+        }
+
         .hidden-input {
-            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            font-size: 16px; /* 重要：防止手機縮放 */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
         }
 
         .form-group select:focus,
@@ -184,7 +237,7 @@
             padding: 12px 24px;
             border-radius: 10px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 600;
             transition: all 0.3s ease;
             width: 100%;
@@ -646,6 +699,42 @@
             }
         }
 
+        /* 手機響應式優化 */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 10px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .sidebar {
+                padding: 20px 15px;
+            }
+            
+            .booking-form {
+                padding: 15px;
+            }
+            
+            .schedule-area {
+                padding: 15px;
+            }
+            
+            .current-week {
+                font-size: 1rem;
+                min-width: auto;
+            }
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -811,8 +900,11 @@
                     <div id="bookingForm">
                         <div class="form-group">
                             <label for="meetingDate">日期</label>
-                            <div class="date-display" id="dateDisplay" onclick="openDatePicker()">請選擇日期</div>
-                            <input type="date" id="meetingDate" class="hidden-input" onchange="updateDateDisplay()">
+                            <div class="date-picker-container">
+                                <div class="date-display placeholder" id="dateDisplay">請點擊選擇日期</div>
+                                <div class="date-icon">📅</div>
+                                <input type="date" id="meetingDate" class="hidden-input">
+                            </div>
                         </div>
                         
                         <div class="form-group">
@@ -888,7 +980,7 @@
 
             <div class="schedule-area">
                 <div class="schedule-header">
-                    <div class="date-nav">
+                                            <div class="date-nav">
                         <button onclick="changeWeek(-1)">◀</button>
                         <div class="current-week" id="currentWeek">本週</div>
                         <button onclick="changeWeek(1)">▶</button>
@@ -971,6 +1063,17 @@
         let supabaseClient = null;
         let realtimeSubscription = null;
         let pendingDeleteBooking = null; // 暫存待刪除的預約資訊
+
+        // 設備檢測
+        function detectDevice() {
+            const userAgent = navigator.userAgent;
+            return {
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent),
+                isIOS: /iPad|iPhone|iPod/.test(userAgent),
+                isAndroid: /Android/.test(userAgent),
+                touchSupport: 'ontouchstart' in window
+            };
+        }
 
         // 計算當前週的週一日期
         function getCurrentWeekStart() {
@@ -1094,8 +1197,6 @@
         }
 
         // 載入預約資料
-        // 修改 loadBookings() 使用累積載入而不是覆蓋
-// 修改 loadBookings() 函數，使用固定的基準點而不是當前週
 async function loadBookings() {
     if (!supabaseClient) {
         showModal('未連接', '資料庫連線尚未建立');
@@ -1234,8 +1335,6 @@ async function loadBookings() {
         }
 
         // 動態更新持續期間選項
-// 動態更新持續期間選項
-// 動態更新持續期間選項
 function updateRecurringPeriodOptions() {
     const recurringType = document.getElementById('recurringType').value;
     const recurringWeeksSelect = document.getElementById('recurringWeeks');
@@ -1613,40 +1712,109 @@ function updateRecurringPeriodOptions() {
             updateTodayButtonState();
         }
 
-        // 表單處理函數
-        function openDatePicker() {
-            const dateInput = document.getElementById('meetingDate');
+        // 改進的日期格式化函數
+        function formatDateDisplay(dateString) {
+            if (!dateString) return '請點擊選擇日期';
+            
             try {
-                if (dateInput.showPicker) {
-                    dateInput.showPicker();
-                } else {
-                    dateInput.click();
-                    dateInput.focus();
-                }
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return '請點擊選擇日期';
+                
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+                const dayName = dayNames[date.getDay()];
+                
+                return `${year}年${month}月${day}日 (${dayName})`;
             } catch (error) {
-                dateInput.click();
-                dateInput.focus();
+                console.error('日期格式化錯誤:', error);
+                return '請點擊選擇日期';
             }
         }
 
-        function formatDateDisplay(dateString) {
-            if (!dateString) return '請選擇日期';
-            const date = new Date(dateString);
-            const month = date.getMonth() + 1;
-            const day = date.getDate();
-            return `${month}月${day}日`;
-        }
-
+        // 改進的日期更新函數
         function updateDateDisplay() {
             const dateInput = document.getElementById('meetingDate');
             const dateDisplay = document.getElementById('dateDisplay');
-            dateDisplay.textContent = formatDateDisplay(dateInput.value);
+            
+            if (!dateInput || !dateDisplay) return;
+            
+            const formattedDate = formatDateDisplay(dateInput.value);
+            dateDisplay.textContent = formattedDate;
+            
+            // 更新樣式
+            if (dateInput.value) {
+                dateDisplay.classList.remove('placeholder');
+                dateDisplay.classList.add('has-value');
+            } else {
+                dateDisplay.classList.add('placeholder');
+                dateDisplay.classList.remove('has-value');
+            }
+            
+            // 如果是月模式且已勾選週期預約，更新說明
+            const recurringType = document.getElementById('recurringType');
+            const recurringCheckbox = document.getElementById('recurringBooking');
+            if (recurringType && recurringCheckbox && 
+                recurringType.value === 'monthly' && recurringCheckbox.checked) {
+                updateModeExplanation();
+            }
+            
+            console.log('日期已更新:', dateInput.value, '->', formattedDate);
+        }
+
+        // 改進的日期選擇器開啟函數
+        function openDatePicker() {
+            const dateInput = document.getElementById('meetingDate');
+            if (!dateInput) return;
+            
+            const device = detectDevice();
+            console.log('開啟日期選擇器, 設備:', device);
+            
+            try {
+                // 方法1: showPicker (支援的瀏覽器)
+                if (dateInput.showPicker) {
+                    console.log('使用 showPicker');
+                    dateInput.showPicker();
+                    return;
+                }
+            } catch (error) {
+                console.log('showPicker 失敗:', error.message);
+            }
+            
+            try {
+                // 方法2: 程式化點擊
+                console.log('使用程式化點擊');
+                dateInput.focus();
+                dateInput.click();
+                
+                // 手機額外處理
+                if (device.isMobile) {
+                    setTimeout(() => {
+                        dateInput.focus();
+                        if (device.isIOS) {
+                            // iOS 特殊處理
+                            const event = new Event('click', { bubbles: true });
+                            dateInput.dispatchEvent(event);
+                        }
+                    }, 50);
+                }
+            } catch (error) {
+                console.log('程式化點擊失敗:', error.message);
+            }
         }
 
         function quickBook(date) {
-            document.getElementById('meetingDate').value = date;
-            document.getElementById('dateDisplay').textContent = formatDateDisplay(date);
-            document.getElementById('meetingTitle').focus();
+            const dateInput = document.getElementById('meetingDate');
+            const dateDisplay = document.getElementById('dateDisplay');
+            
+            if (dateInput) dateInput.value = date;
+            if (dateDisplay) {
+                updateDateDisplay(); // 使用改進的更新函數
+            }
+            
+            const titleInput = document.getElementById('meetingTitle');
+            if (titleInput) titleInput.focus();
         }
 
         function showMeetingDetails(title, organizer, time, room, date) {
@@ -2018,18 +2186,6 @@ END:VCALENDAR`;
             }
         }
 
-        // 階段2：設備偵測
-        function detectDevice() {
-            const userAgent = navigator.userAgent;
-            return {
-                isIOS: /iPad|iPhone|iPod/.test(userAgent),
-                isMac: /Macintosh/.test(userAgent),
-                isAndroid: /Android/.test(userAgent),
-                isWindows: /Windows/.test(userAgent),
-                isAppleDevice: /iPad|iPhone|iPod|Macintosh/.test(userAgent)
-            };
-        }
-
         // 階段2：智慧提示訊息
         function showSmartNotification(message, type = 'info', duration = 3000) {
             const notification = document.createElement('div');
@@ -2191,7 +2347,7 @@ END:VCALENDAR`;
                 downloadICS(icsContent, filename);
                 
                 // 顯示智慧提示
-                if (device.isAppleDevice) {
+                if (device.isIOS) {
                     showSmartNotification('檔案已下載，請點擊檔案加入日曆', 'success', 5000);
                 } else if (device.isAndroid) {
                     showSmartNotification('檔案已下載，請用日曆 App 開啟', 'info', 5000);
@@ -2305,7 +2461,11 @@ function resetForm() {
         if (endTime) endTime.value = '';
         if (organizer) organizer.value = '';
         if (meetingDate) meetingDate.value = '';
-        if (dateDisplay) dateDisplay.textContent = '請選擇日期';
+        if (dateDisplay) {
+            dateDisplay.textContent = '請點擊選擇日期';
+            dateDisplay.classList.add('placeholder');
+            dateDisplay.classList.remove('has-value');
+        }
         
         // 重設週期預約選項
         const recurringCheckbox = document.getElementById('recurringBooking');
@@ -2574,22 +2734,7 @@ if (recurringTypeValue === 'weekly') {
         showModal('系統錯誤', `提交預約時發生未預期的錯誤：<br><strong>${error.message}</strong><br><br>請重新整理頁面後再試，或聯絡系統管理員。`);
     }
 }
-        function timeOverlap(start1, end1, start2, end2) {
-    const s1 = timeToMinutes(start1);
-    const e1 = timeToMinutes(end1);
-    const s2 = timeToMinutes(start2);
-    const e2 = timeToMinutes(end2);
-    
-    const overlap = s1 < e2 && s2 < e1;
-    
-    console.log('時間重疊檢測:', {
-        time1: `${start1}-${end1} (${s1}-${e1}分鐘)`,
-        time2: `${start2}-${end2} (${s2}-${e2}分鐘)`,
-        overlap: overlap
-    });
-    
-    return overlap;
-}
+
 // 時間轉換函數 - 將 HH:MM 格式轉換為分鐘數
 function timeToMinutes(timeStr) {
     if (!timeStr || typeof timeStr !== 'string') {
@@ -2610,77 +2755,6 @@ function timeToMinutes(timeStr) {
     
     console.warn('無法解析時間格式:', timeStr);
     return 0;
-}
-
-// 產生週期預約日期函數
-function generateRecurringDates(startDate, recurringType, weeks) {
-    const dates = [];
-    const baseDate = new Date(startDate);
-    
-    console.log(`產生週期日期 - 模式: ${recurringType}, 期間: ${weeks}週`);
-    
-    if (recurringType === 'weekly') {
-        // 每週邏輯
-        for (let i = 0; i < weeks; i++) {
-            const nextDate = new Date(baseDate);
-            nextDate.setDate(baseDate.getDate() + (i * 7));
-            dates.push(formatDate(nextDate));
-        }
-    } else if (recurringType === 'monthly') {
-        // 每月邏輯 - 使用相對週日模式
-        const totalMonths = Math.round(weeks / 4.33); // 將週數轉換為大概的月數
-        
-        for (let i = 0; i < totalMonths; i++) {
-            // 使用相對週日模式：每月第N個週X
-            const nextDate = calculateRelativeWeeklyDate(baseDate, i);
-            dates.push(formatDate(nextDate));
-            console.log(`月份 ${i}: ${nextDate.toDateString()}`);
-        }
-    }
-    
-    console.log(`總共產生 ${dates.length} 個日期:`, dates);
-    return dates;
-}
-
-// 相對週日日期計算
-function calculateRelativeWeeklyDate(baseDate, monthsToAdd) {
-    // 計算是第幾週的週幾
-    const weekOfMonth = Math.ceil(baseDate.getDate() / 7);
-    const dayOfWeek = baseDate.getDay();
-    
-    console.log(`基準日期 ${baseDate.toDateString()}: 第${weekOfMonth}週的週${dayOfWeek}`);
-    
-    // 計算目標月份
-    const targetDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + monthsToAdd, 1);
-    
-    // 找到該月第1個指定週幾的日期
-    const firstWeekday = targetDate.getDay();
-    const daysToFirstTarget = (dayOfWeek - firstWeekday + 7) % 7;
-    
-    // 計算第N個指定週幾的日期
-    const targetDay = 1 + daysToFirstTarget + (weekOfMonth - 1) * 7;
-    
-    // 檢查該日期是否存在於該月
-    const lastDayOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate();
-    
-    if (targetDay <= lastDayOfMonth) {
-        targetDate.setDate(targetDay);
-        return targetDate;
-    } else {
-        // 如果該月沒有第N個週X，回到上一週
-        const fallbackDay = targetDay - 7;
-        targetDate.setDate(fallbackDay);
-        console.log(`該月沒有第${weekOfMonth}週${dayOfWeek}，調整為第${weekOfMonth-1}週`);
-        return targetDate;
-    }
-}
-
-// 日期格式化函數
-function formatDate(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
 }
 
 // 產生週期預約日期函數
@@ -2720,6 +2794,7 @@ function generateRecurringDates(startDate, recurringType, weeks) {
     console.log(`總共產生 ${dates.length} 個日期:`, dates);
     return dates;
 }
+
         function getCurrentUser() {
             return document.getElementById('organizer').value || '系統';
         }
@@ -2773,7 +2848,7 @@ function generateRecurringDates(startDate, recurringType, weeks) {
 
         // 事件監聽器設定
         function setupEventListeners() {
-            // 日期變更監聽
+            // 基本事件
             document.getElementById('meetingDate').addEventListener('change', updateDateDisplay);
             
             // 開始時間變更，自動設定結束時間
@@ -2828,25 +2903,6 @@ function generateRecurringDates(startDate, recurringType, weeks) {
                 });
             }
             
-            // 日期變更時更新模式說明
-            const meetingDateInput = document.getElementById('meetingDate');
-            if (meetingDateInput) {
-                const originalUpdateDateDisplay = () => {
-                    const dateInput = document.getElementById('meetingDate');
-                    const dateDisplay = document.getElementById('dateDisplay');
-                    dateDisplay.textContent = formatDateDisplay(dateInput.value);
-                    
-                    // 如果是月模式且已勾選週期預約，更新說明
-                    const recurringType = document.getElementById('recurringType').value;
-                    if (recurringType === 'monthly' && document.getElementById('recurringBooking').checked) {
-                        updateModeExplanation();
-                    }
-                };
-                
-                meetingDateInput.removeEventListener('change', updateDateDisplay);
-                meetingDateInput.addEventListener('change', originalUpdateDateDisplay);
-            }
-            
             // 模態框關閉監聽
             const closeBtn = document.querySelector('.close');
             if (closeBtn) {
@@ -2875,7 +2931,77 @@ function generateRecurringDates(startDate, recurringType, weeks) {
                 }
             });
             
-            console.log('所有事件監聽器已設定完成');
+            console.log('基本事件監聽器已設定完成');
+        }
+
+        // 設定額外的日期相關事件監聽器
+        function setupAdditionalDateEvents() {
+            const dateInput = document.getElementById('meetingDate');
+            const dateDisplay = document.getElementById('dateDisplay');
+            const dateContainer = document.querySelector('.date-picker-container');
+            
+            if (!dateInput || !dateDisplay || !dateContainer) {
+                console.warn('找不到日期相關元素');
+                return;
+            }
+            
+            // 日期輸入變更事件
+            dateInput.addEventListener('input', updateDateDisplay);
+            
+            // 點擊顯示區域開啟選擇器
+            dateDisplay.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('點擊日期顯示區域');
+                openDatePicker();
+            });
+            
+            // 容器點擊事件
+            dateContainer.addEventListener('click', function(e) {
+                if (e.target !== dateDisplay) {
+                    console.log('點擊日期容器');
+                    openDatePicker();
+                }
+            });
+            
+            // 鍵盤支援
+            dateDisplay.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    console.log('鍵盤觸發日期選擇器');
+                    openDatePicker();
+                }
+            });
+            
+            // 觸控事件（移動設備）
+            let touchStartTime = 0;
+            
+            dateDisplay.addEventListener('touchstart', function(e) {
+                touchStartTime = Date.now();
+                console.log('觸控開始');
+            }, { passive: true });
+            
+            dateDisplay.addEventListener('touchend', function(e) {
+                const touchDuration = Date.now() - touchStartTime;
+                if (touchDuration < 500) {
+                    e.preventDefault();
+                    console.log('短觸控觸發日期選擇器');
+                    openDatePicker();
+                }
+            });
+            
+            // 焦點視覺反饋
+            dateInput.addEventListener('focus', function() {
+                console.log('日期輸入獲得焦點');
+                dateDisplay.style.borderColor = '#2d4874';
+            });
+            
+            dateInput.addEventListener('blur', function() {
+                console.log('日期輸入失去焦點');
+                dateDisplay.style.borderColor = '#e2e8f0';
+            });
+            
+            console.log('日期相關事件監聽器已設定');
         }
 
         // 初始化函數
@@ -2884,6 +3010,7 @@ function generateRecurringDates(startDate, recurringType, weeks) {
             
             initializeTimeSelects();
             setupEventListeners();
+            setupAdditionalDateEvents(); // 設定日期相關事件
             
             // 更新週別顯示
             updateWeekDisplay();
