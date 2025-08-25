@@ -129,7 +129,7 @@
             font-family: inherit;
         }
 
-        .date-display {
+.date-display {
             width: 100%;
             padding: 12px;
             border: 2px solid #e2e8f0;
@@ -148,7 +148,29 @@
         }
 
         .hidden-input {
-            display: none;
+            opacity: 0;
+            position: absolute;
+            left: -9999px;
+            width: 1px;
+            height: 1px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 手機優化 */
+        @media (max-width: 768px) {
+            .date-display {
+                font-size: 16px; /* 防止 iOS Safari 自動縮放 */
+                min-height: 44px; /* iOS 建議的最小觸控目標 */
+                -webkit-appearance: none; /* 移除 iOS 預設樣式 */
+                border-radius: 10px;
+            }
+            
+            .date-display:focus {
+                /* 防止 iOS 的藍色外框 */
+                outline: none;
+                -webkit-tap-highlight-color: transparent;
+            }
         }
 
         .form-group select:focus,
@@ -1614,18 +1636,58 @@ function updateRecurringPeriodOptions() {
         }
 
         // 表單處理函數
+        // 表單處理函數
         function openDatePicker() {
             const dateInput = document.getElementById('meetingDate');
-            try {
-                if (dateInput.showPicker) {
-                    dateInput.showPicker();
-                } else {
+            
+            // 檢測是否為手機裝置
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // 手機裝置：直接觸發 input 的點擊和聚焦
+                dateInput.style.opacity = '1';
+                dateInput.style.position = 'absolute';
+                dateInput.style.left = '0';
+                dateInput.style.top = '0';
+                dateInput.style.width = '100%';
+                dateInput.style.height = '100%';
+                dateInput.style.zIndex = '999';
+                
+                dateInput.click();
+                dateInput.focus();
+                
+                // 當選擇完成後隱藏真實的 input
+                dateInput.addEventListener('change', function() {
+                    dateInput.style.opacity = '0';
+                    dateInput.style.position = 'absolute';
+                    dateInput.style.left = '-9999px';
+                    dateInput.style.zIndex = '-1';
+                }, { once: true });
+                
+                // 當失去焦點時也隱藏
+                dateInput.addEventListener('blur', function() {
+                    setTimeout(() => {
+                        dateInput.style.opacity = '0';
+                        dateInput.style.position = 'absolute';
+                        dateInput.style.left = '-9999px';
+                        dateInput.style.zIndex = '-1';
+                    }, 100);
+                }, { once: true });
+                
+            } else {
+                // 桌面裝置：嘗試使用 showPicker API
+                try {
+                    if (dateInput.showPicker) {
+                        dateInput.showPicker();
+                    } else {
+                        dateInput.click();
+                        dateInput.focus();
+                    }
+                } catch (error) {
+                    console.log('showPicker 不支援，使用 click 方法');
                     dateInput.click();
                     dateInput.focus();
                 }
-            } catch (error) {
-                dateInput.click();
-                dateInput.focus();
             }
         }
 
