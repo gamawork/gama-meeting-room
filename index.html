@@ -2133,6 +2133,7 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
 VERSION:2.0
 PRODID:-//Gama//會議室預約系統//TW
 CALSCALE:GREGORIAN
+METHOD:PUBLISH
 BEGIN:VEVENT
 UID:${booking.id}@gama-booking.com
 DTSTAMP:${nowFormatted}
@@ -2162,7 +2163,7 @@ END:VCALENDAR`;
         function downloadICS(icsContent, filename) {
             try {
                 // 建立 Blob 物件
-                const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+                const blob = new Blob([icsContent], { type: 'text/calendar' });
                 
                 // 建立下載連結
                 const url = URL.createObjectURL(blob);
