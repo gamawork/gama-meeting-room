@@ -4580,10 +4580,10 @@ function buildBookingDetailMessage(booking, prefixHtml = '') {
         lines.push('');
     }
 
-    lines.push(`📋 <strong>會議主題：</strong>${booking.title || '無標題'}`);
+    lines.push(`<strong>會議主題：</strong>${booking.title || '無標題'}`);
 
     if (booking.date) {
-        lines.push(`📅 <strong>日期：</strong>${booking.date}`);
+        lines.push(`<strong>日期：</strong>${booking.date}`);
     }
 
     const formattedStartTime = booking.startTime ? formatTimeDisplay(booking.startTime) : '';
@@ -4593,14 +4593,14 @@ function buildBookingDetailMessage(booking, prefixHtml = '') {
         : (formattedStartTime || formattedEndTime);
 
     if (timeRange) {
-        lines.push(`⏰ <strong>時間：</strong>${timeRange}`);
+        lines.push(`<strong>時間：</strong>${timeRange}`);
     }
 
-    lines.push(`🏢 <strong>地點：</strong>${booking.room || '未知'}`);
-    lines.push(`👤 <strong>登記者：</strong>${booking.organizer || '未知'}`);
+    lines.push(`<strong>地點：</strong>${booking.room || '未知'}`);
+    lines.push(`<strong>登記者：</strong>${booking.organizer || '未知'}`);
 
     if (booking.attendees) {
-        lines.push(`👥 <strong>與會者：</strong>${booking.attendees}`);
+        lines.push(`<strong>與會者：</strong>${booking.attendees}`);
     }
 
     return lines.join('<br>');
