@@ -35,6 +35,20 @@ alter table public.bookings
 add column if not exists attendees text;
 ```
 
+## Git 帳號
+
+- Git user.name：`gamawork`
+- Git user.email：`gamawork2025@gmail.com`
+- Remote：`https://github.com/gamawork/gama-meeting-room.git`
+- 個人帳號 `ryanchen945` 無 push 權限，操作前確認身分：
+
+```bash
+git config user.name "gamawork"
+git config user.email "gamawork2025@gmail.com"
+```
+
+- 若遇到 403，清除 Windows 憑證管理員中 `github.com` 的記錄後重新登入。
+
 ## 發生亂碼時的處理
 
 - 不要直接在壞掉的檔案上繼續修字串。
