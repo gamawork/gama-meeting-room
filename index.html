@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -414,6 +414,10 @@
             background: #f7fafc;
         }
 
+        .today-date-cell {
+            border-left: 4px solid #86efac !important;
+        }
+
         .date-cell {
             background: #f0fff4;
             font-weight: 600;
@@ -438,7 +442,8 @@
             color: #2d3748;
         }
 
-        .organizer-cell {
+        .organizer-cell,
+        .attendees-cell {
             font-weight: 600;
             color: #2d3748;
         }
@@ -465,6 +470,7 @@
         .row-even .time-cell,
         .row-even .room-cell,
         .row-even .organizer-cell,
+        .row-even .attendees-cell,
         .row-even .meeting-cell,
         .row-even .action-cell {
                  background: #fef5e7; /* 跟原本時間欄位一樣的黃色 */
@@ -478,6 +484,7 @@
 	.row-odd .time-cell,
 	.row-odd .room-cell,
 	.row-odd .organizer-cell,
+	.row-odd .attendees-cell,
 	.row-odd .meeting-cell,
 	.row-odd .action-cell {
     		background: #dbeafe; /* 淡藍色 */
@@ -491,6 +498,7 @@
         .row-even .time-cell:hover,
         .row-even .room-cell:hover,
         .row-even .organizer-cell:hover,
+        .row-even .attendees-cell:hover,
         .row-even .meeting-cell:hover,
         .row-even .action-cell:hover {
             background: #fed7aa; /* 較深的黃色 */
@@ -501,6 +509,7 @@
         .row-odd .time-cell:hover,
         .row-odd .room-cell:hover,
         .row-odd .organizer-cell:hover,
+        .row-odd .attendees-cell:hover,
         .row-odd .meeting-cell:hover,
         .row-odd .action-cell:hover {
             background: #bfdbfe; /* 較深的藍色 */
@@ -595,14 +604,16 @@
             background: #28a745;
             color: white;
             border: none;
-            padding: 6px 10px;
-            border-radius: 5px;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
             transition: all 0.3s ease;
-            margin-right: 5px;
             position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .calendar-btn-dropdown:hover:not(:disabled) {
@@ -622,12 +633,15 @@
             background: #dc3545;
             color: white;
             border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .delete-btn:hover:not(:disabled) {
@@ -778,13 +792,15 @@
             background: #17a2b8;
             color: white;
             border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
             transition: all 0.3s ease;
-            margin-right: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .edit-btn:hover:not(:disabled) {
@@ -979,6 +995,40 @@
         .modal-message {
             margin-bottom: 30px;
             line-height: 1.6;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .modal-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid #d4dceb;
+            border-radius: 999px;
+            background: #f8f9fe;
+            color: #2d4874;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-action-btn:hover {
+            background: #2d4874;
+            color: white;
+            border-color: #2d4874;
+        }
+
+        .modal-action-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
         }
 
         .close {
@@ -1357,13 +1407,15 @@
     background: #d2b48c;
     color: white;
     border: none;
-    padding: 6px 12px;
-    border-radius: 5px;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 12px;
-    font-weight: 600;
     transition: all 0.3s ease;
-    margin-right: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .copy-btn:hover:not(:disabled) {
@@ -1377,6 +1429,15 @@
     background: #6c757d;
     transform: none;
     box-shadow: none;
+}
+
+.calendar-btn-dropdown svg,
+.copy-btn svg,
+.edit-btn svg,
+.delete-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
 }
 /* 手機端懸浮新增按鈕 - 終極修正版 */
 .floating-add-btn {
@@ -1489,13 +1550,14 @@
                     <table class="schedule-table">
                         <thead>
                             <tr>
-                                <th width="60">日期</th>
-                                <th width="60">星期</th>
-                                <th width="110">時間</th>
-                                <th width="100">會議地點</th>
+                                <th width="50">日期</th>
+                                <th width="50">星期</th>
+                                <th width="100">時間</th>
+                                <th width="90">會議地點</th>
                                 <th width="80">登記者</th>
-                                <th width="350">會議主題</th>
-                                <th width="200">動作</th>
+                                <th width="200">與會者</th>
+                                <th width="250">會議主題</th>
+                                <th width="140">動作</th>
                             </tr>
                         </thead>
                         <tbody id="scheduleBody">
@@ -1553,6 +1615,12 @@
                         <div class="form-group">
                             <label for="organizer">登記者</label>
                             <input type="text" id="organizer" placeholder="請輸入登記者姓名">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="attendees">與會者（選填）</label>
+                            <input type="text" id="attendees" maxlength="80" placeholder="請輸入與會者，多位可用逗號分隔">
+                            <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">最多 80 字</div>
                         </div>
                         
                         <div class="form-group">
@@ -1681,11 +1749,9 @@
             }
 
             // 顯示載入狀態
-            const editBtn = event?.target;
-            const originalText = editBtn?.textContent;
+            const editBtn = event?.target?.closest?.('button');
             if (editBtn) {
                 editBtn.disabled = true;
-                editBtn.textContent = '檢測中...';
                 editBtn.style.opacity = '0.6';
             }
 
@@ -1696,7 +1762,6 @@
                 // 恢復按鈕狀態
                 if (editBtn) {
                     editBtn.disabled = false;
-                    editBtn.textContent = originalText;
                     editBtn.style.opacity = '1';
                 }
                 
@@ -1713,7 +1778,6 @@
                 // 恢復按鈕狀態
                 if (editBtn) {
                     editBtn.disabled = false;
-                    editBtn.textContent = originalText;
                     editBtn.style.opacity = '1';
                 }
                 
@@ -1815,6 +1879,7 @@ function copyBooking(bookingId, event) {
     document.getElementById('meetingTitle').value = booking.title || '';
     document.getElementById('meetingRoom').value = booking.room || '';
     document.getElementById('organizer').value = booking.organizer || '';
+    document.getElementById('attendees').value = booking.attendees || '';
     
     // 設定時間選項（重用現有函數）
     setTimeSelectValue('startTime', booking.startTime);
@@ -1884,6 +1949,7 @@ function openEditForm(booking, mode = 'single', futureBookings = []) {
 	document.getElementById('meetingRoom').value = booking.room || '';
 	document.getElementById('meetingDate').value = booking.date || '';
 	document.getElementById('organizer').value = booking.organizer || '';
+	document.getElementById('attendees').value = booking.attendees || '';
 
 	// 特殊處理時間選項
 	setTimeSelectValue('startTime', booking.startTime);
@@ -2182,7 +2248,8 @@ async function loadBookings() {
                         start_time: booking.startTime,
                         end_time: booking.endTime,
                         title: booking.title,
-                        organizer: booking.organizer
+                        organizer: booking.organizer,
+                        attendees: booking.attendees || null
                     }])
                     .select();
                 
@@ -2238,7 +2305,8 @@ async function loadBookings() {
                 startTime: dbRecord.start_time,
                 endTime: dbRecord.end_time,
                 title: dbRecord.title,
-                organizer: dbRecord.organizer
+                organizer: dbRecord.organizer,
+                attendees: dbRecord.attendees || ''
             };
         }
 
@@ -2473,6 +2541,7 @@ function setTimeSelectValue(selectId, timeValue) {
             weekDates.forEach((date, dayIndex) => {
                 const dateStr = formatDate(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
+                const isToday = dateStr === formatDate(new Date());
                 
                 // 決定該天的顏色類別
                 const colorClass = dayIndex % 2 === 0 ? 'row-even' : 'row-odd';
@@ -2485,9 +2554,9 @@ function setTimeSelectValue(selectId, timeValue) {
                     const row = document.createElement('tr');
                     row.className = `${colorClass} day-separator`; // 空行也要有分隔線
                     row.innerHTML = `
-                        <td class="date-cell">${shortDateDisplay}</td>
+                        <td class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
-                        <td class="empty-cell" colspan="4" onclick="quickBook('${dateStr}')">
+                        <td class="empty-cell" colspan="5" onclick="quickBook('${dateStr}')">
                             點選此處 帶入預約日期
                         </td>
                         <td class="empty-action-cell"></td>
@@ -2506,20 +2575,19 @@ function setTimeSelectValue(selectId, timeValue) {
                         }
                         
                         row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
                             <td class="room-cell">${booking.room || '未知'}</td>
                             <td class="organizer-cell">${booking.organizer || '未知'}</td>
-                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}')">
+                            <td class="attendees-cell">${booking.attendees || '—'}</td>
+                            <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}', '${booking.attendees || ''}')">
                                 <div class="meeting-title">${booking.title || '無標題'}</div>
                             </td>
                             <td class="action-cell">
     				<div class="action-buttons">
         			<div class="calendar-dropdown">
-           			 <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')">
-              			  日曆 ▼
-           			 </button>
+           			 <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')" aria-label="日曆" title="日曆"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path></svg></button>
            			 <div class="calendar-menu" id="menu-${booking.id}">
              			   <div class="calendar-option" onclick="addToGoogleCalendar('${booking.id}')">
                 		 Google 日曆
@@ -2529,9 +2597,9 @@ function setTimeSelectValue(selectId, timeValue) {
                 		 </div>
            			 </div>
        				 </div>
-        			<button class="copy-btn" onclick="copyBooking('${booking.id}', event)">複製</button>
-        			<button class="edit-btn" onclick="editBooking('${booking.id}', event)">編輯</button>
-        			<button class="delete-btn" onclick="deleteBooking('${booking.id}', event)">刪除</button>
+        			<button class="copy-btn" onclick="copyBooking('${booking.id}', event)" aria-label="複製" title="複製"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+        			<button class="edit-btn" onclick="editBooking('${booking.id}', event)" aria-label="編輯" title="編輯"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z"></path><path d="m15 5 4 4"></path></svg></button>
+        			<button class="delete-btn" onclick="deleteBooking('${booking.id}', event)" aria-label="刪除" title="刪除"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></button>
    			   </div>
 			   </td>
                         `;
@@ -2733,13 +2801,19 @@ function setTimeSelectValue(selectId, timeValue) {
             if (titleInput) titleInput.focus();
         }
 
-        function showMeetingDetails(title, organizer, time, room, date) {
-            showModal('會議詳情', `
-                <strong>會議主題:</strong> ${title}<br>
-                <strong>時間:</strong> ${date} ${time}<br>
-                <strong>地點:</strong> ${room}<br>
-                <strong>登記者:</strong> ${organizer}
-            `);
+        function showMeetingDetails(title, organizer, time, room, date, attendees = '') {
+            const [rawStartTime = '', rawEndTime = ''] = String(time || '').split('-');
+            const detailMessage = buildBookingDetailMessage({
+                title,
+                date,
+                startTime: rawStartTime,
+                endTime: rawEndTime,
+                room,
+                organizer,
+                attendees
+            });
+
+            showModal('會議詳情', detailMessage, null, { enableActions: true });
         }
 
         // 偵測週期預約 (直接查詢資料庫版本)
@@ -2853,11 +2927,9 @@ async function deleteBooking(bookingId, event) {
     }
 
     // 顯示載入狀態
-    const deleteBtn = event?.target;
-    const originalText = deleteBtn?.textContent;
+    const deleteBtn = event?.target?.closest?.('button');
     if (deleteBtn) {
         deleteBtn.disabled = true;
-        deleteBtn.textContent = '檢測中...';
         deleteBtn.style.opacity = '0.6';
     }
 
@@ -2868,7 +2940,6 @@ async function deleteBooking(bookingId, event) {
         // 恢復按鈕狀態
         if (deleteBtn) {
             deleteBtn.disabled = false;
-            deleteBtn.textContent = originalText;
             deleteBtn.style.opacity = '1';
         }
         
@@ -2885,7 +2956,6 @@ async function deleteBooking(bookingId, event) {
         // 恢復按鈕狀態
         if (deleteBtn) {
             deleteBtn.disabled = false;
-            deleteBtn.textContent = originalText;
             deleteBtn.style.opacity = '1';
         }
         
@@ -2953,11 +3023,8 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
 
         // 執行刪除操作
         async function performDelete(bookingIds, deleteBtn = null) {
-            // 設定按鈕狀態
-            const originalText = deleteBtn?.textContent;
             if (deleteBtn) {
                 deleteBtn.disabled = true;
-                deleteBtn.textContent = '刪除中...';
                 deleteBtn.style.opacity = '0.6';
             }
             
@@ -2993,7 +3060,6 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
                 // 恢復按鈕狀態
                 if (deleteBtn) {
                     deleteBtn.disabled = false;
-                    deleteBtn.textContent = originalText;
                     deleteBtn.style.opacity = '1';
                 }
             } finally {
@@ -3532,12 +3598,15 @@ function generateICSRRULE(recurringInfo) {
         }
 // 顯示詳細刪除確認對話框
 function showDetailedDeleteConfirm(booking) {
-    const message = `
-        <strong>會議主題：</strong>${booking.title || '無標題'}<br>
-        <strong>時間：</strong>${booking.date} ${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}<br>
-        <strong>地點：</strong>${booking.room || '未知'}<br>
-        <strong>登記者：</strong>${booking.organizer || '未知'}
-    `;
+    const message = buildBookingDetailMessage({
+        title: booking.title,
+        date: booking.date,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        room: booking.room,
+        organizer: booking.organizer,
+        attendees: booking.attendees
+    });
     
     showModal('會議詳情', message, () => {
         // 確認刪除回調
@@ -3747,6 +3816,7 @@ async function updatePartialSeriesBookings(bookingsToUpdate) {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const organizer = document.getElementById('organizer').value.trim();
+        const attendees = document.getElementById('attendees').value.trim();
         
         let successCount = 0;
         let failedCount = 0;
@@ -3760,7 +3830,8 @@ async function updatePartialSeriesBookings(bookingsToUpdate) {
                         room: room,
                         start_time: startTime,
                         end_time: endTime,
-                        organizer: organizer
+                        organizer: organizer,
+                        attendees: attendees || null
                     })
                     .eq('id', booking.id);
                 
@@ -3778,19 +3849,28 @@ async function updatePartialSeriesBookings(bookingsToUpdate) {
         }
         
         const skippedCount = futureBookingsToEdit.length - bookingsToUpdate.length;
-        let message = `部分更新完成<br><br>`;
-        message += `會議主題：${title}<br>`;
-        message += `地點：${room}<br>`;
-        message += `時間：${startTime}-${endTime}<br>`;
-        message += `登記者：${organizer}<br><br>`;
-        message += `成功更新：${successCount} 個預約<br>`;
-        message += `跳過衝突：${skippedCount} 個預約<br>`;
-        
+        const detailLines = [
+            `✅ <strong>成功更新：</strong>${successCount} 個預約`,
+            `⏭️ <strong>跳過衝突：</strong>${skippedCount} 個預約`
+        ];
+
         if (failedCount > 0) {
-            message += `更新失敗：${failedCount} 個預約<br>`;
+            detailLines.push(`⚠️ <strong>更新失敗：</strong>${failedCount} 個預約`);
         }
-        
-        showModal('部分更新完成', message);
+
+        const message = appendMessageDetails(
+            buildBookingDetailMessage({
+                title,
+                startTime,
+                endTime,
+                room,
+                organizer,
+                attendees
+            }, `✅ <strong>部分更新完成！</strong>`),
+            detailLines
+        );
+
+        showModal('部分更新完成', message, null, { enableActions: true });
         cancelEdit();
         setTimeout(() => loadBookings(), 1000);
         
@@ -3866,6 +3946,7 @@ function resetForm() {
         const startTime = document.getElementById('startTime');
         const endTime = document.getElementById('endTime');
         const organizer = document.getElementById('organizer');
+        const attendees = document.getElementById('attendees');
         const meetingDate = document.getElementById('meetingDate');
         const dateDisplay = document.getElementById('dateDisplay');
         
@@ -3874,6 +3955,7 @@ function resetForm() {
         if (startTime) startTime.value = '';
         if (endTime) endTime.value = '';
         if (organizer) organizer.value = '';
+        if (attendees) attendees.value = '';
         if (meetingDate) meetingDate.value = '';
         if (dateDisplay) {
             dateDisplay.textContent = '請點擊選擇日期';
@@ -3956,11 +4038,12 @@ async function submitBooking() {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const organizer = document.getElementById('organizer').value.trim();
+        const attendees = document.getElementById('attendees').value.trim();
         const isRecurring = document.getElementById('recurringBooking').checked;
         const recurringType = document.getElementById('recurringType').value;
         const recurringWeeks = parseInt(document.getElementById('recurringWeeks').value);
         
-        console.log('表單資料:', { title, room, date, startTime, endTime, organizer, isRecurring, recurringType, recurringWeeks });
+        console.log('表單資料:', { title, room, date, startTime, endTime, organizer, attendees, isRecurring, recurringType, recurringWeeks });
         
         // 驗證必填欄位
         if (!title) { 
@@ -4047,7 +4130,8 @@ async function submitBooking() {
                     startTime: startTime,
                     endTime: endTime,
                     title: title,
-                    organizer: organizer
+                    organizer: organizer,
+                    attendees: attendees
                 };
                 
                 const success = await saveBooking(booking);
@@ -4125,6 +4209,9 @@ if (recurringTypeValue === 'weekly') {
                 successMessage += `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>`;
                 successMessage += `🏢 <strong>地點：</strong>${room}<br>`;
                 successMessage += `👤 <strong>登記者：</strong>${organizer}<br>`;
+                if (attendees) {
+                    successMessage += `👥 <strong>與會者：</strong>${attendees}<br>`;
+                }
 		let frequencyText;
 		if (recurringType === 'weekly') {
     			frequencyText = '每週';
@@ -4142,15 +4229,18 @@ if (recurringTypeValue === 'weekly') {
                     successMessage += `<br><br>⚠️ <strong>部分日期預約失敗：</strong><br>${failedDates.join(', ')}`;
                 }
             } else {
-                successMessage = `✅ <strong>預約成功！</strong><br><br>`;
-                successMessage += `📋 <strong>會議主題：</strong>${title}<br>`;
-                successMessage += `📅 <strong>日期：</strong>${date}<br>`;
-                successMessage += `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>`;
-                successMessage += `🏢 <strong>地點：</strong>${room}<br>`;
-                successMessage += `👤 <strong>登記者：</strong>${organizer}`;
+                successMessage = buildBookingDetailMessage({
+                    title,
+                    date,
+                    startTime,
+                    endTime,
+                    room,
+                    organizer,
+                    attendees
+                }, `✅ <strong>預約成功！</strong>`);
             }
             
-            showModal('預約成功！', successMessage);
+            showModal('預約成功！', successMessage, null, { enableActions: true });
             resetForm();
             
             // 重新載入資料以確保同步
@@ -4236,8 +4326,9 @@ async function updateBooking() {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const organizer = document.getElementById('organizer').value.trim();
+        const attendees = document.getElementById('attendees').value.trim();
         
-        console.log('開始更新預約:', { title, room, date, startTime, endTime, organizer, editMode });
+        console.log('開始更新預約:', { title, room, date, startTime, endTime, organizer, attendees, editMode });
         
         // 基本驗證
         if (!title || !room || !date || !startTime || !endTime || !organizer) {
@@ -4269,7 +4360,7 @@ async function updateBooking() {
                     return;
                 }
                 
-                await updateSingleBooking(title, room, date, startTime, endTime, organizer);
+                await updateSingleBooking(title, room, date, startTime, endTime, organizer, attendees);
                 
             } else if (editMode === 'series') {
                 // 系列編輯衝突檢查
@@ -4290,7 +4381,7 @@ async function updateBooking() {
                     return;
                 }
                 
-                await updateSeriesBookings(title, room, startTime, endTime, organizer);
+                await updateSeriesBookings(title, room, startTime, endTime, organizer, attendees);
             }
             
         } catch (error) {
@@ -4308,7 +4399,7 @@ async function updateBooking() {
 
 
         // 單次更新
-        async function updateSingleBooking(title, room, date, startTime, endTime, organizer) {
+        async function updateSingleBooking(title, room, date, startTime, endTime, organizer, attendees = '') {
             const { error } = await supabaseClient
                 .from('bookings')
                 .update({
@@ -4317,19 +4408,30 @@ async function updateBooking() {
                     date: date,
                     start_time: startTime,
                     end_time: endTime,
-                    organizer: organizer
+                    organizer: organizer,
+                    attendees: attendees || null
                 })
                 .eq('id', currentEditingBooking.id);
             
             if (error) throw error;
             
-            showModal('更新成功', `預約已成功更新！<br><br>📋 ${title}`);
+            const successMessage = buildBookingDetailMessage({
+                title,
+                date,
+                startTime,
+                endTime,
+                room,
+                organizer,
+                attendees
+            }, `✅ <strong>編輯成功！</strong>`);
+
+            showModal('更新成功', successMessage, null, { enableActions: true });
             cancelEdit();
             setTimeout(() => loadBookings(), 1000);
         }
 
        // 系列更新（修正版）
-        async function updateSeriesBookings(title, room, startTime, endTime, organizer) {
+        async function updateSeriesBookings(title, room, startTime, endTime, organizer, attendees = '') {
     // === 除錯資訊 ===
     console.log('=== 系列更新除錯 ===');
     console.log('1. futureBookingsToEdit:', futureBookingsToEdit);
@@ -4365,7 +4467,8 @@ async function updateBooking() {
                             room: room,
                             start_time: startTime,
                             end_time: endTime,
-                            organizer: organizer
+                            organizer: organizer,
+                            attendees: attendees || null
                             // 保持原有日期不變
                         })
                         .eq('id', booking.id);
@@ -4385,16 +4488,28 @@ async function updateBooking() {
             
             // 顯示結果
             if (successCount > 0) {
-                const message = failedCount > 0 ? 
-                    `✅ 成功更新 ${successCount} 個預約<br>❌ ${failedCount} 個預約更新失敗` :
-                    `✅ <strong>成功更新 ${successCount} 個預約！</strong><br><br>` +
-                    `📋 <strong>會議主題：</strong>${title}<br>` +
-                    `🏢 <strong>地點：</strong>${room}<br>` +
-                    `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>` +
-                    `👤 <strong>登記者：</strong>${organizer}<br><br>` +
-                    `📅 <strong>影響範圍：</strong>${futureBookingsToEdit[0]?.date} 至 ${futureBookingsToEdit[futureBookingsToEdit.length-1]?.date}`;
+                const detailLines = [
+                    `✅ <strong>成功更新：</strong>${successCount} 個預約`,
+                    `📅 <strong>影響範圍：</strong>${futureBookingsToEdit[0]?.date} 至 ${futureBookingsToEdit[futureBookingsToEdit.length-1]?.date}`
+                ];
+
+                if (failedCount > 0) {
+                    detailLines.push(`⚠️ <strong>更新失敗：</strong>${failedCount} 個預約`);
+                }
+
+                const message = appendMessageDetails(
+                    buildBookingDetailMessage({
+                        title,
+                        startTime,
+                        endTime,
+                        room,
+                        organizer,
+                        attendees
+                    }, `✅ <strong>批量更新完成！</strong>`),
+                    detailLines
+                );
                 
-                showModal('批量更新完成', message);
+                showModal('批量更新完成', message, null, { enableActions: true });
                 cancelEdit();
                 setTimeout(() => loadBookings(), 1000);
             } else {
@@ -4404,7 +4519,7 @@ async function updateBooking() {
 
         
 	// 通知函數 - 支持不同類型
-	function showNotification(message, type = 'success', duration = 3000) {
+function showNotification(message, type = 'success', duration = 3000) {
     	const notification = document.createElement('div');
    	 notification.style.cssText = `
        	 position: fixed;
@@ -4444,11 +4559,136 @@ async function updateBooking() {
     	setTimeout(() => {
       	  if (notification.parentNode) {
       	      notification.remove();
-      	  }
+    	 }
    	 }, duration);
 	}
+function htmlToPlainText(html) {
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    temp.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+    return temp.textContent
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        .replace(/[ \t]+\n/g, '\n')
+        .trim();
+}
+
+function buildBookingDetailMessage(booking, prefixHtml = '') {
+    const lines = [];
+
+    if (prefixHtml) {
+        lines.push(prefixHtml);
+        lines.push('');
+    }
+
+    lines.push(`📋 <strong>會議主題：</strong>${booking.title || '無標題'}`);
+
+    if (booking.date) {
+        lines.push(`📅 <strong>日期：</strong>${booking.date}`);
+    }
+
+    const formattedStartTime = booking.startTime ? formatTimeDisplay(booking.startTime) : '';
+    const formattedEndTime = booking.endTime ? formatTimeDisplay(booking.endTime) : '';
+    const timeRange = formattedStartTime && formattedEndTime
+        ? `${formattedStartTime}-${formattedEndTime}`
+        : (formattedStartTime || formattedEndTime);
+
+    if (timeRange) {
+        lines.push(`⏰ <strong>時間：</strong>${timeRange}`);
+    }
+
+    lines.push(`🏢 <strong>地點：</strong>${booking.room || '未知'}`);
+    lines.push(`👤 <strong>登記者：</strong>${booking.organizer || '未知'}`);
+
+    if (booking.attendees) {
+        lines.push(`👥 <strong>與會者：</strong>${booking.attendees}`);
+    }
+
+    return lines.join('<br>');
+}
+
+function appendMessageDetails(baseMessage, detailLines = []) {
+    const extras = detailLines.filter(Boolean);
+    return extras.length ? `${baseMessage}<br><br>${extras.join('<br>')}` : baseMessage;
+}
+
+async function copyModalContent(text) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.setAttribute('readonly', '');
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            textArea.remove();
+        }
+
+        showNotification('已複製視窗內容', 'success');
+    } catch (error) {
+        console.error('複製失敗:', error);
+        showNotification('複製失敗，請稍後再試', 'error');
+    }
+}
+
+function shareModalToLine(text) {
+    const encodedText = encodeURIComponent(text);
+    const lineAppUrl = `line://msg/text/${encodedText}`;
+    const lineWebUrl = `https://social-plugins.line.me/lineit/share?text=${encodedText}`;
+
+    let switchedApp = false;
+    const onVisibilityChange = () => {
+        if (document.hidden) {
+            switchedApp = true;
+        }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange, { once: true });
+
+    setTimeout(() => {
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        if (!switchedApp) {
+            window.open(lineWebUrl, '_blank', 'noopener,noreferrer');
+        }
+    }, 1200);
+
+    window.location.href = lineAppUrl;
+}
+
+function createModalActions(message, options = {}) {
+    const actionContainer = document.createElement('div');
+    actionContainer.className = 'modal-actions';
+
+    const plainText = (options.actionText || htmlToPlainText(message)).trim();
+    const lineText = options.lineShareText || plainText;
+
+    const shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.className = 'modal-action-btn';
+    shareBtn.setAttribute('aria-label', 'Share to LINE');
+    shareBtn.title = 'Share to LINE';
+    shareBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.59 13.51 15.42 17.49"></path><path d="M15.41 6.51 8.59 10.49"></path></svg>';
+    shareBtn.onclick = () => shareModalToLine(lineText);
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'modal-action-btn';
+    copyBtn.setAttribute('aria-label', '複製視窗內容');
+    copyBtn.title = '複製視窗內容';
+    copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+    copyBtn.onclick = () => copyModalContent(plainText);
+
+    actionContainer.appendChild(shareBtn);
+    actionContainer.appendChild(copyBtn);
+
+    return actionContainer;
+}
+
 // 模態框函數
-function showModal(title, message, onConfirm = null) {
+function showModal(title, message, onConfirm = null, options = {}) {
     const modal = document.getElementById('bookingModal');
     const modalTitle = document.querySelector('#bookingModal h3');
     const modalMessage = document.getElementById('modalMessage');
@@ -4460,6 +4700,8 @@ function showModal(title, message, onConfirm = null) {
     // 移除舊的按鈕
     const oldButtons = modalContent.querySelectorAll('.modal-buttons');
     oldButtons.forEach(btn => btn.remove());
+    const oldActions = modalContent.querySelectorAll('.modal-actions');
+    oldActions.forEach(action => action.remove());
     
     // 創建按鈕容器
     const buttonContainer = document.createElement('div');
@@ -4518,6 +4760,10 @@ function showModal(title, message, onConfirm = null) {
     }
     
     modalContent.appendChild(buttonContainer);
+
+    if (!onConfirm && options.enableActions) {
+        modalContent.appendChild(createModalActions(message, options));
+    }
     modal.style.display = 'block';
 }
         function closeModal() {
