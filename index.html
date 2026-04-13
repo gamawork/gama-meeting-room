@@ -415,7 +415,7 @@
         }
 
         .today-date-cell {
-            border-left: 4px solid #86efac !important;
+            border-left: none !important;
         }
 
         .date-cell {
@@ -4663,6 +4663,9 @@ function createModalActions(message, options = {}) {
     actionContainer.className = 'modal-actions';
 
     const plainText = (options.actionText || htmlToPlainText(message)).trim();
+    const copyText = plainText
+        .replace(/^(?:✅\s*)?(?:預約成功|編輯成功)[！!]\s*(?:\r?\n)*/u, '')
+        .trim() || plainText;
     const lineText = options.lineShareText || plainText;
 
     const shareBtn = document.createElement('button');
@@ -4679,7 +4682,7 @@ function createModalActions(message, options = {}) {
     copyBtn.setAttribute('aria-label', '複製視窗內容');
     copyBtn.title = '複製視窗內容';
     copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
-    copyBtn.onclick = () => copyModalContent(plainText);
+    copyBtn.onclick = () => copyModalContent(copyText);
 
     actionContainer.appendChild(shareBtn);
     actionContainer.appendChild(copyBtn);
