@@ -4204,30 +4204,38 @@ if (recurringTypeValue === 'weekly') {
         periodText = `${recurringWeeks}週`;
     }
 }                
-                successMessage = `✅ <strong>成功預約 ${successCount} 場週期會議！</strong><br><br>`;
-                successMessage += `📋 <strong>會議主題：</strong>${title}<br>`;
-                successMessage += `⏰ <strong>時間：</strong>${startTime}-${endTime}<br>`;
-                successMessage += `🏢 <strong>地點：</strong>${room}<br>`;
-                successMessage += `👤 <strong>登記者：</strong>${organizer}<br>`;
-                if (attendees) {
-                    successMessage += `👥 <strong>與會者：</strong>${attendees}<br>`;
+                let frequencyText;
+                if (recurringType === 'weekly') {
+                    frequencyText = '每週';
+                } else if (recurringType === 'biweekly') {
+                    frequencyText = '每雙週';
+                } else if (recurringType === 'monthly') {
+                    frequencyText = '每月';
+                } else {
+                    frequencyText = recurringType;
                 }
-		let frequencyText;
-		if (recurringType === 'weekly') {
-    			frequencyText = '每週';
-		} else if (recurringType === 'biweekly') {
-    			frequencyText = '每雙週';
-		} else if (recurringType === 'monthly') {
-    			frequencyText = '每月';
-		} else {
-    			frequencyText = recurringType;
-		}
-		successMessage += `🔁 <strong>頻率：</strong>${frequencyText}<br>`;
-                successMessage += `📅 <strong>期間：</strong>${periodText}`;
-                
+
+                const recurringDetailLines = [
+                    `<strong>頻率：</strong>${frequencyText}`,
+                    `<strong>期間：</strong>${periodText}`,
+                    `<strong>建立場次：</strong>${successCount} 場`
+                ];
+
                 if (failedDates.length > 0) {
-                    successMessage += `<br><br>⚠️ <strong>部分日期預約失敗：</strong><br>${failedDates.join(', ')}`;
+                    recurringDetailLines.push(`<strong>部分日期預約失敗：</strong>${failedDates.join(', ')}`);
                 }
+
+                successMessage = appendMessageDetails(
+                    buildBookingDetailMessage({
+                        title,
+                        startTime,
+                        endTime,
+                        room,
+                        organizer,
+                        attendees
+                    }),
+                    recurringDetailLines
+                );
             } else {
                 successMessage = buildBookingDetailMessage({
                     title,
@@ -4237,10 +4245,10 @@ if (recurringTypeValue === 'weekly') {
                     room,
                     organizer,
                     attendees
-                }, `✅ <strong>預約成功！</strong>`);
+                });
             }
             
-            showModal('預約成功！', successMessage, null, { enableActions: true });
+            showModal('會議詳情', successMessage, null, { enableActions: true });
             resetForm();
             
             // 重新載入資料以確保同步
@@ -4423,9 +4431,9 @@ async function updateBooking() {
                 room,
                 organizer,
                 attendees
-            }, `✅ <strong>編輯成功！</strong>`);
+            });
 
-            showModal('更新成功', successMessage, null, { enableActions: true });
+            showModal('會議詳情', successMessage, null, { enableActions: true });
             cancelEdit();
             setTimeout(() => loadBookings(), 1000);
         }
@@ -4664,7 +4672,7 @@ function createModalActions(message, options = {}) {
 
     const plainText = (options.actionText || htmlToPlainText(message)).trim();
     const copyText = plainText
-        .replace(/^(?:✅\s*)?(?:預約成功|編輯成功)[！!]\s*(?:\r?\n)*/u, '')
+        .replace(/^(?:(?:✅\s*)?(?:預約成功|編輯成功|更新成功|修改成功)[！!]\s*(?:\r?\n)*|(?:✅\s*)?成功預約\s*\d+\s*場週期會議[！!]\s*(?:\r?\n)*)+/u, '')
         .trim() || plainText;
     const lineText = options.lineShareText || plainText;
 
