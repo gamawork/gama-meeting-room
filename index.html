@@ -235,6 +235,177 @@
             box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
+        .attendees-picker {
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 6px 10px;
+            background: #fff;
+            min-height: 46px;
+            cursor: text;
+            transition: all 0.3s ease;
+        }
+
+        .attendees-picker:focus-within {
+            border-color: #2d4874;
+            box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
+        }
+
+        .attendees-selected {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .attendees-selected:empty {
+            margin-bottom: 0;
+        }
+
+        .attendee-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #eef2ff;
+            color: #1f2a44;
+            font-size: 13px;
+            line-height: 1.2;
+        }
+
+        .attendee-chip-remove {
+            border: none;
+            background: transparent;
+            color: #1f2a44;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .attendees-search-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            padding: 4px 2px;
+            font-family: inherit;
+            box-sizing: border-box;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        #attendeesSearch,
+        #attendeesSearch:focus {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+
+        .organizer-picker {
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 6px 10px;
+            background: #fff;
+            min-height: 46px;
+            cursor: text;
+            transition: all 0.3s ease;
+        }
+
+        .organizer-picker:focus-within {
+            border-color: #2d4874;
+            box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
+        }
+
+        .organizer-dropdown {
+            margin-top: 8px;
+            border: 1px solid #d8e0ed;
+            border-radius: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            background: #fff;
+            display: none;
+        }
+
+        .organizer-dropdown.open {
+            display: block;
+        }
+
+        .organizer-option {
+            width: 100%;
+            text-align: left;
+            border: none;
+            border-bottom: 1px solid #edf2f7;
+            background: #fff;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #2d3748;
+            transition: background-color 0.2s ease;
+        }
+
+        .organizer-option:last-of-type {
+            border-bottom: none;
+        }
+
+        .organizer-option:hover {
+            background: #edf2ff;
+        }
+
+        #organizer,
+        #organizer:focus {
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            width: 100%;
+            padding: 4px 2px;
+        }
+
+        .attendees-dropdown {
+            margin-top: 8px;
+            border: 1px solid #d8e0ed;
+            border-radius: 8px;
+            max-height: 180px;
+            overflow-y: auto;
+            background: #fff;
+            display: none;
+        }
+
+        .attendees-dropdown.open {
+            display: block;
+        }
+
+        .attendee-option {
+            width: 100%;
+            text-align: left;
+            border: none;
+            border-bottom: 1px solid #edf2f7;
+            background: #fff;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #2d3748;
+            transition: background-color 0.2s ease;
+        }
+
+        .attendee-option:last-of-type {
+            border-bottom: none;
+        }
+
+        .attendee-option:hover {
+            background: #edf2ff;
+        }
+
+        .attendees-empty {
+            padding: 10px 12px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
         .checkbox-group {
             display: flex;
             align-items: center;
@@ -1615,13 +1786,21 @@
                         
                         <div class="form-group">
                             <label for="organizer">登記者</label>
-                            <input type="text" id="organizer" placeholder="請輸入登記者姓名">
+                            <div class="organizer-picker" id="organizerPicker">
+                                <input type="text" id="organizer" placeholder="點擊或搜尋登記者">
+                                <div class="organizer-dropdown" id="organizerDropdown"></div>
+                            </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="attendees">與會者（選填）</label>
-                            <input type="text" id="attendees" maxlength="80" placeholder="可輸入與會者">
-                            <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">最多 80 字</div>
+                            <label for="attendeesSearch">與會者（選填）</label>
+                            <div class="attendees-picker" id="attendeesPicker">
+                                <div class="attendees-selected" id="attendeesSelected"></div>
+                                <input type="text" id="attendeesSearch" class="attendees-search-input" placeholder="點擊或搜尋與會者">
+                                <div class="attendees-dropdown" id="attendeesDropdown"></div>
+                            </div>
+                            <input type="hidden" id="attendees">
+                            <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">點選名單可立即加入，也可手動輸入名單外人員</div>
                         </div>
                         
                         <div class="form-group">
@@ -1738,6 +1917,314 @@
         let editMode = 'single'; // 'single' 或 'series'
         let pendingEditBooking = null;
         let futureBookingsToEdit = [];
+        const attendeeDirectory = [
+            'Johnny',
+            'Vicky',
+            'Joanne',
+            'Renee',
+            'Jessie',
+            'Jackal',
+            'Mei',
+            'Faust',
+            'Yi',
+            'Louis',
+            'Jason',
+            'Dylan',
+            'Ivory',
+            'Moy',
+            'Ty',
+            'Jackson',
+            'Ray',
+            'Eason',
+            'Angus',
+            'Alyce',
+            'Casey',
+            'Ken',
+            'Hans',
+            'Jimmy',
+            'Rex',
+            'Ryan',
+            'Stan',
+            'Howard',
+            'Toby',
+            'Betty',
+            'Brian',
+            'Ren',
+            'Allen',
+            'Wei',
+            'Hunter',
+            'Victor',
+            'Kasen',
+            'Yuna',
+            'Minyu'
+        ];
+        const organizerDirectory = [...attendeeDirectory];
+        let selectedAttendees = [];
+
+        function normalizeAttendeeName(name) {
+            return String(name || '').replace(/\s+/g, ' ').trim();
+        }
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function splitAttendeesText(value) {
+            return String(value || '')
+                .split(/[,，、\n]+/)
+                .map(normalizeAttendeeName)
+                .filter(Boolean);
+        }
+
+        function isAttendeeSelected(name) {
+            const target = normalizeAttendeeName(name).toLowerCase();
+            return selectedAttendees.some(item => item.toLowerCase() === target);
+        }
+
+        function syncAttendeesField() {
+            const hiddenInput = document.getElementById('attendees');
+            if (hiddenInput) {
+                hiddenInput.value = selectedAttendees.join(', ');
+            }
+        }
+
+        function getAttendeesValue() {
+            syncAttendeesField();
+            const hiddenInput = document.getElementById('attendees');
+            return hiddenInput ? hiddenInput.value.trim() : '';
+        }
+
+        function getFilteredAttendees(keyword) {
+            const query = normalizeAttendeeName(keyword).toLowerCase();
+            return attendeeDirectory.filter(name => {
+                if (isAttendeeSelected(name)) return false;
+                return !query || name.toLowerCase().startsWith(query);
+            });
+        }
+
+        function closeOrganizerDropdown() {
+            const dropdown = document.getElementById('organizerDropdown');
+            if (!dropdown) return;
+            dropdown.classList.remove('open');
+        }
+
+        function renderOrganizerDropdown() {
+            const organizerInput = document.getElementById('organizer');
+            const dropdown = document.getElementById('organizerDropdown');
+            if (!organizerInput || !dropdown) return;
+
+            const query = normalizeAttendeeName(organizerInput.value).toLowerCase();
+            const filtered = organizerDirectory.filter(name => !query || name.toLowerCase().startsWith(query));
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="attendees-empty">找不到符合的人員，可直接輸入</div>';
+            } else {
+                dropdown.innerHTML = filtered.map(name => `
+                    <button type="button" class="organizer-option" data-organizer-option="${escapeHtml(name)}">
+                        ${escapeHtml(name)}
+                    </button>
+                `).join('');
+            }
+
+            dropdown.classList.add('open');
+        }
+
+        function initializeOrganizerPicker() {
+            const picker = document.getElementById('organizerPicker');
+            const organizerInput = document.getElementById('organizer');
+            const dropdown = document.getElementById('organizerDropdown');
+            if (!picker || !organizerInput || !dropdown) return;
+
+            picker.addEventListener('click', function() {
+                organizerInput.focus();
+                renderOrganizerDropdown();
+            });
+
+            picker.addEventListener('mouseleave', function() {
+                closeOrganizerDropdown();
+            });
+
+            organizerInput.addEventListener('focus', function() {
+                renderOrganizerDropdown();
+            });
+
+            organizerInput.addEventListener('click', function() {
+                renderOrganizerDropdown();
+            });
+
+            organizerInput.addEventListener('input', function() {
+                renderOrganizerDropdown();
+            });
+
+            organizerInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeOrganizerDropdown();
+                }
+            });
+
+            dropdown.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const button = event.target?.closest?.('[data-organizer-option]');
+                if (!button) return;
+                organizerInput.value = button.getAttribute('data-organizer-option');
+                organizerInput.focus();
+                renderOrganizerDropdown();
+            });
+        }
+
+        function renderSelectedAttendees() {
+            const selectedContainer = document.getElementById('attendeesSelected');
+            if (!selectedContainer) return;
+
+            selectedContainer.innerHTML = selectedAttendees.map(name => `
+                <span class="attendee-chip">
+                    <span>${escapeHtml(name)}</span>
+                    <button type="button" class="attendee-chip-remove" data-remove-attendee="${escapeHtml(name)}" aria-label="移除 ${escapeHtml(name)}">&times;</button>
+                </span>
+            `).join('');
+            syncAttendeesField();
+        }
+
+        function closeAttendeesDropdown() {
+            const dropdown = document.getElementById('attendeesDropdown');
+            if (!dropdown) return;
+            dropdown.classList.remove('open');
+        }
+
+        function renderAttendeesDropdown() {
+            const searchInput = document.getElementById('attendeesSearch');
+            const dropdown = document.getElementById('attendeesDropdown');
+            if (!searchInput || !dropdown) return;
+
+            const filtered = getFilteredAttendees(searchInput.value);
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="attendees-empty">找不到符合的人員，可直接按 Enter 新增</div>';
+            } else {
+                dropdown.innerHTML = filtered.map(name => `
+                    <button type="button" class="attendee-option" data-attendee-option="${escapeHtml(name)}">
+                        ${escapeHtml(name)}
+                    </button>
+                `).join('');
+            }
+
+            dropdown.classList.add('open');
+        }
+
+        function addAttendee(name) {
+            const normalized = normalizeAttendeeName(name);
+            if (!normalized || isAttendeeSelected(normalized)) return;
+
+            selectedAttendees.push(normalized);
+            renderSelectedAttendees();
+            renderAttendeesDropdown();
+        }
+
+        function removeAttendee(name) {
+            const target = normalizeAttendeeName(name).toLowerCase();
+            selectedAttendees = selectedAttendees.filter(item => item.toLowerCase() !== target);
+            renderSelectedAttendees();
+            renderAttendeesDropdown();
+        }
+
+        function commitAttendeesDraft() {
+            const searchInput = document.getElementById('attendeesSearch');
+            if (!searchInput) return;
+
+            const draft = normalizeAttendeeName(searchInput.value);
+            if (!draft) return;
+            addAttendee(draft);
+            searchInput.value = '';
+            renderAttendeesDropdown();
+        }
+
+        function setAttendeesFromString(rawValue) {
+            const nextSelected = [];
+            splitAttendeesText(rawValue).forEach(name => {
+                const key = name.toLowerCase();
+                if (!nextSelected.some(item => item.toLowerCase() === key)) {
+                    nextSelected.push(name);
+                }
+            });
+            selectedAttendees = nextSelected;
+            renderSelectedAttendees();
+            const searchInput = document.getElementById('attendeesSearch');
+            if (searchInput) searchInput.value = '';
+            closeAttendeesDropdown();
+        }
+
+        function initializeAttendeesPicker() {
+            const picker = document.getElementById('attendeesPicker');
+            const searchInput = document.getElementById('attendeesSearch');
+            const selectedContainer = document.getElementById('attendeesSelected');
+            const dropdown = document.getElementById('attendeesDropdown');
+            if (!picker || !searchInput || !selectedContainer || !dropdown) return;
+
+            setAttendeesFromString(document.getElementById('attendees')?.value || '');
+
+            picker.addEventListener('click', function() {
+                searchInput.focus();
+                renderAttendeesDropdown();
+            });
+
+            picker.addEventListener('mouseleave', function() {
+                closeAttendeesDropdown();
+            });
+
+            searchInput.addEventListener('click', function() {
+                renderAttendeesDropdown();
+            });
+
+            searchInput.addEventListener('focus', function() {
+                renderAttendeesDropdown();
+            });
+
+            searchInput.addEventListener('input', function() {
+                renderAttendeesDropdown();
+            });
+
+            searchInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    commitAttendeesDraft();
+                    return;
+                }
+
+                if (event.key === ',') {
+                    event.preventDefault();
+                    commitAttendeesDraft();
+                    return;
+                }
+
+                if (event.key === 'Backspace' && !searchInput.value && selectedAttendees.length > 0) {
+                    removeAttendee(selectedAttendees[selectedAttendees.length - 1]);
+                    return;
+                }
+
+                if (event.key === 'Escape') {
+                    closeAttendeesDropdown();
+                }
+            });
+
+            dropdown.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const button = event.target?.closest?.('[data-attendee-option]');
+                if (!button) return;
+                addAttendee(button.getAttribute('data-attendee-option'));
+                searchInput.focus();
+            });
+
+            selectedContainer.addEventListener('click', function(event) {
+                const button = event.target?.closest?.('[data-remove-attendee]');
+                if (!button) return;
+                removeAttendee(button.getAttribute('data-remove-attendee'));
+            });
+        }
 
 // 編輯預約主函數
         async function editBooking(bookingId, event) {
@@ -1880,7 +2367,7 @@ function copyBooking(bookingId, event) {
     document.getElementById('meetingTitle').value = booking.title || '';
     document.getElementById('meetingRoom').value = booking.room || '';
     document.getElementById('organizer').value = booking.organizer || '';
-    document.getElementById('attendees').value = booking.attendees || '';
+    setAttendeesFromString(booking.attendees || '');
     
     // 設定時間選項（重用現有函數）
     setTimeSelectValue('startTime', booking.startTime);
@@ -1950,7 +2437,7 @@ function openEditForm(booking, mode = 'single', futureBookings = []) {
 	document.getElementById('meetingRoom').value = booking.room || '';
 	document.getElementById('meetingDate').value = booking.date || '';
 	document.getElementById('organizer').value = booking.organizer || '';
-	document.getElementById('attendees').value = booking.attendees || '';
+	setAttendeesFromString(booking.attendees || '');
 
 	// 特殊處理時間選項
 	setTimeSelectValue('startTime', booking.startTime);
@@ -3817,7 +4304,7 @@ async function updatePartialSeriesBookings(bookingsToUpdate) {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const organizer = document.getElementById('organizer').value.trim();
-        const attendees = document.getElementById('attendees').value.trim();
+        const attendees = getAttendeesValue();
         
         let successCount = 0;
         let failedCount = 0;
@@ -3956,7 +4443,11 @@ function resetForm() {
         if (startTime) startTime.value = '';
         if (endTime) endTime.value = '';
         if (organizer) organizer.value = '';
+        closeOrganizerDropdown();
         if (attendees) attendees.value = '';
+        setAttendeesFromString('');
+        const attendeesSearch = document.getElementById('attendeesSearch');
+        if (attendeesSearch) attendeesSearch.value = '';
         if (meetingDate) meetingDate.value = '';
         if (dateDisplay) {
             dateDisplay.textContent = '請點擊選擇日期';
@@ -4039,7 +4530,7 @@ async function submitBooking() {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const organizer = document.getElementById('organizer').value.trim();
-        const attendees = document.getElementById('attendees').value.trim();
+        const attendees = getAttendeesValue();
         const isRecurring = document.getElementById('recurringBooking').checked;
         const recurringType = document.getElementById('recurringType').value;
         const recurringWeeks = parseInt(document.getElementById('recurringWeeks').value);
@@ -4335,7 +4826,7 @@ async function updateBooking() {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
         const organizer = document.getElementById('organizer').value.trim();
-        const attendees = document.getElementById('attendees').value.trim();
+        const attendees = getAttendeesValue();
         
         console.log('開始更新預約:', { title, room, date, startTime, endTime, organizer, attendees, editMode });
         
@@ -5000,6 +5491,8 @@ function scrollToForm() {
             console.log('開始初始化系統...');
             
             initializeTimeSelects();
+            initializeOrganizerPicker();
+            initializeAttendeesPicker();
             setupEventListeners();
             setupAdditionalDateEvents();
             
