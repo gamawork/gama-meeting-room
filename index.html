@@ -239,9 +239,9 @@
             width: 100%;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
-            padding: 6px 10px;
+            padding: 8px 10px;
             background: #fff;
-            min-height: 46px;
+            min-height: 50px;
             cursor: text;
             transition: all 0.3s ease;
         }
@@ -259,7 +259,7 @@
         }
 
         .attendees-selected:empty {
-            margin-bottom: 0;
+            display: none;
         }
 
         .attendee-chip {
@@ -289,11 +289,14 @@
             border: none;
             outline: none;
             font-size: 16px;
-            padding: 4px 2px;
+            padding: 8px 2px;
+            line-height: 24px;
+            margin: 0;
             font-family: inherit;
             box-sizing: border-box;
             background: transparent;
             box-shadow: none;
+            display: block;
         }
 
         #attendeesSearch,
@@ -302,15 +305,20 @@
             outline: none !important;
             box-shadow: none !important;
             background: transparent !important;
+            padding: 8px 2px !important;
+            line-height: 24px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
         }
 
         .organizer-picker {
             width: 100%;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
-            padding: 6px 10px;
+            padding: 8px 10px;
             background: #fff;
-            min-height: 46px;
+            min-height: 50px;
             cursor: text;
             transition: all 0.3s ease;
         }
@@ -322,6 +330,8 @@
 
         .organizer-dropdown {
             margin-top: 8px;
+            margin-left: -10px;
+            margin-right: -10px;
             border: 1px solid #d8e0ed;
             border-radius: 8px;
             max-height: 180px;
@@ -362,11 +372,18 @@
             box-shadow: none !important;
             background: transparent !important;
             width: 100%;
-            padding: 4px 2px;
+            padding: 8px 2px;
+            line-height: 24px;
+            margin: 0;
+            font-family: inherit;
+            box-sizing: border-box;
+            display: block;
         }
 
         .attendees-dropdown {
             margin-top: 8px;
+            margin-left: -10px;
+            margin-right: -10px;
             border: 1px solid #d8e0ed;
             border-radius: 8px;
             max-height: 180px;
@@ -590,17 +607,41 @@
             border-left: none !important;
         }
 
+        .today-row .date-cell,
+        .today-row .day-cell,
+        .today-row .time-cell,
+        .today-row .room-cell,
+        .today-row .organizer-cell,
+        .today-row .attendees-cell,
+        .today-row .meeting-cell,
+        .today-row .action-cell {
+            background: #fff8db !important;
+        }
+
+        .today-row .date-cell:hover,
+        .today-row .day-cell:hover,
+        .today-row .time-cell:hover,
+        .today-row .room-cell:hover,
+        .today-row .organizer-cell:hover,
+        .today-row .attendees-cell:hover,
+        .today-row .meeting-cell:hover,
+        .today-row .action-cell:hover {
+            background: #fef0b3 !important;
+        }
+
         .date-cell {
             background: #f0fff4;
             font-weight: 600;
             color: #2d3748;
             vertical-align: middle;
+            border-bottom: 2px solid #b6c3d3 !important;
         }
 
         .day-cell {
             background: #f0fff4;
             font-weight: 600;
             color: #2d3748;
+            border-bottom: 2px solid #b6c3d3 !important;
         }
 
         /* 移除原本的固定背景色 */
@@ -620,6 +661,66 @@
             color: #2d3748;
         }
 
+        .booking-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .booking-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .booking-tag-amber {
+            background: #d8e4f5;
+            color: #183153;
+        }
+
+        .booking-tag-red {
+            background: #ffdede;
+            color: #a23d3d;
+        }
+
+        .booking-tag-blue {
+            background: #d9ecff;
+            color: #13558f;
+        }
+
+        .booking-tag-green {
+            background: #ddf8e8;
+            color: #1f6b47;
+        }
+
+        .booking-tag-gold {
+            background: #fff3c9;
+            color: #8b6713;
+        }
+
+        .booking-tag-purple {
+            background: #f0e3ff;
+            color: #7440bf;
+        }
+
+        .booking-tag-orange {
+            background: #ffe4d4;
+            color: #9a5425;
+        }
+
+        .booking-tag-empty {
+            color: #4b5563;
+            font-weight: 500;
+        }
+
         .meeting-cell {
             color: #1f2937;
             cursor: pointer;
@@ -636,7 +737,7 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
-	/* 交錯顏色樣式 - 偶數行（黃色，跟原本時間欄位一樣） */
+	/* 交錯顏色樣式 - 偶數行（黃色） */
         .row-even .date-cell,
         .row-even .day-cell,
         .row-even .time-cell,
@@ -645,7 +746,7 @@
         .row-even .attendees-cell,
         .row-even .meeting-cell,
         .row-even .action-cell {
-                 background: #fef5e7; /* 跟原本時間欄位一樣的黃色 */
+                 background: #fffaf2;
     		 border-bottom: 1px solid #cbd5e1 !important; /* 深灰色邊框 */
    		 border-right: 1px solid #cbd5e1 !important;  /* 深灰色邊框 */
         }
@@ -659,12 +760,11 @@
 	.row-odd .attendees-cell,
 	.row-odd .meeting-cell,
 	.row-odd .action-cell {
-    		background: #dbeafe; /* 淡藍色 */
+    		background: #eff6ff;
     		border-bottom: 1px solid #cbd5e1 !important; /* 深灰色邊框 */
     		border-right: 1px solid #cbd5e1 !important;  /* 深灰色邊框 */
 	}
 
-        /* Hover 效果 */
         .row-even .date-cell:hover,
         .row-even .day-cell:hover,
         .row-even .time-cell:hover,
@@ -673,7 +773,7 @@
         .row-even .attendees-cell:hover,
         .row-even .meeting-cell:hover,
         .row-even .action-cell:hover {
-            background: #fed7aa; /* 較深的黃色 */
+            background: #feefd8;
         }
 
         .row-odd .date-cell:hover,
@@ -684,7 +784,11 @@
         .row-odd .attendees-cell:hover,
         .row-odd .meeting-cell:hover,
         .row-odd .action-cell:hover {
-            background: #bfdbfe; /* 較深的藍色 */
+            background: #dbeafe;
+        }
+
+        .day-separator td {
+            border-bottom: 2px solid #b6c3d3 !important;
         }
 
         .meeting-title {
@@ -1917,47 +2021,16 @@
         let editMode = 'single'; // 'single' 或 'series'
         let pendingEditBooking = null;
         let futureBookingsToEdit = [];
-        const attendeeDirectory = [
-            'Johnny',
-            'Vicky',
-            'Joanne',
-            'Renee',
-            'Jessie',
-            'Jackal',
-            'Mei',
-            'Faust',
-            'Yi',
-            'Louis',
-            'Jason',
-            'Dylan',
-            'Ivory',
-            'Moy',
-            'Ty',
-            'Jackson',
-            'Ray',
-            'Eason',
-            'Angus',
-            'Alyce',
-            'Casey',
-            'Ken',
-            'Hans',
-            'Jimmy',
-            'Rex',
-            'Ryan',
-            'Stan',
-            'Howard',
-            'Toby',
-            'Betty',
-            'Brian',
-            'Ren',
-            'Allen',
-            'Wei',
-            'Hunter',
-            'Victor',
-            'Kasen',
-            'Yuna',
-            'Minyu'
+        const attendeeGroups = [
+            ['囧尼', 'Vicky', 'Joanne', 'Renee', 'Jessie'],
+            ['Jackal', 'Rex', 'Ryan'],
+            ['Mei', 'Faust', 'Yi', 'Louis', 'Jason', 'Dylan'],
+            ['姿驊', 'Moy', 'TY', 'Jackson', 'Ray', 'Eason', 'Angus', 'Alyce', 'Casey', 'Ken', 'Hans', 'Jimmy'],
+            ['Stan', 'Howard', 'Toby', 'Betty'],
+            ['小威', 'Ren', 'Allen', 'Wei', 'Hunter'],
+            ['Victor', '鵬富', '子萱', 'Minyu']
         ];
+        const attendeeDirectory = attendeeGroups.flat();
         const organizerDirectory = [...attendeeDirectory];
         let selectedAttendees = [];
 
@@ -2088,6 +2161,54 @@
                 </span>
             `).join('');
             syncAttendeesField();
+        }
+
+        function getTagToneClass(name) {
+            const normalized = normalizeAttendeeName(name);
+            const tones = [
+                'booking-tag-amber',
+                'booking-tag-red',
+                'booking-tag-blue',
+                'booking-tag-green',
+                'booking-tag-gold',
+                'booking-tag-purple',
+                'booking-tag-orange'
+            ];
+
+            for (let groupIndex = 0; groupIndex < attendeeGroups.length; groupIndex++) {
+                if (attendeeGroups[groupIndex].includes(normalized)) {
+                    return tones[groupIndex];
+                }
+            }
+
+            return 'booking-tag-blue';
+        }
+
+        function renderBookingTags(rawValue, mode = 'single') {
+            const names = splitAttendeesText(rawValue);
+
+            if (mode === 'single') {
+                const singleName = normalizeAttendeeName(rawValue);
+                if (!singleName) {
+                    return '<span class="booking-tag-empty">未知</span>';
+                }
+
+                return `
+                    <div class="booking-tags">
+                        <span class="booking-tag ${getTagToneClass(singleName)}">${escapeHtml(singleName)}</span>
+                    </div>
+                `;
+            }
+
+            if (names.length === 0) {
+                return '<span class="booking-tag-empty">—</span>';
+            }
+
+            return `
+                <div class="booking-tags">
+                    ${names.map(name => `<span class="booking-tag ${getTagToneClass(name)}">${escapeHtml(name)}</span>`).join('')}
+                </div>
+            `;
         }
 
         function closeAttendeesDropdown() {
@@ -3040,7 +3161,7 @@ function setTimeSelectValue(selectId, timeValue) {
                 
                 if (dayBookings.length === 0) {
                     const row = document.createElement('tr');
-                    row.className = `${colorClass} day-separator`; // 空行也要有分隔線
+                    row.className = `${colorClass} day-separator${isToday ? ' today-row' : ''}`; // 空行也要有分隔線
                     row.innerHTML = `
                         <td class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
@@ -3055,7 +3176,7 @@ function setTimeSelectValue(selectId, timeValue) {
                     
                     dayBookings.forEach((booking, index) => {
                         const row = document.createElement('tr');
-                        row.className = colorClass; // 同一天的所有行使用相同顏色
+                        row.className = `${colorClass}${isToday ? ' today-row' : ''}`; // 同一天的所有行使用相同顏色
                         
                         // 如果是該天的最後一個預約，添加分隔線
                         if (index === dayBookings.length - 1) {
@@ -3067,8 +3188,8 @@ function setTimeSelectValue(selectId, timeValue) {
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
                             <td class="room-cell">${booking.room || '未知'}</td>
-                            <td class="organizer-cell">${booking.organizer || '未知'}</td>
-                            <td class="attendees-cell">${booking.attendees || '—'}</td>
+                            <td class="organizer-cell">${renderBookingTags(booking.organizer, 'single')}</td>
+                            <td class="attendees-cell">${renderBookingTags(booking.attendees, 'multi')}</td>
                             <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}', '${booking.attendees || ''}')">
                                 <div class="meeting-title">${booking.title || '無標題'}</div>
                             </td>
