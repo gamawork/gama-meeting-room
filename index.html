@@ -235,6 +235,11 @@
             box-shadow: 0 0 0 3px rgba(45, 72, 116, 0.1);
         }
 
+        .field-invalid {
+            border-color: #dc2626 !important;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+        }
+
         .attendees-picker {
             width: 100%;
             border: 2px solid #e2e8f0;
@@ -363,6 +368,11 @@
 
         .organizer-option:hover {
             background: #edf2ff;
+        }
+
+        .organizer-option.keyboard-active,
+        .attendee-option.keyboard-active {
+            background: #dbeafe;
         }
 
         #organizer,
@@ -1850,7 +1860,7 @@
                         <div class="form-group">
                             <label for="meetingDate">日期</label>
                             <div class="date-picker-container">
-                                <div class="date-display placeholder" id="dateDisplay">請點擊選擇日期</div>
+                                <div class="date-display placeholder" id="dateDisplay" tabindex="0">請點擊選擇日期</div>
                                 <div class="date-icon">📅</div>
                                 <input type="date" id="meetingDate" class="hidden-input">
                             </div>
@@ -2033,6 +2043,8 @@
         const attendeeDirectory = attendeeGroups.flat();
         const organizerDirectory = [...attendeeDirectory];
         let selectedAttendees = [];
+        let organizerActiveIndex = -1;
+        let attendeeActiveIndex = -1;
 
         function normalizeAttendeeName(name) {
             return String(name || '').replace(/\s+/g, ' ').trim();
@@ -2052,6 +2064,105 @@
                 .split(/[,，、\n]+/)
                 .map(normalizeAttendeeName)
                 .filter(Boolean);
+        }
+
+        function getValidationTarget(fieldName) {
+            const targetMap = {
+                meetingTitle: {
+                    element: document.getElementById('meetingTitle'),
+                    focusElement: document.getElementById('meetingTitle')
+                },
+                meetingRoom: {
+                    element: document.getElementById('meetingRoom'),
+                    focusElement: document.getElementById('meetingRoom')
+                },
+                meetingDate: {
+                    element: document.getElementById('dateDisplay'),
+                    focusElement: document.getElementById('dateDisplay')
+                },
+                startTime: {
+                    element: document.getElementById('startTime'),
+                    focusElement: document.getElementById('startTime')
+                },
+                endTime: {
+                    element: document.getElementById('endTime'),
+                    focusElement: document.getElementById('endTime')
+                },
+                organizer: {
+                    element: document.getElementById('organizerPicker'),
+                    focusElement: document.getElementById('organizer')
+                },
+                recurringType: {
+                    element: document.getElementById('recurringType'),
+                    focusElement: document.getElementById('recurringType')
+                },
+                recurringWeeks: {
+                    element: document.getElementById('recurringWeeks'),
+                    focusElement: document.getElementById('recurringWeeks')
+                }
+            };
+
+            return targetMap[fieldName] || null;
+        }
+
+        function clearFieldValidation(fieldName) {
+            const target = getValidationTarget(fieldName);
+            if (!target?.element) return;
+            target.element.classList.remove('field-invalid');
+        }
+
+        function clearBookingFormValidation() {
+            ['meetingTitle', 'meetingRoom', 'meetingDate', 'startTime', 'endTime', 'organizer', 'recurringType', 'recurringWeeks']
+                .forEach(clearFieldValidation);
+        }
+
+        function markFieldInvalid(fieldName) {
+            const target = getValidationTarget(fieldName);
+            if (!target?.element) return;
+            target.element.classList.add('field-invalid');
+        }
+
+        function focusValidationField(fieldName) {
+            const target = getValidationTarget(fieldName);
+            if (!target?.focusElement) return;
+
+            const formGroup = target.focusElement.closest('.form-group') || target.element;
+            if (formGroup?.scrollIntoView) {
+                formGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            setTimeout(() => {
+                if (target.focusElement?.focus) {
+                    target.focusElement.focus({ preventScroll: true });
+                }
+            }, 180);
+        }
+
+        function validateBookingForm({ title, room, date, startTime, endTime, organizer, isRecurring, recurringType, recurringWeeks }) {
+            clearBookingFormValidation();
+
+            const invalidFields = [];
+
+            if (!title) invalidFields.push('meetingTitle');
+            if (!room) invalidFields.push('meetingRoom');
+            if (!date) invalidFields.push('meetingDate');
+            if (!startTime) invalidFields.push('startTime');
+            if (!endTime) invalidFields.push('endTime');
+            if (!organizer) invalidFields.push('organizer');
+
+            if (isRecurring) {
+                if (!recurringType) invalidFields.push('recurringType');
+                if (isNaN(recurringWeeks)) invalidFields.push('recurringWeeks');
+            }
+
+            invalidFields.forEach(markFieldInvalid);
+
+            if (invalidFields.length > 0) {
+                focusValidationField(invalidFields[0]);
+                return false;
+            }
+
+            return true;
         }
 
         function isAttendeeSelected(name) {
@@ -2080,10 +2191,33 @@
             });
         }
 
+        function getOrganizerOptions() {
+            return Array.from(document.querySelectorAll('#organizerDropdown [data-organizer-option]'));
+        }
+
+        function getAttendeeOptions() {
+            return Array.from(document.querySelectorAll('#attendeesDropdown [data-attendee-option]'));
+        }
+
+        function updateKeyboardActive(options, activeIndex, activeClassName = 'keyboard-active') {
+            options.forEach((option, index) => {
+                option.classList.toggle(activeClassName, index === activeIndex);
+            });
+        }
+
+        function moveKeyboardIndex(currentIndex, optionsLength, direction) {
+            if (optionsLength === 0) return -1;
+            if (currentIndex < 0) {
+                return direction > 0 ? 0 : optionsLength - 1;
+            }
+            return (currentIndex + direction + optionsLength) % optionsLength;
+        }
+
         function closeOrganizerDropdown() {
             const dropdown = document.getElementById('organizerDropdown');
             if (!dropdown) return;
             dropdown.classList.remove('open');
+            organizerActiveIndex = -1;
         }
 
         function renderOrganizerDropdown() {
@@ -2105,6 +2239,13 @@
             }
 
             dropdown.classList.add('open');
+            const options = getOrganizerOptions();
+            if (options.length === 0) {
+                organizerActiveIndex = -1;
+                return;
+            }
+            organizerActiveIndex = organizerActiveIndex >= 0 && organizerActiveIndex < options.length ? organizerActiveIndex : 0;
+            updateKeyboardActive(options, organizerActiveIndex);
         }
 
         function initializeOrganizerPicker() {
@@ -2131,11 +2272,49 @@
             });
 
             organizerInput.addEventListener('input', function() {
+                organizerActiveIndex = -1;
+                clearFieldValidation('organizer');
                 renderOrganizerDropdown();
             });
 
             organizerInput.addEventListener('keydown', function(event) {
+                const options = getOrganizerOptions();
+
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    if (!dropdown.classList.contains('open')) {
+                        renderOrganizerDropdown();
+                    }
+                    organizerActiveIndex = moveKeyboardIndex(organizerActiveIndex, getOrganizerOptions().length, 1);
+                    updateKeyboardActive(getOrganizerOptions(), organizerActiveIndex);
+                    return;
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    if (!dropdown.classList.contains('open')) {
+                        renderOrganizerDropdown();
+                    }
+                    organizerActiveIndex = moveKeyboardIndex(organizerActiveIndex, getOrganizerOptions().length, -1);
+                    updateKeyboardActive(getOrganizerOptions(), organizerActiveIndex);
+                    return;
+                }
+
+                if (event.key === 'Enter') {
+                    if (dropdown.classList.contains('open') && options.length > 0 && organizerActiveIndex >= 0) {
+                        event.preventDefault();
+                        organizerInput.value = options[organizerActiveIndex].getAttribute('data-organizer-option');
+                        clearFieldValidation('organizer');
+                        renderOrganizerDropdown();
+                    }
+                    return;
+                }
+
                 if (event.key === 'Escape') {
+                    closeOrganizerDropdown();
+                }
+
+                if (event.key === 'Tab') {
                     closeOrganizerDropdown();
                 }
             });
@@ -2145,6 +2324,7 @@
                 const button = event.target?.closest?.('[data-organizer-option]');
                 if (!button) return;
                 organizerInput.value = button.getAttribute('data-organizer-option');
+                clearFieldValidation('organizer');
                 organizerInput.focus();
                 renderOrganizerDropdown();
             });
@@ -2215,6 +2395,7 @@
             const dropdown = document.getElementById('attendeesDropdown');
             if (!dropdown) return;
             dropdown.classList.remove('open');
+            attendeeActiveIndex = -1;
         }
 
         function renderAttendeesDropdown() {
@@ -2235,6 +2416,13 @@
             }
 
             dropdown.classList.add('open');
+            const options = getAttendeeOptions();
+            if (options.length === 0) {
+                attendeeActiveIndex = -1;
+                return;
+            }
+            attendeeActiveIndex = attendeeActiveIndex >= 0 && attendeeActiveIndex < options.length ? attendeeActiveIndex : 0;
+            updateKeyboardActive(options, attendeeActiveIndex);
         }
 
         function addAttendee(name) {
@@ -2306,13 +2494,42 @@
             });
 
             searchInput.addEventListener('input', function() {
+                attendeeActiveIndex = -1;
                 renderAttendeesDropdown();
             });
 
             searchInput.addEventListener('keydown', function(event) {
-                if (event.key === 'Enter') {
+                const options = getAttendeeOptions();
+
+                if (event.key === 'ArrowDown') {
                     event.preventDefault();
-                    commitAttendeesDraft();
+                    if (!dropdown.classList.contains('open')) {
+                        renderAttendeesDropdown();
+                    }
+                    attendeeActiveIndex = moveKeyboardIndex(attendeeActiveIndex, getAttendeeOptions().length, 1);
+                    updateKeyboardActive(getAttendeeOptions(), attendeeActiveIndex);
+                    return;
+                }
+
+                if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    if (!dropdown.classList.contains('open')) {
+                        renderAttendeesDropdown();
+                    }
+                    attendeeActiveIndex = moveKeyboardIndex(attendeeActiveIndex, getAttendeeOptions().length, -1);
+                    updateKeyboardActive(getAttendeeOptions(), attendeeActiveIndex);
+                    return;
+                }
+
+                if (event.key === 'Enter') {
+                    if (dropdown.classList.contains('open') && options.length > 0 && attendeeActiveIndex >= 0) {
+                        event.preventDefault();
+                        addAttendee(options[attendeeActiveIndex].getAttribute('data-attendee-option'));
+                        searchInput.focus();
+                    } else {
+                        event.preventDefault();
+                        commitAttendeesDraft();
+                    }
                     return;
                 }
 
@@ -2328,6 +2545,10 @@
                 }
 
                 if (event.key === 'Escape') {
+                    closeAttendeesDropdown();
+                }
+
+                if (event.key === 'Tab') {
                     closeAttendeesDropdown();
                 }
             });
@@ -4548,6 +4769,7 @@ function timeOverlap(start1, end1, start2, end2) {
 function resetForm() {
     try {
         console.log('開始重設表單...');
+        clearBookingFormValidation();
         
         // 清空基本欄位
         const meetingTitle = document.getElementById('meetingTitle');
@@ -4658,30 +4880,9 @@ async function submitBooking() {
         
         console.log('表單資料:', { title, room, date, startTime, endTime, organizer, attendees, isRecurring, recurringType, recurringWeeks });
         
-        // 驗證必填欄位
-        if (!title) { 
-            showModal('預約失敗', '請填寫會議主題。'); 
-            return; 
-        }
-        if (!room) { 
-            showModal('預約失敗', '請選擇會議室。'); 
-            return; 
-        }
-        if (!date) { 
-            showModal('預約失敗', '請選擇日期。'); 
-            return; 
-        }
-        if (!startTime) { 
-            showModal('預約失敗', '請選擇開始時間。'); 
-            return; 
-        }
-        if (!endTime) { 
-            showModal('預約失敗', '請選擇結束時間。'); 
-            return; 
-        }
-        if (!organizer) { 
-            showModal('預約失敗', '請填寫登記者。'); 
-            return; 
+        if (!validateBookingForm({ title, room, date, startTime, endTime, organizer, isRecurring, recurringType, recurringWeeks })) {
+            showModal('預約失敗', '請先完成紅框標示的必填欄位。');
+            return;
         }
         
         // 驗證時間邏輯
@@ -4693,10 +4894,6 @@ async function submitBooking() {
         // 處理週期預約
         let datesToBook = [date];
         if (isRecurring) {
-            if (!recurringType || isNaN(recurringWeeks)) {
-                showModal('預約失敗', '請選擇週期預約的重複頻率和持續期間。');
-                return;
-            }
             console.log('產生週期預約日期...');
             datesToBook = generateRecurringDates(date, recurringType, recurringWeeks);
             console.log('週期預約日期:', datesToBook);
@@ -4951,9 +5148,18 @@ async function updateBooking() {
         
         console.log('開始更新預約:', { title, room, date, startTime, endTime, organizer, attendees, editMode });
         
-        // 基本驗證
-        if (!title || !room || !date || !startTime || !endTime || !organizer) {
-            showModal('更新失敗', '請填寫所有必填欄位。');
+        if (!validateBookingForm({
+            title,
+            room,
+            date,
+            startTime,
+            endTime,
+            organizer,
+            isRecurring: false,
+            recurringType: '',
+            recurringWeeks: NaN
+        })) {
+            showModal('更新失敗', '請先完成紅框標示的必填欄位。');
             return;
         }
         
@@ -5411,6 +5617,11 @@ function showModal(title, message, onConfirm = null, options = {}) {
         function setupEventListeners() {
             // 基本事件
             document.getElementById('meetingDate').addEventListener('change', updateDateDisplay);
+            document.getElementById('meetingDate').addEventListener('change', () => clearFieldValidation('meetingDate'));
+            document.getElementById('meetingTitle').addEventListener('input', () => clearFieldValidation('meetingTitle'));
+            document.getElementById('meetingRoom').addEventListener('change', () => clearFieldValidation('meetingRoom'));
+            document.getElementById('startTime').addEventListener('change', () => clearFieldValidation('startTime'));
+            document.getElementById('endTime').addEventListener('change', () => clearFieldValidation('endTime'));
             
             // 開始時間變更，自動設定結束時間
             document.getElementById('startTime').addEventListener('change', function() {
@@ -5460,7 +5671,15 @@ function showModal(title, message, onConfirm = null, options = {}) {
             if (recurringTypeSelect) {
                 recurringTypeSelect.addEventListener('change', function() {
                     console.log('重複頻率已變更為:', this.value);
+                    clearFieldValidation('recurringType');
                     updateRecurringPeriodOptions();
+                });
+            }
+
+            const recurringWeeksSelect = document.getElementById('recurringWeeks');
+            if (recurringWeeksSelect) {
+                recurringWeeksSelect.addEventListener('change', function() {
+                    clearFieldValidation('recurringWeeks');
                 });
             }
             
