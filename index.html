@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gama 會議室預約系統</title>
+    <title>Gama Meeting Room Booking System</title>
     <link rel="icon" type="image/x-icon" href="./gama.ico">
     <style>
         * {
@@ -84,6 +84,33 @@
             background: rgba(251, 191, 36, 0.3);
             border: 1px solid rgba(251, 191, 36, 0.5);
             color: white;
+        }
+
+        .lang-switch {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .lang-switch:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .lang-switch .lang-active {
+            color: #ffd166;
+            text-shadow: 0 0 4px rgba(255, 209, 102, 0.4);
         }
 
         .main-content {
@@ -543,14 +570,14 @@
             background: #28a745;
             color: white;
             border: none;
-            padding: 8px 32px;
+            padding: 8px 35px;
             border-radius: 10px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 600;
             transition: all 0.3s ease;
             white-space: nowrap;
-            min-width: 120px;
+            min-width: 132px;
         }
 
         .today-btn:hover {
@@ -1811,7 +1838,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Gama 會議室預約系統</h1>
+            <h1 data-i18n="app.title">Gama Meeting Room Booking System</h1>
+            <button type="button" id="langSwitch" class="lang-switch" onclick="toggleLang()" aria-label="Switch language"><span class="lang-active">EN</span> | <span>中</span></button>
         </div>
 
 <div class="main-content">
@@ -1819,9 +1847,9 @@
                 <div class="schedule-header">
                     <div class="date-nav">
                         <button onclick="changeWeek(-1)">◀</button>
-                        <div class="current-week" id="currentWeek">本週</div>
+                        <div class="current-week" id="currentWeek" data-i18n="nav.thisWeek">This Week</div>
                         <button onclick="changeWeek(1)">▶</button>
-                        <button class="today-btn" id="todayBtn" onclick="goToToday()">回到本週</button>
+                        <button class="today-btn" id="todayBtn" onclick="goToToday()" data-i18n="nav.backToThisWeek">Back to This Week</button>
                     </div>
                 </div>
 
@@ -1829,21 +1857,21 @@
                     <div class="loading-overlay" id="loadingOverlay">
                         <div class="loading-content">
                             <div class="loading-spinner"></div>
-                            <div class="loading-text">載入中...</div>
+                            <div class="loading-text" data-i18n="app.loading">Loading...</div>
                         </div>
                     </div>
 
                     <table class="schedule-table">
                         <thead>
                             <tr>
-                                <th width="50">日期</th>
-                                <th width="50">星期</th>
-                                <th width="100">時間</th>
-                                <th width="90">會議地點</th>
-                                <th width="80">登記者</th>
-                                <th width="200">與會者</th>
-                                <th width="250">會議主題</th>
-                                <th width="140">動作</th>
+                                <th width="50" data-i18n="table.date">Date</th>
+                                <th width="50" data-i18n="table.day">Day</th>
+                                <th width="100" data-i18n="table.time">Time</th>
+                                <th width="90" data-i18n="table.location">Location</th>
+                                <th width="80" data-i18n="table.organizer">Organizer</th>
+                                <th width="200" data-i18n="table.attendees">Attendees</th>
+                                <th width="250" data-i18n="table.subject">Subject</th>
+                                <th width="140" data-i18n="table.actions">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="scheduleBody">
@@ -1855,98 +1883,96 @@
 
             <div class="sidebar">
                 <div class="booking-form">
-                    <h3 style="margin-bottom: 20px; color: #2d3748;">新增預約</h3>
+                    <h3 style="margin-bottom: 20px; color: #2d3748;" data-i18n="form.title.new">New Booking</h3>
                     <div id="bookingForm">
                         <div class="form-group">
-                            <label for="meetingDate">日期</label>
+                            <label for="meetingDate" data-i18n="form.date">Date</label>
                             <div class="date-picker-container">
-                                <div class="date-display placeholder" id="dateDisplay" tabindex="0">請點擊選擇日期</div>
+                                <div class="date-display placeholder" id="dateDisplay" tabindex="0" data-i18n="form.date.placeholder">Click to select a date</div>
                                 <div class="date-icon">📅</div>
                                 <input type="date" id="meetingDate" class="hidden-input">
                             </div>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="meetingTitle">會議主題</label>
-                            <input type="text" id="meetingTitle" placeholder="請輸入會議主題">
+                            <label for="meetingTitle" data-i18n="form.subject">Subject</label>
+                            <input type="text" id="meetingTitle" data-i18n-placeholder="form.subject.placeholder" placeholder="Enter meeting subject">
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="meetingRoom">會議地點</label>
+                            <label for="meetingRoom" data-i18n="form.location">Location</label>
                             <select id="meetingRoom">
-                                <option value="">請選擇會議室</option>
-                                <option value="小會議室">小會議室</option>
-                                <option value="大會議室">大會議室</option>
-                                <option value="茶水間">茶水間</option>
-                                <option value="囧尼辦公室">囧尼辦公室</option>
-                                <option value="街口辦公室">街口辦公室</option>
-                                <option value="會客區">會客區</option>
+                                <option value="" data-i18n="form.location.placeholder">Select a room</option>
+                                <option value="302" data-i18n="room.302">302</option>
+                                <option value="301" data-i18n="room.301">301</option>
+                                <option value="茶水間" data-i18n="room.茶水間">Pantry</option>
+                                <option value="囧尼辦公室" data-i18n="room.囧尼辦公室">Johnny Office</option>
+                                <option value="街口辦公室" data-i18n="room.街口辦公室">Jackal Office</option>
+                                <option value="會客區" data-i18n="room.會客區">Reception Area</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="startTime">開始時間</label>
+                            <label for="startTime" data-i18n="form.startTime">Start Time</label>
                             <select id="startTime">
-                                <option value="">請選擇時間</option>
+                                <option value="" data-i18n="form.time.placeholder">Select a time</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="endTime">結束時間</label>
+                            <label for="endTime" data-i18n="form.endTime">End Time</label>
                             <select id="endTime">
-                                <option value="">請選擇時間</option>
+                                <option value="" data-i18n="form.time.placeholder">Select a time</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group">
-                            <label for="organizer">登記者</label>
+                            <label for="organizer" data-i18n="form.organizer">Organizer</label>
                             <div class="organizer-picker" id="organizerPicker">
-                                <input type="text" id="organizer" placeholder="點擊或搜尋登記者">
+                                <input type="text" id="organizer" data-i18n-placeholder="form.organizer.placeholder" placeholder="Click or search organizer">
                                 <div class="organizer-dropdown" id="organizerDropdown"></div>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label for="attendeesSearch">與會者（選填）</label>
+                            <label for="attendeesSearch" data-i18n="form.attendees">Attendees (optional)</label>
                             <div class="attendees-picker" id="attendeesPicker">
                                 <div class="attendees-selected" id="attendeesSelected"></div>
-                                <input type="text" id="attendeesSearch" class="attendees-search-input" placeholder="點擊或搜尋與會者">
+                                <input type="text" id="attendeesSearch" class="attendees-search-input" data-i18n-placeholder="form.attendees.placeholder" placeholder="Click or search attendees">
                                 <div class="attendees-dropdown" id="attendeesDropdown"></div>
                             </div>
                             <input type="hidden" id="attendees">
-                            <div style="margin-top: 6px; font-size: 12px; color: #6b7280;">點選名單可立即加入，也可手動輸入名單外人員</div>
+                            <div style="margin-top: 6px; font-size: 12px; color: #6b7280;" data-i18n="form.attendees.help">Click to add from the list, or type to enter people outside the list</div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label class="checkbox-group">
                                 <input type="checkbox" id="recurringBooking">
-                                <span>週期預約</span>
+                                <span data-i18n="form.recurring">Recurring booking</span>
                             </label>
                         </div>
-                        
+
                         <div class="form-group" id="recurringOptions" style="display: none;">
-                            <label for="recurringType">重複頻率</label>
+                            <label for="recurringType" data-i18n="form.frequency">Frequency</label>
                             <select id="recurringType">
-                                <option value="weekly">每週</option>
-                                <option value="biweekly">每雙週</option>
-                                <option value="monthly">每月 (每月第幾個週幾)</option>
+                                <option value="weekly" data-i18n="form.freq.weekly">Weekly</option>
+                                <option value="biweekly" data-i18n="form.freq.biweekly">Every Two Weeks</option>
+                                <option value="monthly" data-i18n="form.freq.monthly">Monthly (Nth weekday)</option>
                             </select>
                         </div>
-                        
+
                         <div class="form-group" id="monthlyModeOption" style="display: none;">
-                            <div class="mode-explanation" id="modeExplanation" style="margin-top: 8px; font-size: 12px; color: #666; line-height: 1.4;">
-                                相對週日模式 (例如：每月第二個週二)
-                            </div>
+                            <div class="mode-explanation" id="modeExplanation" style="margin-top: 8px; font-size: 12px; color: #666; line-height: 1.4;" data-i18n="form.monthlyHint">Relative weekday mode (e.g., second Tuesday of every month)</div>
                         </div>
-                        
+
                         <div class="form-group" id="recurringPeriod" style="display: none;">
-                            <label for="recurringWeeks">持續期間</label>
+                            <label for="recurringWeeks" data-i18n="form.duration">Duration</label>
                             <select id="recurringWeeks">
                                 <!-- 動態生成選項 -->
                             </select>
                         </div>
-                        
-                        <button type="button" class="btn" id="submitBtn" onclick="submitBooking()">確認預約</button>
+
+                        <button type="button" class="btn" id="submitBtn" onclick="submitBooking()" data-i18n="form.submit.new">Confirm Booking</button>
                     </div>
                 </div>
             </div>
@@ -1955,28 +1981,28 @@
     <div id="bookingModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
-            <h3>預約成功！</h3>
+            <h3 data-i18n="modal.bookingSuccess">Booking Successful!</h3>
             <div class="modal-message" id="modalMessage"></div>
-            
+
         </div>
     </div>
 
     <!-- 週期刪除確認模態框 -->
     <div id="recurringDeleteModal" class="recurring-modal">
         <div class="recurring-modal-content">
-            <h3>確定要刪除此行程嗎？</h3>
-            <div class="recurring-modal-message" id="recurringModalMessage">
-                偵測到這是重複行程。
+            <h3 data-i18n="recurring.deleteTitle">Delete this booking?</h3>
+            <div class="recurring-modal-message" id="recurringModalMessage" data-i18n="recurring.deleteIntro">
+                This is part of a recurring series.
             </div>
             <div class="recurring-modal-buttons">
-                <button class="recurring-btn recurring-btn-single" onclick="confirmRecurringDelete('single')">
-                    只刪除此行程
+                <button class="recurring-btn recurring-btn-single" onclick="confirmRecurringDelete('single')" data-i18n="recurring.deleteThis">
+                    Delete this booking only
                 </button>
-                <button class="recurring-btn recurring-btn-all" onclick="confirmRecurringDelete('all')">
-                    刪除所有將來的行程
+                <button class="recurring-btn recurring-btn-all" onclick="confirmRecurringDelete('all')" data-i18n="recurring.deleteAllFuture">
+                    Delete all future bookings
                 </button>
-                <button class="recurring-btn recurring-btn-cancel" onclick="closeRecurringModal()">
-                    取消
+                <button class="recurring-btn recurring-btn-cancel" onclick="closeRecurringModal()" data-i18n="recurring.cancel">
+                    Cancel
                 </button>
             </div>
         </div>
@@ -2014,6 +2040,505 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 
     <script>
+        // ===== i18n 雙語系統 =====
+        const I18N = {
+            en: {
+                'app.title': 'Gama Meeting Room Booking System',
+                'app.loading': 'Loading...',
+                'nav.thisWeek': 'This Week',
+                'nav.backToThisWeek': 'Back to This Week',
+                'table.date': 'Date',
+                'table.day': 'Day',
+                'table.time': 'Time',
+                'table.location': 'Location',
+                'table.organizer': 'Organizer',
+                'table.attendees': 'Attendees',
+                'table.subject': 'Subject',
+                'table.actions': 'Actions',
+                'table.emptyRow': 'Click here to set this date',
+                'table.untitled': 'Untitled',
+                'table.unknown': 'Unknown',
+                'day.sun': 'Sun', 'day.mon': 'Mon', 'day.tue': 'Tue', 'day.wed': 'Wed', 'day.thu': 'Thu', 'day.fri': 'Fri', 'day.sat': 'Sat',
+                'month.short': 'Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec',
+                'form.title.new': 'New Booking',
+                'form.title.edit': 'Edit Booking',
+                'form.date': 'Date',
+                'form.date.placeholder': 'Click to select a date',
+                'form.subject': 'Subject',
+                'form.subject.placeholder': 'Enter meeting subject',
+                'form.location': 'Location',
+                'form.location.placeholder': 'Select a room',
+                'form.startTime': 'Start Time',
+                'form.endTime': 'End Time',
+                'form.time.placeholder': 'Select a time',
+                'form.organizer': 'Organizer',
+                'form.organizer.placeholder': 'Click or search organizer',
+                'form.attendees': 'Attendees (optional)',
+                'form.attendees.placeholder': 'Click or search attendees',
+                'form.attendees.help': 'Click to add from the list, or type to enter people outside the list',
+                'form.recurring': 'Recurring booking',
+                'form.frequency': 'Frequency',
+                'form.freq.weekly': 'Weekly',
+                'form.freq.biweekly': 'Every Two Weeks',
+                'form.freq.monthly': 'Monthly (Nth weekday)',
+                'form.monthlyHint': 'Relative weekday mode (e.g., second Tuesday of every month)',
+                'form.duration': 'Duration',
+                'form.submit.new': 'Confirm Booking',
+                'form.submit.edit': '💾 Save Changes',
+                'form.cancelEdit': 'Back',
+                'form.editMode.single': 'Single',
+                'form.editMode.series': 'Series ({count})',
+                'form.editMode.notice': 'Recurrence cannot be modified in edit mode',
+                'form.editModal.title': '🔧 Edit Booking',
+                'form.editModal.singleBtn': '📝 Edit this one',
+                'form.editModal.singleDesc': 'Only change this meeting',
+                'form.editModal.seriesBtn': '🔄 Edit future series',
+                'form.editModal.seriesDesc': 'Change this and all future meetings',
+                'form.editModal.cancel': '❌ Cancel',
+                'room.302': '302',
+                'room.301': '301',
+                'room.小會議室': '302',
+                'room.大會議室': '301',
+                'room.茶水間': 'Pantry',
+                'room.囧尼辦公室': 'Johnny Office',
+                'room.街口辦公室': 'Jackal Office',
+                'room.會客區': 'Reception Area',
+                'period.year': '{n} Year(s)',
+                'period.month': '{n} Month(s)',
+                'period.week': '{n} Week(s)',
+                'period.halfYear': '6 Months (Half Year)',
+                'period.12monthsAsYear': '12 Months (1 Year)',
+                'period.36monthsAs3Year': '36 Months (3 Years)',
+                'period.24monthsAs2Year': '24 Months (2 Years)',
+                'modal.bookingSuccess': 'Booking Successful!',
+                'modal.meetingDetails': 'Meeting Details',
+                'modal.bookingFailed': 'Booking Failed',
+                'modal.bookingFailedConflict': 'Booking Failed — Time Conflict',
+                'modal.updateFailed': 'Update Failed',
+                'modal.saveFailed': 'Save Failed',
+                'modal.deleteFailed': 'Delete Failed',
+                'modal.initFailed': 'Initialization Failed',
+                'modal.connFailed': 'Connection Test Failed',
+                'modal.loadFailed': 'Load Failed',
+                'modal.conflictCheckFailed': 'Conflict Check Failed',
+                'modal.bulkUpdateDone': 'Bulk Update Complete',
+                'modal.partialUpdateDone': 'Partial Update Complete',
+                'modal.cannotUpdate': 'Cannot Update',
+                'modal.notConnected': 'Not Connected',
+                'modal.error': 'Error',
+                'modal.systemError': 'System Error',
+                'btn.ok': 'OK',
+                'btn.cancel': 'Cancel',
+                'btn.delete': 'Delete',
+                'detail.subject': 'Subject:',
+                'detail.date': 'Date:',
+                'detail.time': 'Time:',
+                'detail.location': 'Location:',
+                'detail.organizer': 'Organizer:',
+                'detail.attendees': 'Attendees:',
+                'detail.detection': 'Detection:',
+                'detail.frequency': 'Frequency:',
+                'detail.period': 'Period:',
+                'detail.created': 'Created:',
+                'detail.failedDates': 'Failed dates:',
+                'detail.sessions': '{n} session(s)',
+                'detail.bookings': '{n} booking(s)',
+                'recurring.deleteTitle': 'Delete this booking?',
+                'recurring.deleteIntro': 'This is part of a recurring series.',
+                'recurring.deleteThis': 'Delete this booking only',
+                'recurring.deleteAllFuture': 'Delete all future bookings',
+                'recurring.cancel': 'Cancel',
+                'recurring.detectedMsg': 'This is a {interval} recurring booking.',
+                'recurring.affectN': '<strong>Will affect {n} bookings</strong>',
+                'recurring.lastDate': 'Last booking date: <strong>{date}</strong>',
+                'recurring.chooseScope': 'Choose deletion scope:',
+                'recurring.editSingleDesc': 'Only change the meeting on {date}',
+                'recurring.editSeriesDesc': 'Change {n} meetings starting {start} (through {end})',
+                'recurring.detectionLabel': '{interval} recurring, {n} bookings total',
+                'conflict.title': 'Booking Conflict',
+                'conflict.seriesTitle': 'Series Edit Conflict',
+                'conflict.date': 'Conflict date:',
+                'conflict.room': 'Room:',
+                'conflict.existingTime': 'Existing time:',
+                'conflict.existingMeeting': 'Existing meeting:',
+                'conflict.bookedBy': 'Booked by:',
+                'conflict.suggestion': 'Please change your time or pick another room.',
+                'conflict.backToEdit': 'Back to Edit',
+                'conflict.listHeader': 'The following dates have conflicts and cannot be booked:',
+                'conflict.summary': '{total} bookings total, {conflict} have conflicts:',
+                'conflict.allConflict': 'All dates have conflicts; update cannot proceed.',
+                'conflict.skipPrompt': 'Skip {n} conflicting dates and update the remaining {m}?',
+                'notify.deleted': 'Booking deleted',
+                'notify.deletedN': 'Deleted {n} bookings',
+                'notify.newBooking': 'New booking: {title} ({organizer})',
+                'notify.copyNotFound': 'Cannot find the booking to copy',
+                'notify.copyDone': 'Booking content copied — select a new date',
+                'notify.bookingNotFound': 'Booking data not found',
+                'notify.googleOpened': 'Google Calendar opened',
+                'notify.googleOpenedN': 'Google Calendar opened ({n} recurring meetings)',
+                'notify.googleFail': 'Failed to add to Google Calendar: {err}',
+                'notify.appleFail': 'Failed to add to Apple Calendar: {err}',
+                'notify.recurringDownloadedTap': 'Recurring booking file downloaded ({n}). Tap the file to add to calendar.',
+                'notify.recurringDownloadedApp': 'Recurring booking file downloaded ({n}). Open with your calendar app.',
+                'notify.recurringDownloadedIcs': 'Recurring booking ICS file downloaded ({n}). Open with your calendar software.',
+                'notify.fileDownloadedTap': 'File downloaded. Tap to add to calendar.',
+                'notify.fileDownloadedApp': 'File downloaded. Open with your calendar app.',
+                'notify.fileDownloadedIcs': 'ICS file downloaded. Open with your calendar software.',
+                'notify.fallbackIcs': 'Fell back to single booking and downloaded ICS file',
+                'notify.modalCopied': 'Window content copied',
+                'notify.modalCopyFail': 'Copy failed, please try again',
+                'notify.fillForm': 'Please fill in booking details',
+                'status.connecting': '🔄 Connecting...',
+                'status.connected': '✅ Connected',
+                'status.initFailed': '❌ Initialization Failed',
+                'status.connFailed': '❌ Connection Test Failed',
+                'status.loadFailed': '❌ Load Failed',
+                'error.editNotFound': 'Cannot find the booking to edit',
+                'error.deleteNotFound': 'Cannot find the booking to delete',
+                'error.dbNotConnected': 'Database connection not established',
+                'error.supabaseSdk': 'Supabase SDK not loaded',
+                'error.supabaseInit': 'Failed to initialize Supabase: {err}',
+                'error.dbConnect': "Failed to connect to database: {err}<br><br>Possible causes:<br>1. Network issue<br>2. Table 'bookings' does not exist<br>3. RLS policy misconfigured<br><br>Please check your Supabase setup.",
+                'error.requiredFields': 'Please complete the required fields highlighted in red.',
+                'error.endBeforeStart': 'End time must be later than start time.',
+                'error.noDates': 'Cannot generate booking dates. Please check date settings.',
+                'error.conflictCheckFail': 'Conflict detection error:<br><strong>{err}</strong><br><br>Possible causes:<br>• Database connection issue<br>• Unstable network<br><br>Please retry later or contact admin.',
+                'error.allFailed': 'All bookings failed to create.<br><br>Failed dates:<br>{dates}<br><br>Please check your network or retry later.',
+                'error.submitUnexpected': 'Unexpected error submitting booking:<br><strong>{err}</strong><br><br>Please refresh the page and try again, or contact admin.',
+                'error.loadFail': 'Failed to load bookings: {err}',
+                'error.saveFail': 'Failed to save booking: {err}',
+                'error.deleteFail': 'Failed to delete booking: {err}',
+                'error.updateFail': 'Failed to update booking: {err}',
+                'error.partialUpdate': 'Error during partial update: {err}',
+                'error.conflictCheck': 'Cannot check conflicts: {err}<br><br>Please check your network and retry.',
+                'error.allUpdatesFailed': 'All booking updates failed. Please try again later.',
+                'update.success': '✅ <strong>Successfully updated:</strong> {n} bookings',
+                'update.skipped': '⏭️ <strong>Skipped conflicts:</strong> {n} bookings',
+                'update.failed': '⚠️ <strong>Updates failed:</strong> {n} bookings',
+                'update.partialDone': '✅ <strong>Partial update complete!</strong>',
+                'dropdown.noMatchOrganizer': 'No matching name — type to enter directly',
+                'dropdown.noMatchAttendees': 'No matching name — press Enter to add directly',
+                'dropdown.remove': 'Remove {name}',
+                'calendar.google': 'Google Calendar',
+                'calendar.appleOutlook': 'Apple & Outlook Calendar',
+                'calendar.recurringSummary': 'Recurring booking, {n} sessions',
+                'calendar.recurringFilename': 'Recurring Booking',
+                'calendar.icsCategory': 'Meeting',
+                'action.calendar': 'Calendar',
+                'action.copy': 'Copy',
+                'action.edit': 'Edit',
+                'action.delete': 'Delete',
+                'action.shareLine': 'Share to LINE',
+                'action.copyWindow': 'Copy window content',
+                'freqText.weekly': 'weekly',
+                'freqText.biweekly': 'every two weeks',
+                'freqText.monthly': 'monthly',
+                'week.range.sameMonth': '{monthName} {start}–{end}, {year}',
+                'week.range.crossMonth': '{startMonth} {startDay} – {endMonth} {endDay}, {year}',
+                'monthly.relativeExplain': 'Relative weekday mode: every {ordinal} {dayName} of the month',
+                'ordinal.1': 'first', 'ordinal.2': 'second', 'ordinal.3': 'third', 'ordinal.4': 'fourth', 'ordinal.5': 'fifth',
+                'throw.invalidDateTime': 'Invalid date/time format',
+                'throw.conflictCheck': 'Conflict check failed: {err}'
+            },
+            zh: {
+                'app.title': 'Gama 會議室預約系統',
+                'app.loading': '載入中...',
+                'nav.thisWeek': '本週',
+                'nav.backToThisWeek': '回到本週',
+                'table.date': '日期',
+                'table.day': '星期',
+                'table.time': '時間',
+                'table.location': '會議地點',
+                'table.organizer': '登記者',
+                'table.attendees': '與會者',
+                'table.subject': '會議主題',
+                'table.actions': '動作',
+                'table.emptyRow': '點選此處 帶入預約日期',
+                'table.untitled': '無標題',
+                'table.unknown': '未知',
+                'day.sun': '週日', 'day.mon': '週一', 'day.tue': '週二', 'day.wed': '週三', 'day.thu': '週四', 'day.fri': '週五', 'day.sat': '週六',
+                'month.short': '1月,2月,3月,4月,5月,6月,7月,8月,9月,10月,11月,12月',
+                'form.title.new': '新增預約',
+                'form.title.edit': '編輯預約',
+                'form.date': '日期',
+                'form.date.placeholder': '請點擊選擇日期',
+                'form.subject': '會議主題',
+                'form.subject.placeholder': '請輸入會議主題',
+                'form.location': '會議地點',
+                'form.location.placeholder': '請選擇會議室',
+                'form.startTime': '開始時間',
+                'form.endTime': '結束時間',
+                'form.time.placeholder': '請選擇時間',
+                'form.organizer': '登記者',
+                'form.organizer.placeholder': '點擊或搜尋登記者',
+                'form.attendees': '與會者（選填）',
+                'form.attendees.placeholder': '點擊或搜尋與會者',
+                'form.attendees.help': '點選名單可立即加入，也可手動輸入名單外人員',
+                'form.recurring': '週期預約',
+                'form.frequency': '重複頻率',
+                'form.freq.weekly': '每週',
+                'form.freq.biweekly': '每雙週',
+                'form.freq.monthly': '每月 (每月第幾個週幾)',
+                'form.monthlyHint': '相對週日模式 (例如：每月第二個週二)',
+                'form.duration': '持續期間',
+                'form.submit.new': '確認預約',
+                'form.submit.edit': '💾 儲存變更',
+                'form.cancelEdit': '返回',
+                'form.editMode.single': '單次',
+                'form.editMode.series': '系列 ({count}場)',
+                'form.editMode.notice': '編輯模式下無法修改週期設定',
+                'form.editModal.title': '🔧 編輯預約',
+                'form.editModal.singleBtn': '📝 只編輯此次',
+                'form.editModal.singleDesc': '僅修改這一場會議',
+                'form.editModal.seriesBtn': '🔄 編輯未來系列',
+                'form.editModal.seriesDesc': '修改從此次開始的所有後續會議',
+                'form.editModal.cancel': '❌ 取消',
+                'room.302': '302',
+                'room.301': '301',
+                'room.小會議室': '302',
+                'room.大會議室': '301',
+                'room.茶水間': '茶水間',
+                'room.囧尼辦公室': '囧尼辦公室',
+                'room.街口辦公室': '街口辦公室',
+                'room.會客區': '會客區',
+                'period.year': '{n}年',
+                'period.month': '{n}個月',
+                'period.week': '{n}週',
+                'period.halfYear': '6個月（半年）',
+                'period.12monthsAsYear': '12個月（1年）',
+                'period.36monthsAs3Year': '36個月（3年）',
+                'period.24monthsAs2Year': '24個月（2年）',
+                'modal.bookingSuccess': '預約成功！',
+                'modal.meetingDetails': '會議詳情',
+                'modal.bookingFailed': '預約失敗',
+                'modal.bookingFailedConflict': '預約失敗 - 時間衝突',
+                'modal.updateFailed': '更新失敗',
+                'modal.saveFailed': '儲存失敗',
+                'modal.deleteFailed': '刪除失敗',
+                'modal.initFailed': '初始化失敗',
+                'modal.connFailed': '連線測試失敗',
+                'modal.loadFailed': '載入失敗',
+                'modal.conflictCheckFailed': '衝突檢查失敗',
+                'modal.bulkUpdateDone': '批量更新完成',
+                'modal.partialUpdateDone': '部分更新完成',
+                'modal.cannotUpdate': '無法更新',
+                'modal.notConnected': '未連接',
+                'modal.error': '錯誤',
+                'modal.systemError': '系統錯誤',
+                'btn.ok': '確認',
+                'btn.cancel': '取消',
+                'btn.delete': '刪除',
+                'detail.subject': '會議主題：',
+                'detail.date': '日期：',
+                'detail.time': '時間：',
+                'detail.location': '地點：',
+                'detail.organizer': '登記者：',
+                'detail.attendees': '與會者：',
+                'detail.detection': '偵測結果：',
+                'detail.frequency': '頻率：',
+                'detail.period': '期間：',
+                'detail.created': '建立場次：',
+                'detail.failedDates': '部分日期預約失敗：',
+                'detail.sessions': '{n} 場',
+                'detail.bookings': '{n} 個預約',
+                'recurring.deleteTitle': '確定要刪除此行程嗎？',
+                'recurring.deleteIntro': '偵測到這是重複行程。',
+                'recurring.deleteThis': '只刪除此行程',
+                'recurring.deleteAllFuture': '刪除所有將來的行程',
+                'recurring.cancel': '取消',
+                'recurring.detectedMsg': '偵測到這是{interval}重複行程。',
+                'recurring.affectN': '<strong>將影響 {n} 個預約</strong>',
+                'recurring.lastDate': '最後一筆預約日：<strong>{date}</strong>',
+                'recurring.chooseScope': '請選擇刪除範圍：',
+                'recurring.editSingleDesc': '僅修改 {date} 這一場會議',
+                'recurring.editSeriesDesc': '修改從 {start} 開始的 {n} 場會議 (至 {end})',
+                'recurring.detectionLabel': '{interval}重複，共 {n} 個預約',
+                'conflict.title': '預約衝突',
+                'conflict.seriesTitle': '系列編輯衝突',
+                'conflict.date': '衝突日期：',
+                'conflict.room': '會議室：',
+                'conflict.existingTime': '現有時間：',
+                'conflict.existingMeeting': '現有會議：',
+                'conflict.bookedBy': '預約者：',
+                'conflict.suggestion': '請修改您的預約時間或選擇其他會議室。',
+                'conflict.backToEdit': '返回修改',
+                'conflict.listHeader': '以下日期有衝突，無法預約：',
+                'conflict.summary': '共 {total} 個預約，其中 {conflict} 個產生衝突：',
+                'conflict.allConflict': '所有日期都有衝突，無法執行更新。',
+                'conflict.skipPrompt': '確定要跳過 {n} 個衝突日期，更新剩餘 {m} 個預約嗎？',
+                'notify.deleted': '預約已刪除',
+                'notify.deletedN': '已刪除 {n} 個預約',
+                'notify.newBooking': '新預約：{title} ({organizer})',
+                'notify.copyNotFound': '找不到要複製的預約資料',
+                'notify.copyDone': '預約內容已複製，請選擇新的日期',
+                'notify.bookingNotFound': '找不到預約資料',
+                'notify.googleOpened': '已開啟 Google 日曆',
+                'notify.googleOpenedN': '已開啟 Google 日曆 ({n} 場週期會議)',
+                'notify.googleFail': '加入 Google 日曆失敗: {err}',
+                'notify.appleFail': '加入 Apple 日曆失敗: {err}',
+                'notify.recurringDownloadedTap': '週期預約檔案已下載 ({n} 場)，請點擊檔案加入日曆',
+                'notify.recurringDownloadedApp': '週期預約檔案已下載 ({n} 場)，請用日曆 App 開啟',
+                'notify.recurringDownloadedIcs': '週期預約 ICS 檔案已下載 ({n} 場)，請用日曆軟體開啟',
+                'notify.fileDownloadedTap': '檔案已下載，請點擊檔案加入日曆',
+                'notify.fileDownloadedApp': '檔案已下載,請用日曆 App 開啟',
+                'notify.fileDownloadedIcs': 'ICS 檔案已下載，請用日曆軟體開啟',
+                'notify.fallbackIcs': '已回退為單次預約模式並下載 ICS 檔案',
+                'notify.modalCopied': '已複製視窗內容',
+                'notify.modalCopyFail': '複製失敗，請稍後再試',
+                'notify.fillForm': '請填寫預約資訊',
+                'status.connecting': '🔄 連接中...',
+                'status.connected': '✅ 已連接',
+                'status.initFailed': '❌ 初始化失敗',
+                'status.connFailed': '❌ 連線測試失敗',
+                'status.loadFailed': '❌ 載入失敗',
+                'error.editNotFound': '找不到要編輯的預約',
+                'error.deleteNotFound': '找不到要刪除的預約',
+                'error.dbNotConnected': '資料庫連線尚未建立',
+                'error.supabaseSdk': 'Supabase SDK 未載入',
+                'error.supabaseInit': '無法初始化 Supabase：{err}',
+                'error.dbConnect': "無法連接到資料庫：{err}<br><br>可能原因：<br>1. 網路連線問題<br>2. 資料表 'bookings' 不存在<br>3. RLS 政策未正確設定<br><br>請檢查 Supabase 設定。",
+                'error.requiredFields': '請先完成紅框標示的必填欄位。',
+                'error.endBeforeStart': '結束時間必須晚於開始時間。',
+                'error.noDates': '無法產生預約日期，請檢查日期設定。',
+                'error.conflictCheckFail': '衝突檢測時發生錯誤：<br><strong>{err}</strong><br><br>可能原因：<br>• 資料庫連線問題<br>• 網路連線不穩定<br><br>請稍後重試或聯絡系統管理員。',
+                'error.allFailed': '所有預約都未能成功建立。<br><br>失敗的日期：<br>{dates}<br><br>請檢查網路連線或稍後重試。',
+                'error.submitUnexpected': '提交預約時發生未預期的錯誤：<br><strong>{err}</strong><br><br>請重新整理頁面後再試，或聯絡系統管理員。',
+                'error.loadFail': '無法載入預約資料: {err}',
+                'error.saveFail': '無法儲存預約: {err}',
+                'error.deleteFail': '無法刪除預約: {err}',
+                'error.updateFail': '無法更新預約：{err}',
+                'error.partialUpdate': '部分更新時發生錯誤：{err}',
+                'error.conflictCheck': '無法檢查衝突：{err}<br><br>請檢查網路連線後重試。',
+                'error.allUpdatesFailed': '所有預約更新都失敗了，請稍後重試。',
+                'update.success': '✅ <strong>成功更新：</strong>{n} 個預約',
+                'update.skipped': '⏭️ <strong>跳過衝突：</strong>{n} 個預約',
+                'update.failed': '⚠️ <strong>更新失敗：</strong>{n} 個預約',
+                'update.partialDone': '✅ <strong>部分更新完成！</strong>',
+                'dropdown.noMatchOrganizer': '找不到符合的人員，可直接輸入',
+                'dropdown.noMatchAttendees': '找不到符合的人員，可直接按 Enter 新增',
+                'dropdown.remove': '移除 {name}',
+                'calendar.google': 'Google 日曆',
+                'calendar.appleOutlook': 'Apple & Outlook 日曆',
+                'calendar.recurringSummary': '週期預約，共 {n} 場',
+                'calendar.recurringFilename': '週期預約',
+                'calendar.icsCategory': '會議',
+                'action.calendar': '日曆',
+                'action.copy': '複製',
+                'action.edit': '編輯',
+                'action.delete': '刪除',
+                'action.shareLine': '分享到 LINE',
+                'action.copyWindow': '複製視窗內容',
+                'freqText.weekly': '每週',
+                'freqText.biweekly': '每雙週',
+                'freqText.monthly': '每月',
+                'week.range.sameMonth': '{year}年{startMonth}月{start}日 - {end}日',
+                'week.range.crossMonth': '{year}年{startMonth}月{startDay}日 - {endMonth}月{endDay}日',
+                'monthly.relativeExplain': '相對週日模式：每月{ordinal}{dayName}',
+                'ordinal.1': '第一個', 'ordinal.2': '第二個', 'ordinal.3': '第三個', 'ordinal.4': '第四個', 'ordinal.5': '第五個',
+                'throw.invalidDateTime': '無效的日期時間格式',
+                'throw.conflictCheck': '衝突檢測失敗：{err}'
+            }
+        };
+
+        let currentLang = (function() {
+            try { return localStorage.getItem('gama_lang') || 'en'; } catch (e) { return 'en'; }
+        })();
+
+        function t(key, vars) {
+            const dict = I18N[currentLang] || I18N.en;
+            let str = (dict && dict[key] != null) ? dict[key] : ((I18N.en && I18N.en[key] != null) ? I18N.en[key] : key);
+            if (vars && typeof str === 'string') {
+                str = str.replace(/\{(\w+)\}/g, function(_, name) {
+                    return (vars[name] != null) ? vars[name] : '';
+                });
+            }
+            return str;
+        }
+
+        function tRoom(room) {
+            if (!room) return '';
+            const key = 'room.' + room;
+            const dict = I18N[currentLang] || I18N.en;
+            return (dict && dict[key] != null) ? dict[key] : room;
+        }
+
+        function applyStaticI18n() {
+            document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                el.textContent = t(el.dataset.i18n);
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
+                el.placeholder = t(el.dataset.i18nPlaceholder);
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+                const txt = t(el.dataset.i18nTitle);
+                el.title = txt;
+                if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', txt);
+            });
+            document.title = t('app.title');
+        }
+
+        function refreshDynamicUI() {
+            try {
+                if (typeof updateWeekDisplay === 'function') updateWeekDisplay();
+                if (typeof updateSchedule === 'function') updateSchedule();
+                if (typeof updateDateDisplay === 'function') updateDateDisplay();
+                if (typeof updateTodayButtonState === 'function') updateTodayButtonState();
+                if (typeof updateModeExplanation === 'function') updateModeExplanation();
+            } catch (e) {
+                console.warn('refreshDynamicUI partial failure:', e);
+            }
+            const submitBtn = document.getElementById('submitBtn');
+            const formTitle = document.querySelector('.booking-form h3');
+            if (submitBtn && !window.isEditMode) submitBtn.textContent = t('form.submit.new');
+            if (submitBtn && window.isEditMode) submitBtn.textContent = t('form.submit.edit');
+            if (formTitle && !window.isEditMode) formTitle.textContent = t('form.title.new');
+            const editModeNotice = document.querySelector('.edit-mode-notice');
+            if (editModeNotice) editModeNotice.textContent = t('form.editMode.notice');
+            const startSel = document.getElementById('startTime');
+            const endSel = document.getElementById('endTime');
+            [startSel, endSel].forEach(function(sel) {
+                if (sel && sel.options.length > 0 && sel.options[0].value === '') {
+                    sel.options[0].textContent = t('form.time.placeholder');
+                }
+            });
+            const roomSel = document.getElementById('meetingRoom');
+            if (roomSel) {
+                Array.from(roomSel.options).forEach(function(opt) {
+                    if (opt.value === '') opt.textContent = t('form.location.placeholder');
+                    else opt.textContent = tRoom(opt.value);
+                });
+            }
+            const recurringWeeks = document.getElementById('recurringWeeks');
+            if (recurringWeeks && typeof updateRecurringPeriodOptions === 'function') {
+                const recurringType = document.getElementById('recurringType');
+                if (recurringType) updateRecurringPeriodOptions();
+            }
+        }
+
+        function updateLangSwitcherUI() {
+            const btn = document.getElementById('langSwitch');
+            if (!btn) return;
+            if (currentLang === 'en') {
+                btn.innerHTML = '<span class="lang-active">EN</span> | <span>中</span>';
+            } else {
+                btn.innerHTML = '<span>EN</span> | <span class="lang-active">中</span>';
+            }
+        }
+
+        function setLang(lang) {
+            currentLang = (lang === 'zh') ? 'zh' : 'en';
+            try { localStorage.setItem('gama_lang', currentLang); } catch (e) {}
+            document.documentElement.lang = (currentLang === 'zh') ? 'zh-TW' : 'en';
+            applyStaticI18n();
+            refreshDynamicUI();
+            updateLangSwitcherUI();
+        }
+
+        function toggleLang() {
+            setLang(currentLang === 'en' ? 'zh' : 'en');
+        }
+        // ===== /i18n =====
+
         // Supabase 設定 - 直接設定連線資訊
         const SUPABASE_URL = 'https://vicvccudnqluufsgyznk.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpY3ZjY3VkbnFsdXVmc2d5em5rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMzkyMDMsImV4cCI6MjA3MDcxNTIwM30.55ZG0B_L6UVJOUteqZ7sPXGHm8DG6K5Qk4xcQ9lF01U';
@@ -2229,7 +2754,7 @@
             const filtered = organizerDirectory.filter(name => !query || name.toLowerCase().startsWith(query));
 
             if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="attendees-empty">找不到符合的人員，可直接輸入</div>';
+                dropdown.innerHTML = '<div class="attendees-empty">' + escapeHtml(t('dropdown.noMatchOrganizer')) + '</div>';
             } else {
                 dropdown.innerHTML = filtered.map(name => `
                     <button type="button" class="organizer-option" data-organizer-option="${escapeHtml(name)}">
@@ -2337,7 +2862,7 @@
             selectedContainer.innerHTML = selectedAttendees.map(name => `
                 <span class="attendee-chip">
                     <span>${escapeHtml(name)}</span>
-                    <button type="button" class="attendee-chip-remove" data-remove-attendee="${escapeHtml(name)}" aria-label="移除 ${escapeHtml(name)}">&times;</button>
+                    <button type="button" class="attendee-chip-remove" data-remove-attendee="${escapeHtml(name)}" aria-label="${escapeHtml(t('dropdown.remove', { name: name }))}">&times;</button>
                 </span>
             `).join('');
             syncAttendeesField();
@@ -2370,7 +2895,7 @@
             if (mode === 'single') {
                 const singleName = normalizeAttendeeName(rawValue);
                 if (!singleName) {
-                    return '<span class="booking-tag-empty">未知</span>';
+                    return '<span class="booking-tag-empty">' + escapeHtml(t('table.unknown')) + '</span>';
                 }
 
                 return `
@@ -2406,7 +2931,7 @@
             const filtered = getFilteredAttendees(searchInput.value);
 
             if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="attendees-empty">找不到符合的人員，可直接按 Enter 新增</div>';
+                dropdown.innerHTML = '<div class="attendees-empty">' + escapeHtml(t('dropdown.noMatchAttendees')) + '</div>';
             } else {
                 dropdown.innerHTML = filtered.map(name => `
                     <button type="button" class="attendee-option" data-attendee-option="${escapeHtml(name)}">
@@ -2574,7 +3099,7 @@
             
             const targetBooking = bookings.find(b => b.id === bookingId);
             if (!targetBooking) {
-                showModal('錯誤', '找不到要編輯的預約');
+                showModal(t('modal.error'), t('error.editNotFound'));
                 return;
             }
 
@@ -2631,24 +3156,25 @@
             const seriesDesc = document.getElementById('seriesEditDesc');
             
             const futureCount = recurringInfo.futureBookings.length;
-            const intervalText = recurringInfo.intervalType === 'weekly' ? '每週' : 
-                                 recurringInfo.intervalType === 'biweekly' ? '每雙週' : '每月';
-            
+            const intervalKey = recurringInfo.intervalType === 'weekly' ? 'freqText.weekly' :
+                                 recurringInfo.intervalType === 'biweekly' ? 'freqText.biweekly' : 'freqText.monthly';
+            const intervalText = t(intervalKey);
+
             // 計算日期範圍
             const startDate = targetBooking.date;
             const endDate = recurringInfo.futureBookings[futureCount - 1]?.date;
-            
+
             // 填入預約資訊
             bookingInfo.innerHTML = `
-                <p><strong>會議主題：</strong>${targetBooking.title}</p>
-                <p><strong>時間：</strong>${formatTimeDisplay(targetBooking.startTime)} - ${formatTimeDisplay(targetBooking.endTime)}</p>
-                <p><strong>地點：</strong>${targetBooking.room}</p>
-                <p><strong>偵測結果：</strong>${intervalText}重複，共 ${futureCount} 個預約</p>
+                <p><strong>${escapeHtml(t('detail.subject'))}</strong>${escapeHtml(targetBooking.title || '')}</p>
+                <p><strong>${escapeHtml(t('detail.time'))}</strong>${formatTimeDisplay(targetBooking.startTime)} - ${formatTimeDisplay(targetBooking.endTime)}</p>
+                <p><strong>${escapeHtml(t('detail.location'))}</strong>${escapeHtml(tRoom(targetBooking.room))}</p>
+                <p><strong>${escapeHtml(t('detail.detection'))}</strong>${escapeHtml(t('recurring.detectionLabel', { interval: intervalText, n: futureCount }))}</p>
             `;
-            
+
             // 更新按鈕描述
-            singleDesc.textContent = `僅修改 ${startDate} 這一場會議`;
-            seriesDesc.textContent = `修改從 ${startDate} 開始的 ${futureCount} 場會議 (至 ${endDate})`;
+            singleDesc.textContent = t('recurring.editSingleDesc', { date: startDate });
+            seriesDesc.textContent = t('recurring.editSeriesDesc', { n: futureCount, start: startDate, end: endDate });
             
             // 暫存編輯資訊
             pendingEditBooking = {
@@ -2692,7 +3218,7 @@ function copyBooking(bookingId, event) {
     // 找到要複製的預約
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) {
-        showNotification('找不到要複製的預約資料', 'warning');
+        showNotification(t('notify.copyNotFound'), 'warning');
         return;
     }
     
@@ -2735,11 +3261,11 @@ function copyBooking(bookingId, event) {
     // 確保表單標題和按鈕正確
     const submitBtn = document.getElementById('submitBtn');
     const formTitle = document.querySelector('.booking-form h3');
-    if (submitBtn) submitBtn.textContent = '確認預約';
-    if (formTitle) formTitle.textContent = '新增預約';
-    
+    if (submitBtn) submitBtn.textContent = t('form.submit.new');
+    if (formTitle) formTitle.textContent = t('form.title.new');
+
     // 顯示成功提示
-    showNotification('預約內容已複製，請選擇新的日期', 'success');
+    showNotification(t('notify.copyDone'), 'success');
     
     // 滾動到表單區域
     document.querySelector('.sidebar').scrollIntoView({ behavior: 'smooth' });
@@ -2802,16 +3328,16 @@ function openEditForm(booking, mode = 'single', futureBookings = []) {
         if (!notice) {
             notice = document.createElement('div');
             notice.className = 'edit-mode-notice';
-            notice.textContent = '編輯模式下無法修改週期設定';
+            notice.textContent = t('form.editMode.notice');
             checkboxGroup.appendChild(notice);
         }
     }
-    
+
     // 隱藏週期相關選項
     if (recurringOptions) recurringOptions.style.display = 'none';
     if (recurringPeriod) recurringPeriod.style.display = 'none';
     if (monthlyModeOption) monthlyModeOption.style.display = 'none';
-    
+
     updateDateDisplay();
     updateUIForEditMode();
 }
@@ -2819,22 +3345,25 @@ function openEditForm(booking, mode = 'single', futureBookings = []) {
 function updateUIForEditMode() {
     const submitBtn = document.getElementById('submitBtn');
     const formTitle = document.querySelector('.booking-form h3');
-    
-    if (submitBtn) submitBtn.textContent = '💾 儲存變更';
-    
+
+    window.isEditMode = true;
+    if (submitBtn) submitBtn.textContent = t('form.submit.edit');
+
     if (formTitle) {
-        const modeText = editMode === 'single' ? '單次' : `系列 (${futureBookingsToEdit.length}場)`;
+        const modeText = editMode === 'single'
+            ? t('form.editMode.single')
+            : t('form.editMode.series', { count: futureBookingsToEdit.length });
         const modeClass = editMode === 'single' ? 'edit-mode-single' : 'edit-mode-series';
-        
+
         formTitle.innerHTML = `
             <div style="display: flex; align-items: center;">
-                編輯預約 
-                <span class="edit-mode-indicator ${modeClass}">${modeText}</span>
+                ${escapeHtml(t('form.title.edit'))}
+                <span class="edit-mode-indicator ${modeClass}">${escapeHtml(modeText)}</span>
             </div>
-            <button class="edit-cancel-btn" onclick="cancelEdit()">返回</button>
+            <button class="edit-cancel-btn" onclick="cancelEdit()">${escapeHtml(t('form.cancelEdit'))}</button>
         `;
     }
-    
+
     document.querySelector('.sidebar').scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -2863,12 +3392,13 @@ function cancelEdit() {
     }
     
     resetForm();
-    
+
+    window.isEditMode = false;
     const submitBtn = document.getElementById('submitBtn');
     const formTitle = document.querySelector('.booking-form h3');
-    
-    if (submitBtn) submitBtn.textContent = '確認預約';
-    if (formTitle) formTitle.textContent = '新增預約';
+
+    if (submitBtn) submitBtn.textContent = t('form.submit.new');
+    if (formTitle) formTitle.textContent = t('form.title.new');
 }
 
 
@@ -2902,26 +3432,26 @@ function cancelEdit() {
         // 初始化 Supabase 連接
         function initializeSupabase() {
             try {
-                updateStatus('connecting', '🔄 連接中...');
+                updateStatus('connecting', t('status.connecting'));
                 console.log('開始初始化 Supabase...');
                 console.log('Supabase object:', typeof supabase);
-                
+
                 // 檢查 Supabase SDK 是否可用
                 if (typeof supabase === 'undefined') {
-                    throw new Error('Supabase SDK 未載入');
+                    throw new Error(t('error.supabaseSdk'));
                 }
-                
+
                 // 建立 Supabase 客戶端
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log('Supabase 客戶端建立成功:', supabaseClient);
-                
+
                 // 測試連線
                 testConnection();
-                
+
             } catch (error) {
                 console.error('Supabase 初始化失敗:', error);
-                updateStatus('error', '❌ 初始化失敗');
-                showModal('初始化失敗', `無法初始化 Supabase：${error.message}`);
+                updateStatus('error', t('status.initFailed'));
+                showModal(t('modal.initFailed'), t('error.supabaseInit', { err: error.message }));
             }
         }
 
@@ -2942,18 +3472,18 @@ function cancelEdit() {
                 }
                 
                 console.log('資料庫連線測試成功:', data);
-                updateStatus('connected', '✅ 已連接');
-                
+                updateStatus('connected', t('status.connected'));
+
                 // 載入資料
                 loadBookings();
-                
+
                 // 設定即時更新
                 setupRealtimeSubscription();
-                
+
             } catch (error) {
                 console.error('連線測試失敗:', error);
-                updateStatus('error', '❌ 連線測試失敗');
-                showModal('連線測試失敗', `無法連接到資料庫：${error.message}<br><br>可能原因：<br>1. 網路連線問題<br>2. 資料表 'bookings' 不存在<br>3. RLS 政策未正確設定<br><br>請檢查 Supabase 設定。`);
+                updateStatus('error', t('status.connFailed'));
+                showModal(t('modal.connFailed'), t('error.dbConnect', { err: error.message }));
             }
         }
 
@@ -2983,7 +3513,7 @@ function cancelEdit() {
                             
                             // 顯示通知
                             if (payload.new.organizer !== getCurrentUser()) {
-                                showNotification(`新預約：${payload.new.title} (${payload.new.organizer})`);
+                                showNotification(t('notify.newBooking', { title: payload.new.title, organizer: payload.new.organizer }));
                             }
                         } else if (payload.eventType === 'DELETE') {
                             // 刪除預約
@@ -3007,13 +3537,13 @@ function cancelEdit() {
         // 載入預約資料
 async function loadBookings() {
     if (!supabaseClient) {
-        showModal('未連接', '資料庫連線尚未建立');
+        showModal(t('modal.notConnected'), t('error.dbNotConnected'));
         return;
     }
-    
+
     try {
         showLoading(true);
-        updateStatus('loading', '🔄 載入資料...');
+        updateStatus('loading', t('status.connecting'));
         
         // 🔧 修正：使用今天所在週作為固定基準點，而不是 currentWeekStart
         const todayWeekStart = getCurrentWeekStart(); // 固定基準
@@ -3047,14 +3577,14 @@ async function loadBookings() {
         bookings = data.map(formatBookingFromDB);
         
         updateSchedule();
-        updateStatus('connected', '✅ 已連接');
-        
+        updateStatus('connected', t('status.connected'));
+
         console.log(`載入 ${bookings.length} 筆預約資料（固定範圍）`);
-        
+
     } catch (error) {
         console.error('載入資料失敗:', error);
-        updateStatus('error', '❌ 載入失敗');
-        showModal('載入失敗', `無法載入預約資料: ${error.message}`);
+        updateStatus('error', t('status.loadFailed'));
+        showModal(t('modal.loadFailed'), t('error.loadFail', { err: error.message }));
     } finally {
         showLoading(false);
     }
@@ -3063,7 +3593,7 @@ async function loadBookings() {
         // 新增預約
         async function saveBooking(booking) {
             if (!supabaseClient) {
-                showModal('未連接', '資料庫連線尚未建立');
+                showModal(t('modal.notConnected'), t('error.dbNotConnected'));
                 return false;
             }
             
@@ -3092,7 +3622,7 @@ async function loadBookings() {
                 
             } catch (error) {
                 console.error('儲存預約失敗:', error);
-                showModal('儲存失敗', `無法儲存預約: ${error.message}`);
+                showModal(t('modal.saveFailed'), t('error.saveFail', { err: error.message }));
                 return false;
             } finally {
                 showLoading(false);
@@ -3153,72 +3683,77 @@ function updateRecurringPeriodOptions() {
     // 清空現有選項
     recurringWeeksSelect.innerHTML = '';
     
+    const weekLabel = function(n) { return t('period.week', { n: n }); };
+    const monthLabel = function(n) { return t('period.month', { n: n }); };
+    const weeksWithMonths = function(n, months) { return weekLabel(n) + '（' + monthLabel(months) + '）'; };
+    const weeksWithYears = function(n, years) { return weekLabel(n) + '（' + t('period.year', { n: years }) + '）'; };
+
     if (recurringType === 'weekly') {
         // 隱藏月模式選項
         monthlyModeOption.style.display = 'none';
-        
+
         // 每週重複的選項
         const weeklyOptions = [
-            { value: 2, text: '2週' },
-            { value: 3, text: '3週' },
-            { value: 4, text: '4週' },
-            { value: 6, text: '6週' },
-            { value: 8, text: '8週' },
-            { value: 12, text: '12週（3個月）' },
-            { value: 24, text: '24週（6個月）' },
-            { value: 52, text: '52週（1年）' },
-            { value: 156, text: '156週（3年）' }
+            { value: 2, text: weekLabel(2) },
+            { value: 3, text: weekLabel(3) },
+            { value: 4, text: weekLabel(4) },
+            { value: 6, text: weekLabel(6) },
+            { value: 8, text: weekLabel(8) },
+            { value: 12, text: weeksWithMonths(12, 3) },
+            { value: 24, text: weeksWithMonths(24, 6) },
+            { value: 52, text: weeksWithYears(52, 1) },
+            { value: 156, text: weeksWithYears(156, 3) }
         ];
-        
+
         weeklyOptions.forEach(option => {
             const optionElement = document.createElement('option');
             optionElement.value = option.value;
             optionElement.textContent = option.text;
             recurringWeeksSelect.appendChild(optionElement);
         });
-        
+
         // 預設選擇12週
         recurringWeeksSelect.value = '12';
-        
+
     } else if (recurringType === 'biweekly') {
         // 隱藏月模式選項
         monthlyModeOption.style.display = 'none';
-        
+
         // 每雙週重複的選項
         const biweeklyOptions = [
-            { value: 4, text: '4週' },
-            { value: 6, text: '6週' },
-            { value: 8, text: '8週' },
-            { value: 10, text: '10週' },
-            { value: 12, text: '12週' },
-            { value: 26, text: '6個月（半年）' },
-            { value: 52, text: '12個月（1年）' },
-            { value: 156, text: '36個月（3年）' }
+            { value: 4, text: weekLabel(4) },
+            { value: 6, text: weekLabel(6) },
+            { value: 8, text: weekLabel(8) },
+            { value: 10, text: weekLabel(10) },
+            { value: 12, text: weekLabel(12) },
+            { value: 26, text: t('period.halfYear') },
+            { value: 52, text: t('period.12monthsAsYear') },
+            { value: 156, text: t('period.36monthsAs3Year') }
         ];
-        
+
         biweeklyOptions.forEach(option => {
             const optionElement = document.createElement('option');
             optionElement.value = option.value;
             optionElement.textContent = option.text;
             recurringWeeksSelect.appendChild(optionElement);
         });
-        
+
         // 預設選擇12週
         recurringWeeksSelect.value = '12';
-        
+
     } else if (recurringType === 'monthly') {
         // 顯示月模式選項
         monthlyModeOption.style.display = 'block';
         updateModeExplanation(); // 更新說明文字
-        
+
         // 每月重複的選項 (內部仍使用週數計算)
         const monthlyOptions = [
-            { value: 9, text: '2個月' },        // 約9週
-            { value: 13, text: '3個月' },       // 約13週
-            { value: 26, text: '6個月' },       // 約26週
-            { value: 52, text: '12個月（1年）' }, // 52週
-            { value: 104, text: '24個月（2年）' }, // 104週
-            { value: 156, text: '36個月（3年）' }  // 156週
+            { value: 9, text: monthLabel(2) },
+            { value: 13, text: monthLabel(3) },
+            { value: 26, text: monthLabel(6) },
+            { value: 52, text: t('period.12monthsAsYear') },
+            { value: 104, text: t('period.24monthsAs2Year') },
+            { value: 156, text: t('period.36monthsAs3Year') }
         ];
         
         monthlyOptions.forEach(option => {
@@ -3238,21 +3773,23 @@ function updateRecurringPeriodOptions() {
         function updateModeExplanation() {
             const dateInput = document.getElementById('meetingDate');
             const explanation = document.getElementById('modeExplanation');
-            
+
+            if (!dateInput || !explanation) return;
             if (!dateInput.value) {
-                explanation.textContent = '';
+                explanation.textContent = t('form.monthlyHint');
+                explanation.style.color = '#666';
                 return;
             }
-            
+
             const selectedDate = new Date(dateInput.value);
             const day = selectedDate.getDate();
-            const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-            const dayName = dayNames[selectedDate.getDay()];
-            
+            const dayKeys = ['day.sun', 'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
+            const dayName = t(dayKeys[selectedDate.getDay()]);
+
             // 直接使用相對週日模式
             const weekOfMonth = Math.ceil(day / 7);
-            const weekNames = ['', '第一個', '第二個', '第三個', '第四個', '第五個'];
-            explanation.textContent = `相對週日模式：每月${weekNames[weekOfMonth]}${dayName}`;
+            const ordinal = t('ordinal.' + Math.min(weekOfMonth, 5));
+            explanation.textContent = t('monthly.relativeExplain', { ordinal: ordinal, dayName: dayName });
             explanation.style.color = '#2d4874';
         }
 
@@ -3299,8 +3836,8 @@ function updateRecurringPeriodOptions() {
         }
 
         function getDayName(date) {
-            const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-            return days[date.getDay()];
+            const keys = ['day.sun', 'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
+            return t(keys[date.getDay()]);
         }
 
         function getWeekDates(startDate) {
@@ -3339,16 +3876,16 @@ function setTimeSelectValue(selectId, timeValue) {
             const endSelect = document.getElementById('endTime');
             
             // 開始時間：09:00 - 18:00
-            startSelect.innerHTML = '<option value="">請選擇時間</option>';
+            startSelect.innerHTML = `<option value="">${escapeHtml(t('form.time.placeholder'))}</option>`;
             for (let hour = 9; hour <= 18; hour++) {
                 startSelect.innerHTML += `<option value="${String(hour).padStart(2, '0')}:00">${String(hour).padStart(2, '0')}:00</option>`;
                 if (hour < 18) {
                     startSelect.innerHTML += `<option value="${String(hour).padStart(2, '0')}:30">${String(hour).padStart(2, '0')}:30</option>`;
                 }
             }
-            
+
             // 結束時間：09:30 - 18:30
-            endSelect.innerHTML = '<option value="">請選擇時間</option>';
+            endSelect.innerHTML = `<option value="">${escapeHtml(t('form.time.placeholder'))}</option>`;
             for (let hour = 9; hour <= 18; hour++) {
                 if (hour === 9) {
                     // 9點只有30分
@@ -3387,49 +3924,52 @@ function setTimeSelectValue(selectId, timeValue) {
                         <td class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="5" onclick="quickBook('${dateStr}')">
-                            點選此處 帶入預約日期
+                            ${escapeHtml(t('table.emptyRow'))}
                         </td>
                         <td class="empty-action-cell"></td>
                     `;
                     scheduleBody.appendChild(row);
                 } else {
                     dayBookings.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-                    
+
                     dayBookings.forEach((booking, index) => {
                         const row = document.createElement('tr');
                         row.className = `${colorClass}${isToday ? ' today-row' : ''}`; // 同一天的所有行使用相同顏色
-                        
+
                         // 如果是該天的最後一個預約，添加分隔線
                         if (index === dayBookings.length - 1) {
                             row.classList.add('day-separator');
                         }
-                        
+
+                        const roomDisplay = booking.room ? tRoom(booking.room) : t('table.unknown');
+                        const titleDisplay = booking.title || t('table.untitled');
+
                         row.innerHTML = `
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
-                            <td class="room-cell">${booking.room || '未知'}</td>
+                            <td class="room-cell">${escapeHtml(roomDisplay)}</td>
                             <td class="organizer-cell">${renderBookingTags(booking.organizer, 'single')}</td>
                             <td class="attendees-cell">${renderBookingTags(booking.attendees, 'multi')}</td>
                             <td class="meeting-cell" onclick="showMeetingDetails('${booking.title}', '${booking.organizer}', '${booking.startTime}-${booking.endTime}', '${booking.room}', '${dateStr}', '${booking.attendees || ''}')">
-                                <div class="meeting-title">${booking.title || '無標題'}</div>
+                                <div class="meeting-title">${escapeHtml(titleDisplay)}</div>
                             </td>
                             <td class="action-cell">
     				<div class="action-buttons">
         			<div class="calendar-dropdown">
-           			 <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')" aria-label="日曆" title="日曆"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path></svg></button>
+           			 <button class="calendar-btn-dropdown" onclick="toggleCalendarMenu(event, '${booking.id}')" aria-label="${escapeHtml(t('action.calendar'))}" title="${escapeHtml(t('action.calendar'))}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path></svg></button>
            			 <div class="calendar-menu" id="menu-${booking.id}">
              			   <div class="calendar-option" onclick="addToGoogleCalendar('${booking.id}')">
-                		 Google 日曆
+                		 ${escapeHtml(t('calendar.google'))}
                			 </div>
                			 <div class="calendar-option" onclick="addToAppleCalendar('${booking.id}')">
-                   		 Apple & Outlook 日曆
+                   		 ${escapeHtml(t('calendar.appleOutlook'))}
                 		 </div>
            			 </div>
        				 </div>
-        			<button class="copy-btn" onclick="copyBooking('${booking.id}', event)" aria-label="複製" title="複製"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-        			<button class="edit-btn" onclick="editBooking('${booking.id}', event)" aria-label="編輯" title="編輯"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z"></path><path d="m15 5 4 4"></path></svg></button>
-        			<button class="delete-btn" onclick="deleteBooking('${booking.id}', event)" aria-label="刪除" title="刪除"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></button>
+        			<button class="copy-btn" onclick="copyBooking('${booking.id}', event)" aria-label="${escapeHtml(t('action.copy'))}" title="${escapeHtml(t('action.copy'))}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+        			<button class="edit-btn" onclick="editBooking('${booking.id}', event)" aria-label="${escapeHtml(t('action.edit'))}" title="${escapeHtml(t('action.edit'))}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z"></path><path d="m15 5 4 4"></path></svg></button>
+        			<button class="delete-btn" onclick="deleteBooking('${booking.id}', event)" aria-label="${escapeHtml(t('action.delete'))}" title="${escapeHtml(t('action.delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></button>
    			   </div>
 			   </td>
                         `;
@@ -3486,16 +4026,16 @@ function setTimeSelectValue(selectId, timeValue) {
         function updateTodayButtonState() {
             const todayBtn = document.getElementById('todayBtn');
             if (!todayBtn) return;
-            
+
             // 檢查當前顯示的週是否就是本週
             const isCurrentWeek = currentWeekStart.getTime() === todayWeekStart.getTime();
-            
+
             if (isCurrentWeek) {
                 todayBtn.disabled = true;
-                todayBtn.textContent = '本週';
+                todayBtn.textContent = t('nav.thisWeek');
             } else {
                 todayBtn.disabled = false;
-                todayBtn.textContent = '回到本週';
+                todayBtn.textContent = t('nav.backToThisWeek');
             }
         }
 
@@ -3504,46 +4044,60 @@ function setTimeSelectValue(selectId, timeValue) {
             const year = currentWeekStart.getFullYear();
             const startMonth = currentWeekStart.getMonth() + 1;
             const startDay = currentWeekStart.getDate();
-            
+
             const endDate = new Date(currentWeekStart);
             endDate.setDate(currentWeekStart.getDate() + 6);
             const endMonth = endDate.getMonth() + 1;
             const endDay = endDate.getDate();
-            
+
             let weekDisplay;
-            if (startMonth === endMonth) {
-                // 同一個月
-                weekDisplay = `${year}年${startMonth}月${startDay}日 - ${endDay}日`;
+            if (currentLang === 'en') {
+                const months = t('month.short').split(',');
+                const startMonthName = months[startMonth - 1] || '';
+                const endMonthName = months[endMonth - 1] || '';
+                if (startMonth === endMonth) {
+                    weekDisplay = `${startMonthName} ${startDay}–${endDay}, ${year}`;
+                } else {
+                    weekDisplay = `${startMonthName} ${startDay} – ${endMonthName} ${endDay}, ${year}`;
+                }
             } else {
-                // 跨月
-                weekDisplay = `${year}年${startMonth}月${startDay}日 - ${endMonth}月${endDay}日`;
+                if (startMonth === endMonth) {
+                    weekDisplay = `${year}年${startMonth}月${startDay}日 - ${endDay}日`;
+                } else {
+                    weekDisplay = `${year}年${startMonth}月${startDay}日 - ${endMonth}月${endDay}日`;
+                }
             }
-            
+
             document.getElementById('currentWeek').textContent = weekDisplay;
             console.log('週別顯示更新為:', weekDisplay);
-            
+
             // 更新回到本週按鈕狀態
             updateTodayButtonState();
         }
 
         // 改進的日期格式化函數
         function formatDateDisplay(dateString) {
-            if (!dateString) return '請點擊選擇日期';
-            
+            if (!dateString) return t('form.date.placeholder');
+
             try {
                 const date = new Date(dateString);
-                if (isNaN(date.getTime())) return '請點擊選擇日期';
-                
+                if (isNaN(date.getTime())) return t('form.date.placeholder');
+
                 const year = date.getFullYear();
                 const month = date.getMonth() + 1;
                 const day = date.getDate();
-                const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-                const dayName = dayNames[date.getDay()];
-                
+                const dayKeys = ['day.sun', 'day.mon', 'day.tue', 'day.wed', 'day.thu', 'day.fri', 'day.sat'];
+                const dayName = t(dayKeys[date.getDay()]);
+
+                if (currentLang === 'en') {
+                    const months = t('month.short').split(',');
+                    const monthName = months[month - 1] || '';
+                    return `${dayName}, ${monthName} ${day}, ${year}`;
+                }
                 return `${year}年${month}月${day}日 (${dayName})`;
             } catch (error) {
                 console.error('日期格式化錯誤:', error);
-                return '請點擊選擇日期';
+                return t('form.date.placeholder');
             }
         }
 
@@ -3643,7 +4197,7 @@ function setTimeSelectValue(selectId, timeValue) {
                 attendees
             });
 
-            showModal('會議詳情', detailMessage, null, { enableActions: true });
+            showModal(t('modal.meetingDetails'), detailMessage, null, { enableActions: true });
         }
 
         // 偵測週期預約 (直接查詢資料庫版本)
@@ -3745,14 +4299,14 @@ async function deleteBooking(bookingId, event) {
     }
     
     if (!supabaseClient) {
-        showModal('未連接', '資料庫連線尚未建立');
+        showModal(t('modal.notConnected'), t('error.dbNotConnected'));
         return;
     }
-    
+
     // 找到要刪除的預約
     const targetBooking = bookings.find(b => b.id === bookingId);
     if (!targetBooking) {
-        showModal('錯誤', '找不到要刪除的預約');
+        showModal(t('modal.error'), t('error.deleteNotFound'));
         return;
     }
 
@@ -3798,27 +4352,25 @@ async function deleteBooking(bookingId, event) {
 function showRecurringDeleteModal(targetBooking, recurringInfo) {
     const modal = document.getElementById('recurringDeleteModal');
     const message = document.getElementById('recurringModalMessage');
-    
+
     const futureCount = recurringInfo.futureBookings.length;
-    const intervalText = recurringInfo.intervalType === 'weekly' ? '每週' : '每月';
-    
+    const intervalKey = recurringInfo.intervalType === 'weekly' ? 'freqText.weekly' :
+                         recurringInfo.intervalType === 'biweekly' ? 'freqText.biweekly' : 'freqText.monthly';
+    const intervalText = t(intervalKey);
+
     // 找到最後一筆預約的日期
     const lastBookingDate = recurringInfo.futureBookings[futureCount - 1]?.date;
     let lastDateText = '';
-    
+
     if (lastBookingDate) {
-        // 格式化最後預約日期為 YYYY年MM月DD日
-        const lastDate = new Date(lastBookingDate);
-        const year = lastDate.getFullYear();
-        const month = lastDate.getMonth() + 1;
-        const day = lastDate.getDate();
-        lastDateText = `<br>最後一筆預約日：<strong>${year}年${month}月${day}日</strong>`;
+        const formattedDate = formatDateDisplay(lastBookingDate);
+        lastDateText = '<br>' + t('recurring.lastDate', { date: formattedDate });
     }
-    
+
     message.innerHTML = `
-        偵測到這是${intervalText}重複行程。<br>
-        <strong>將影響 ${futureCount} 個預約</strong>${lastDateText}<br><br>
-        請選擇刪除範圍：
+        ${t('recurring.detectedMsg', { interval: intervalText })}<br>
+        ${t('recurring.affectN', { n: futureCount })}${lastDateText}<br><br>
+        ${escapeHtml(t('recurring.chooseScope'))}
     `;
     
     // 暫存刪除資訊
@@ -3878,14 +4430,14 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
                 updateSchedule();
                 
                 const deleteCount = bookingIds.length;
-                const message = deleteCount === 1 ? '預約已刪除' : `已刪除 ${deleteCount} 個預約`;
+                const message = deleteCount === 1 ? t('notify.deleted') : t('notify.deletedN', { n: deleteCount });
                 showNotification(message);
-                
+
                 console.log('預約刪除成功，IDs:', bookingIds);
-                
+
             } catch (error) {
                 console.error('刪除預約失敗:', error);
-                showModal('刪除失敗', `無法刪除預約: ${error.message}`);
+                showModal(t('modal.deleteFailed'), t('error.deleteFail', { err: error.message }));
                 
                 // 恢復按鈕狀態
                 if (deleteBtn) {
@@ -3917,7 +4469,7 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
                 
                 // 檢查日期是否有效
                 if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-                    throw new Error('無效的日期時間格式');
+                    throw new Error(t('throw.invalidDateTime'));
                 }
                 
                 // 格式化為 ICS 格式 (YYYYMMDDTHHMMSS)
@@ -3940,7 +4492,7 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
                 // 生成 ICS 內容
                 const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Gama//會議室預約系統//TW
+PRODID:-//Gama//Meeting Room Booking System//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
@@ -3948,13 +4500,13 @@ UID:${booking.id}@gama-booking.com
 DTSTAMP:${nowFormatted}
 DTSTART:${startFormatted}
 DTEND:${endFormatted}
-SUMMARY:${booking.title || '會議'}
-LOCATION:${booking.room || ''}
-DESCRIPTION:登記者: ${booking.organizer || '未知'}\\n\\n透過 Gama 會議室預約系統建立
-CATEGORIES:會議
+SUMMARY:${booking.title || t('calendar.icsCategory')}
+LOCATION:${tRoom(booking.room) || ''}
+DESCRIPTION:${t('detail.organizer')} ${booking.organizer || t('table.unknown')}\\n\\nCreated via Gama Meeting Room Booking System
+CATEGORIES:${t('calendar.icsCategory')}
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:會議提醒
+DESCRIPTION:${t('calendar.icsCategory')}
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
@@ -4071,10 +4623,10 @@ END:VCALENDAR`;
 // 修改原有的 Google 日曆函數
 async function addToGoogleCalendar(bookingId) {
     hideAllCalendarMenus();
-    
+
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) {
-        showSmartNotification('找不到預約資料', 'warning');
+        showSmartNotification(t('notify.bookingNotFound'), 'warning');
         return;
     }
     
@@ -4104,7 +4656,7 @@ async function addToGoogleCalendar(bookingId) {
         try {
             await createSingleGoogleCalendarEvent(booking);
         } catch (fallbackError) {
-            showSmartNotification(`加入 Google 日曆失敗: ${fallbackError.message}`, 'warning');
+            showSmartNotification(t('notify.googleFail', { err: fallbackError.message }), 'warning');
         }
     }
 }
@@ -4127,7 +4679,7 @@ async function createSingleGoogleCalendarEvent(booking) {
     const endDateTime = new Date(`${booking.date}T${endTime}:00`);
     
     if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-        throw new Error(`無效的日期時間格式`);
+        throw new Error(t('throw.invalidDateTime'));
     }
     
     // 格式化為 Google Calendar 格式
@@ -4148,18 +4700,18 @@ async function createSingleGoogleCalendarEvent(booking) {
     // 建立 Google Calendar URL
     const params = new URLSearchParams({
         action: 'TEMPLATE',
-        text: booking.title || '會議',
+        text: booking.title || t('calendar.icsCategory'),
         dates: `${startFormatted}/${endFormatted}`,
-        location: booking.room || '',
-        details: `登記者: ${booking.organizer || '未知'}\n\n透過 Gama 會議室預約系統建立`
+        location: tRoom(booking.room) || '',
+        details: `${t('detail.organizer')} ${booking.organizer || t('table.unknown')}\n\nCreated via Gama Meeting Room Booking System`
     });
-    
+
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
-    
+
     // 在新視窗開啟 Google Calendar
     window.open(googleCalendarUrl, '_blank');
-    
-    showSmartNotification('已開啟 Google 日曆', 'success');
+
+    showSmartNotification(t('notify.googleOpened'), 'success');
 }
 
 // 新增：創建週期 Google Calendar 事件
@@ -4180,7 +4732,7 @@ async function createRecurringGoogleCalendarEvent(booking, recurringInfo) {
     const endDateTime = new Date(`${booking.date}T${endTime}:00`);
     
     if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-        throw new Error(`無效的日期時間格式`);
+        throw new Error(t('throw.invalidDateTime'));
     }
     
     // 格式化為 Google Calendar 格式
@@ -4204,19 +4756,19 @@ async function createRecurringGoogleCalendarEvent(booking, recurringInfo) {
     // 建立 Google Calendar URL with RRULE
     const params = new URLSearchParams({
         action: 'TEMPLATE',
-        text: booking.title || '會議',
+        text: booking.title || t('calendar.icsCategory'),
         dates: `${startFormatted}/${endFormatted}`,
-        location: booking.room || '',
-        details: `登記者: ${booking.organizer || '未知'}\n\n週期預約，共 ${recurringInfo.futureBookings.length} 場\n透過 Gama 會議室預約系統建立`,
+        location: tRoom(booking.room) || '',
+        details: `${t('detail.organizer')} ${booking.organizer || t('table.unknown')}\n\n${t('calendar.recurringSummary', { n: recurringInfo.futureBookings.length })}\nCreated via Gama Meeting Room Booking System`,
         recur: rrule
     });
-    
+
     const googleCalendarUrl = `https://calendar.google.com/calendar/render?${params.toString()}`;
-    
+
     // 在新視窗開啟 Google Calendar
     window.open(googleCalendarUrl, '_blank');
-    
-    showSmartNotification(`已開啟 Google 日曆 (${recurringInfo.futureBookings.length} 場週期會議)`, 'success');
+
+    showSmartNotification(t('notify.googleOpenedN', { n: recurringInfo.futureBookings.length }), 'success');
 }
 
 // 新增：生成 Google Calendar RRULE
@@ -4258,66 +4810,69 @@ function generateGoogleRRULE(recurringInfo, startDateTime) {
 // addToAppleCalendar 函數
 async function addToAppleCalendar(bookingId) {
     hideAllCalendarMenus();
-    
+
     const booking = bookings.find(b => b.id === bookingId);
     if (!booking) {
-        showSmartNotification('找不到預約資料', 'warning');
+        showSmartNotification(t('notify.bookingNotFound'), 'warning');
         return;
     }
-    
+
     try {
         const recurringInfo = await detectRecurringBookings(booking);
         const device = detectDevice();
-        
+
         // 修正：同樣的週期預約資料驗證
-        const isValidRecurring = recurringInfo.isRecurring && 
-                                recurringInfo.futureBookings && 
+        const isValidRecurring = recurringInfo.isRecurring &&
+                                recurringInfo.futureBookings &&
                                 Array.isArray(recurringInfo.futureBookings) &&
                                 recurringInfo.futureBookings.length > 1 &&
                                 recurringInfo.intervalType &&
                                 ['weekly', 'biweekly', 'monthly'].includes(recurringInfo.intervalType);
-        
+
         if (isValidRecurring) {
             console.log('有效週期預約，生成週期 ICS');
             const icsContent = generateRecurringICS(booking, recurringInfo);
-            const filename = `${booking.title || '會議'}_週期預約_${booking.date}.ics`;
-            
+            const titlePart = booking.title || t('calendar.icsCategory');
+            const filename = `${titlePart}_${t('calendar.recurringFilename')}_${booking.date}.ics`;
+
             downloadICS(icsContent, filename);
-            
+
             if (device.isIOS) {
-                showSmartNotification(`週期預約檔案已下載 (${recurringInfo.futureBookings.length} 場)，請點擊檔案加入日曆`, 'success', 5000);
+                showSmartNotification(t('notify.recurringDownloadedTap', { n: recurringInfo.futureBookings.length }), 'success', 5000);
             } else if (device.isAndroid) {
-                showSmartNotification(`週期預約檔案已下載 (${recurringInfo.futureBookings.length} 場)，請用日曆 App 開啟`, 'info', 5000);
+                showSmartNotification(t('notify.recurringDownloadedApp', { n: recurringInfo.futureBookings.length }), 'info', 5000);
             } else {
-                showSmartNotification(`週期預約 ICS 檔案已下載 (${recurringInfo.futureBookings.length} 場)，請用日曆軟體開啟`, 'info', 5000);
+                showSmartNotification(t('notify.recurringDownloadedIcs', { n: recurringInfo.futureBookings.length }), 'info', 5000);
             }
         } else {
             console.log('單次預約或週期資料無效，使用單次模式');
             const icsContent = generateICS(booking);
-            const filename = `${booking.title || '會議'}_${booking.date}.ics`;
-            
+            const titlePart = booking.title || t('calendar.icsCategory');
+            const filename = `${titlePart}_${booking.date}.ics`;
+
             downloadICS(icsContent, filename);
-            
+
             if (device.isIOS) {
-                showSmartNotification('檔案已下載，請點擊檔案加入日曆', 'success', 5000);
+                showSmartNotification(t('notify.fileDownloadedTap'), 'success', 5000);
             } else if (device.isAndroid) {
-                showSmartNotification('檔案已下載，請用日曆 App 開啟', 'info', 5000);
+                showSmartNotification(t('notify.fileDownloadedApp'), 'info', 5000);
             } else {
-                showSmartNotification('ICS 檔案已下載，請用日曆軟體開啟', 'info', 5000);
+                showSmartNotification(t('notify.fileDownloadedIcs'), 'info', 5000);
             }
         }
-        
+
     } catch (error) {
         console.error('加入 Apple 日曆失敗:', error);
         // 錯誤時回退到單次預約
         console.log('發生錯誤，回退到單次預約模式');
         try {
             const icsContent = generateICS(booking);
-            const filename = `${booking.title || '會議'}_${booking.date}.ics`;
+            const titlePart = booking.title || t('calendar.icsCategory');
+            const filename = `${titlePart}_${booking.date}.ics`;
             downloadICS(icsContent, filename);
-            showSmartNotification('已回退為單次預約模式並下載 ICS 檔案', 'info', 5000);
+            showSmartNotification(t('notify.fallbackIcs'), 'info', 5000);
         } catch (fallbackError) {
-            showSmartNotification(`加入 Apple 日曆失敗: ${fallbackError.message}`, 'warning');
+            showSmartNotification(t('notify.appleFail', { err: fallbackError.message }), 'warning');
         }
     }
 }
@@ -4368,7 +4923,7 @@ const rrule = generateICSRRULE(recurringInfo);
 // 生成 ICS 內容
 const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Gama//會議室預約系統//TW
+PRODID:-//Gama//Meeting Room Booking System//EN
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 BEGIN:VEVENT
@@ -4377,13 +4932,13 @@ DTSTAMP:${nowFormatted}
 DTSTART:${startFormatted}
 DTEND:${endFormatted}
 ${rrule}
-SUMMARY:${booking.title || '會議'}
-LOCATION:${booking.room || ''}
-DESCRIPTION:登記者: ${booking.organizer || '未知'}\\n\\n週期預約，共 ${recurringInfo.futureBookings.length} 場\\n透過 Gama 會議室預約系統建立
-CATEGORIES:會議
+SUMMARY:${booking.title || t('calendar.icsCategory')}
+LOCATION:${tRoom(booking.room) || ''}
+DESCRIPTION:${t('detail.organizer')} ${booking.organizer || t('table.unknown')}\\n\\n${t('calendar.recurringSummary', { n: recurringInfo.futureBookings.length })}\\nCreated via Gama Meeting Room Booking System
+CATEGORIES:${t('calendar.icsCategory')}
 BEGIN:VALARM
 ACTION:DISPLAY
-DESCRIPTION:會議提醒
+DESCRIPTION:${t('calendar.icsCategory')}
 TRIGGER:-PT15M
 END:VALARM
 END:VEVENT
@@ -4437,8 +4992,8 @@ function showDetailedDeleteConfirm(booking) {
         organizer: booking.organizer,
         attendees: booking.attendees
     });
-    
-    showModal('會議詳情', message, () => {
+
+    showModal(t('modal.meetingDetails'), message, () => {
         // 確認刪除回調
         performDelete([booking.id]);
     });
@@ -4498,7 +5053,7 @@ async function checkRecurringConflicts(recurringDates, room, startTime, endTime,
         
     } catch (error) {
         console.error('衝突檢查錯誤:', error);
-        throw new Error(`衝突檢測失敗: ${error.message}`);
+        throw new Error(t('throw.conflictCheck', { err: error.message }));
     }
 }
 
@@ -4551,19 +5106,19 @@ function showEditConflictModal(conflicts, isSeriesEdit = false) {
     
     const conflict = conflicts[0];
     message.innerHTML = `
-        <h4>預約衝突</h4>
+        <h4>${escapeHtml(t('conflict.title'))}</h4>
         <div class="conflict-details">
-            <p><strong>衝突日期：</strong>${conflict.date}</p>
-            <p><strong>會議室：</strong>${conflict.booking.room}</p>
-            <p><strong>現有時間：</strong>${formatTimeDisplay(conflict.booking.startTime)} - ${formatTimeDisplay(conflict.booking.endTime)}</p>
-            <p><strong>現有會議：</strong>${conflict.booking.title}</p>
-            <p><strong>預約者：</strong>${conflict.booking.organizer}</p>
+            <p><strong>${escapeHtml(t('conflict.date'))}</strong>${escapeHtml(conflict.date)}</p>
+            <p><strong>${escapeHtml(t('conflict.room'))}</strong>${escapeHtml(tRoom(conflict.booking.room))}</p>
+            <p><strong>${escapeHtml(t('conflict.existingTime'))}</strong>${formatTimeDisplay(conflict.booking.startTime)} - ${formatTimeDisplay(conflict.booking.endTime)}</p>
+            <p><strong>${escapeHtml(t('conflict.existingMeeting'))}</strong>${escapeHtml(conflict.booking.title || '')}</p>
+            <p><strong>${escapeHtml(t('conflict.bookedBy'))}</strong>${escapeHtml(conflict.booking.organizer || '')}</p>
         </div>
-        <p class="conflict-suggestion">請修改您的預約時間或選擇其他會議室。</p>
+        <p class="conflict-suggestion">${escapeHtml(t('conflict.suggestion'))}</p>
     `;
-    
+
     options.innerHTML = `
-        <button class="btn conflict-btn-cancel" onclick="closeEditConflictModal()">返回修改</button>
+        <button class="btn conflict-btn-cancel" onclick="closeEditConflictModal()">${escapeHtml(t('conflict.backToEdit'))}</button>
     `;
     
     modal.style.display = 'block';
@@ -4584,26 +5139,26 @@ function showSeriesEditConflictModal(conflictStats) {
     conflictStats.conflicts.forEach(conflict => {
         conflictList += `
             <div class="conflict-item">
-                <strong>${conflict.date}</strong> - ${conflict.booking.title} (${formatTimeDisplay(conflict.booking.startTime)}-${formatTimeDisplay(conflict.booking.endTime)})
+                <strong>${escapeHtml(conflict.date)}</strong> - ${escapeHtml(conflict.booking.title || '')} (${formatTimeDisplay(conflict.booking.startTime)}-${formatTimeDisplay(conflict.booking.endTime)})
             </div>
         `;
     });
-    
+
     message.innerHTML = `
-        <h4>系列編輯衝突</h4>
+        <h4>${escapeHtml(t('conflict.seriesTitle'))}</h4>
         <div class="conflict-summary">
-            <p>共 ${conflictStats.totalDates} 個預約，其中 ${conflictStats.conflictDates} 個產生衝突：</p>
+            <p>${escapeHtml(t('conflict.summary', { total: conflictStats.totalDates, conflict: conflictStats.conflictDates }))}</p>
         </div>
         <div class="conflict-list">
             ${conflictList}
         </div>
-        <p class="conflict-suggestion">請修改您的預約時間或選擇其他會議室。</p>
+        <p class="conflict-suggestion">${escapeHtml(t('conflict.suggestion'))}</p>
     `;
-    
+
     window.pendingSeriesConflictStats = conflictStats;
-    
+
     options.innerHTML = `
-         <button class="btn conflict-btn-cancel" onclick="closeSeriesEditConflictModal()">返回修改</button>
+         <button class="btn conflict-btn-cancel" onclick="closeSeriesEditConflictModal()">${escapeHtml(t('conflict.backToEdit'))}</button>
     `;
     
     modal.style.display = 'block';
@@ -4620,13 +5175,13 @@ async function confirmSeriesEditWithConflicts(action) {
         );
         
         if (nonConflictBookings.length === 0) {
-            showModal('無法更新', '所有日期都有衝突，無法執行更新。');
+            showModal(t('modal.cannotUpdate'), t('conflict.allConflict'));
             closeSeriesEditConflictModal();
             return;
         }
-        
+
         const confirmed = confirm(
-            `確定要跳過 ${stats.conflictDates} 個衝突日期，更新剩餘 ${nonConflictBookings.length} 個預約嗎？`
+            t('conflict.skipPrompt', { n: stats.conflictDates, m: nonConflictBookings.length })
         );
         
         if (confirmed) {
@@ -4680,12 +5235,12 @@ async function updatePartialSeriesBookings(bookingsToUpdate) {
         
         const skippedCount = futureBookingsToEdit.length - bookingsToUpdate.length;
         const detailLines = [
-            `✅ <strong>成功更新：</strong>${successCount} 個預約`,
-            `⏭️ <strong>跳過衝突：</strong>${skippedCount} 個預約`
+            t('update.success', { n: successCount }),
+            t('update.skipped', { n: skippedCount })
         ];
 
         if (failedCount > 0) {
-            detailLines.push(`⚠️ <strong>更新失敗：</strong>${failedCount} 個預約`);
+            detailLines.push(t('update.failed', { n: failedCount }));
         }
 
         const message = appendMessageDetails(
@@ -4696,17 +5251,17 @@ async function updatePartialSeriesBookings(bookingsToUpdate) {
                 room,
                 organizer,
                 attendees
-            }, `✅ <strong>部分更新完成！</strong>`),
+            }, t('update.partialDone')),
             detailLines
         );
 
-        showModal('部分更新完成', message, null, { enableActions: true });
+        showModal(t('modal.partialUpdateDone'), message, null, { enableActions: true });
         cancelEdit();
         setTimeout(() => loadBookings(), 1000);
-        
+
     } catch (error) {
         console.error('部分系列更新失敗:', error);
-        showModal('更新失敗', `部分更新時發生錯誤：${error.message}`);
+        showModal(t('modal.updateFailed'), t('error.partialUpdate', { err: error.message }));
     } finally {
         showLoading(false);
     }
@@ -4793,7 +5348,7 @@ function resetForm() {
         if (attendeesSearch) attendeesSearch.value = '';
         if (meetingDate) meetingDate.value = '';
         if (dateDisplay) {
-            dateDisplay.textContent = '請點擊選擇日期';
+            dateDisplay.textContent = t('form.date.placeholder');
             dateDisplay.classList.add('placeholder');
             dateDisplay.classList.remove('has-value');
         }
@@ -4881,13 +5436,13 @@ async function submitBooking() {
         console.log('表單資料:', { title, room, date, startTime, endTime, organizer, attendees, isRecurring, recurringType, recurringWeeks });
         
         if (!validateBookingForm({ title, room, date, startTime, endTime, organizer, isRecurring, recurringType, recurringWeeks })) {
-            showModal('預約失敗', '請先完成紅框標示的必填欄位。');
+            showModal(t('modal.bookingFailed'), t('error.requiredFields'));
             return;
         }
-        
+
         // 驗證時間邏輯
         if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-            showModal('預約失敗', '結束時間必須晚於開始時間。');
+            showModal(t('modal.bookingFailed'), t('error.endBeforeStart'));
             return;
         }
         
@@ -4900,30 +5455,30 @@ async function submitBooking() {
         }
         
         if (!datesToBook || datesToBook.length === 0) {
-            showModal('預約失敗', '無法產生預約日期，請檢查日期設定。');
+            showModal(t('modal.bookingFailed'), t('error.noDates'));
             return;
         }
-        
+
         // 檢查衝突
         console.log('開始檢查衝突...');
         try {
             const conflicts = await checkRecurringConflicts(datesToBook, room, startTime, endTime);
             if (conflicts.length > 0) {
-                let conflictMessage = '以下日期有衝突，無法預約：<br><br>';
+                let conflictMessage = escapeHtml(t('conflict.listHeader')) + '<br><br>';
                 conflicts.forEach(conflict => {
-                    conflictMessage += `📅 <strong>${conflict.date}</strong><br>`;
-                    conflictMessage += `🏢 ${conflict.booking.room}<br>`;
+                    conflictMessage += `📅 <strong>${escapeHtml(conflict.date)}</strong><br>`;
+                    conflictMessage += `🏢 ${escapeHtml(tRoom(conflict.booking.room))}<br>`;
                     conflictMessage += `⏰ ${formatTimeDisplay(conflict.booking.startTime)}-${formatTimeDisplay(conflict.booking.endTime)}<br>`;
-                    conflictMessage += `📋 ${conflict.booking.title}<br>`;
-                    conflictMessage += `👤 ${conflict.booking.organizer}<br><br>`;
+                    conflictMessage += `📋 ${escapeHtml(conflict.booking.title || '')}<br>`;
+                    conflictMessage += `👤 ${escapeHtml(conflict.booking.organizer || '')}<br><br>`;
                 });
-                showModal('預約失敗 - 時間衝突', conflictMessage);
+                showModal(t('modal.bookingFailedConflict'), conflictMessage);
                 return;
             }
             console.log('衝突檢查通過');
         } catch (error) {
             console.error('衝突檢測失敗:', error);
-            showModal('預約失敗', `衝突檢測時發生錯誤：<br><strong>${error.message}</strong><br><br>可能原因：<br>• 資料庫連線問題<br>• 網路連線不穩定<br><br>請稍後重試或聯絡系統管理員。`);
+            showModal(t('modal.bookingFailed'), t('error.conflictCheckFail', { err: error.message }));
             return;
         }
         
@@ -4967,72 +5522,65 @@ async function submitBooking() {
                 const recurringTypeValue = document.getElementById('recurringType').value;
 if (recurringTypeValue === 'weekly') {
     if (recurringWeeks === 52) {
-        periodText = '1年';
+        periodText = t('period.year', { n: 1 });
     } else if (recurringWeeks === 156) {
-        periodText = '3年';
+        periodText = t('period.year', { n: 3 });
     } else if (recurringWeeks === 12) {
-        periodText = '3個月';
+        periodText = t('period.month', { n: 3 });
     } else if (recurringWeeks === 24) {
-        periodText = '6個月';
+        periodText = t('period.month', { n: 6 });
     } else {
-        periodText = `${recurringWeeks}週`;
+        periodText = t('period.week', { n: recurringWeeks });
     }
 } else if (recurringTypeValue === 'biweekly') {
     if (recurringWeeks === 52) {
-        periodText = '12個月（1年）';
+        periodText = t('period.12monthsAsYear');
     } else if (recurringWeeks === 156) {
-        periodText = '36個月（3年）';
+        periodText = t('period.36monthsAs3Year');
     } else if (recurringWeeks === 26) {
-        periodText = '6個月（半年）';
-    } else if (recurringWeeks === 12) {
-        periodText = '12週';
-    } else if (recurringWeeks === 10) {
-        periodText = '10週';
-    } else if (recurringWeeks === 8) {
-        periodText = '8週';
-    } else if (recurringWeeks === 6) {
-        periodText = '6週';
-    } else if (recurringWeeks === 4) {
-        periodText = '4週';
+        periodText = t('period.halfYear');
     } else {
-        periodText = `${recurringWeeks}週`;
+        periodText = t('period.week', { n: recurringWeeks });
     }
 } else if (recurringTypeValue === 'monthly') {
     if (recurringWeeks === 52) {
-        periodText = '1年';
+        periodText = t('period.year', { n: 1 });
     } else if (recurringWeeks === 104) {
-        periodText = '2年';
+        periodText = t('period.year', { n: 2 });
     } else if (recurringWeeks === 156) {
-        periodText = '3年';
+        periodText = t('period.year', { n: 3 });
     } else if (recurringWeeks === 9) {
-        periodText = '2個月';
+        periodText = t('period.month', { n: 2 });
     } else if (recurringWeeks === 13) {
-        periodText = '3個月';
+        periodText = t('period.month', { n: 3 });
     } else if (recurringWeeks === 26) {
-        periodText = '6個月';
+        periodText = t('period.month', { n: 6 });
     } else {
-        periodText = `${recurringWeeks}週`;
+        periodText = t('period.week', { n: recurringWeeks });
     }
-}                
+}
                 let frequencyText;
                 if (recurringType === 'weekly') {
-                    frequencyText = '每週';
+                    frequencyText = t('form.freq.weekly');
                 } else if (recurringType === 'biweekly') {
-                    frequencyText = '每雙週';
+                    frequencyText = t('form.freq.biweekly');
                 } else if (recurringType === 'monthly') {
-                    frequencyText = '每月';
+                    frequencyText = t('form.freq.weekly') && t('freqText.monthly');
                 } else {
                     frequencyText = recurringType;
                 }
+                if (recurringType === 'monthly') frequencyText = t('freqText.monthly');
+                if (recurringType === 'weekly') frequencyText = t('freqText.weekly');
+                if (recurringType === 'biweekly') frequencyText = t('freqText.biweekly');
 
                 const recurringDetailLines = [
-                    `<strong>頻率：</strong>${frequencyText}`,
-                    `<strong>期間：</strong>${periodText}`,
-                    `<strong>建立場次：</strong>${successCount} 場`
+                    `<strong>${escapeHtml(t('detail.frequency'))}</strong>${escapeHtml(frequencyText)}`,
+                    `<strong>${escapeHtml(t('detail.period'))}</strong>${escapeHtml(periodText)}`,
+                    `<strong>${escapeHtml(t('detail.created'))}</strong>${escapeHtml(t('detail.sessions', { n: successCount }))}`
                 ];
 
                 if (failedDates.length > 0) {
-                    recurringDetailLines.push(`<strong>部分日期預約失敗：</strong>${failedDates.join(', ')}`);
+                    recurringDetailLines.push(`<strong>${escapeHtml(t('detail.failedDates'))}</strong>${escapeHtml(failedDates.join(', '))}`);
                 }
 
                 successMessage = appendMessageDetails(
@@ -5058,20 +5606,20 @@ if (recurringTypeValue === 'weekly') {
                 });
             }
             
-            showModal('會議詳情', successMessage, null, { enableActions: true });
+            showModal(t('modal.meetingDetails'), successMessage, null, { enableActions: true });
             resetForm();
-            
+
             // 重新載入資料以確保同步
             setTimeout(() => {
                 loadBookings();
             }, 1000);
         } else {
-            showModal('預約失敗', `所有預約都未能成功建立。<br><br>失敗的日期：<br>${failedDates.join('<br>')}<br><br>請檢查網路連線或稍後重試。`);
+            showModal(t('modal.bookingFailed'), t('error.allFailed', { dates: failedDates.join('<br>') }));
         }
-        
+
     } catch (error) {
         console.error('提交預約時發生未預期的錯誤:', error);
-        showModal('系統錯誤', `提交預約時發生未預期的錯誤：<br><strong>${error.message}</strong><br><br>請重新整理頁面後再試，或聯絡系統管理員。`);
+        showModal(t('modal.systemError'), t('error.submitUnexpected', { err: error.message }));
     }
 }
 
@@ -5159,12 +5707,12 @@ async function updateBooking() {
             recurringType: '',
             recurringWeeks: NaN
         })) {
-            showModal('更新失敗', '請先完成紅框標示的必填欄位。');
+            showModal(t('modal.updateFailed'), t('error.requiredFields'));
             return;
         }
-        
+
         if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-            showModal('更新失敗', '結束時間必須晚於開始時間。');
+            showModal(t('modal.updateFailed'), t('error.endBeforeStart'));
             return;
         }
         
@@ -5213,12 +5761,12 @@ async function updateBooking() {
             
         } catch (error) {
             console.error('衝突檢查過程發生錯誤:', error);
-            showModal('衝突檢查失敗', `無法檢查衝突：${error.message}<br><br>請檢查網路連線後重試。`);
+            showModal(t('modal.conflictCheckFailed'), t('error.conflictCheck', { err: error.message }));
         }
-        
+
     } catch (error) {
         console.error('更新失敗:', error);
-        showModal('更新失敗', `無法更新預約：${error.message}`);
+        showModal(t('modal.updateFailed'), t('error.updateFail', { err: error.message }));
     } finally {
         showLoading(false);
     }
@@ -5252,7 +5800,7 @@ async function updateBooking() {
                 attendees
             });
 
-            showModal('會議詳情', successMessage, null, { enableActions: true });
+            showModal(t('modal.meetingDetails'), successMessage, null, { enableActions: true });
             cancelEdit();
             setTimeout(() => loadBookings(), 1000);
         }
@@ -5268,11 +5816,12 @@ async function updateBooking() {
     console.log('5. 所有 ID:', futureBookingsToEdit.map(b => b.id));
     // === 除錯結束 ===
             // 確認操作
-            const confirmed = confirm(
-                `確定要修改 ${futureBookingsToEdit.length} 個預約嗎？\n\n` +
-                `影響日期：${futureBookingsToEdit[0]?.date} 至 ${futureBookingsToEdit[futureBookingsToEdit.length-1]?.date}\n\n` +
-                `這將無法撤銷。`
-            );
+            const confirmRangeStart = futureBookingsToEdit[0]?.date;
+            const confirmRangeEnd = futureBookingsToEdit[futureBookingsToEdit.length-1]?.date;
+            const confirmMessage = currentLang === 'en'
+                ? `Update ${futureBookingsToEdit.length} bookings?\n\nAffected dates: ${confirmRangeStart} – ${confirmRangeEnd}\n\nThis cannot be undone.`
+                : `確定要修改 ${futureBookingsToEdit.length} 個預約嗎？\n\n影響日期：${confirmRangeStart} 至 ${confirmRangeEnd}\n\n這將無法撤銷。`;
+            const confirmed = confirm(confirmMessage);
             
             if (!confirmed) {
                 showLoading(false);
@@ -5315,14 +5864,21 @@ async function updateBooking() {
             
             // 顯示結果
             if (successCount > 0) {
+                const rangeStart = futureBookingsToEdit[0]?.date;
+                const rangeEnd = futureBookingsToEdit[futureBookingsToEdit.length-1]?.date;
+                const rangeLabel = currentLang === 'en' ? 'Affected range:' : '影響範圍：';
                 const detailLines = [
-                    `✅ <strong>成功更新：</strong>${successCount} 個預約`,
-                    `📅 <strong>影響範圍：</strong>${futureBookingsToEdit[0]?.date} 至 ${futureBookingsToEdit[futureBookingsToEdit.length-1]?.date}`
+                    t('update.success', { n: successCount }),
+                    `📅 <strong>${escapeHtml(rangeLabel)}</strong>${escapeHtml(rangeStart)} – ${escapeHtml(rangeEnd)}`
                 ];
 
                 if (failedCount > 0) {
-                    detailLines.push(`⚠️ <strong>更新失敗：</strong>${failedCount} 個預約`);
+                    detailLines.push(t('update.failed', { n: failedCount }));
                 }
+
+                const bulkHeading = currentLang === 'en'
+                    ? '✅ <strong>Bulk update complete!</strong>'
+                    : '✅ <strong>批量更新完成！</strong>';
 
                 const message = appendMessageDetails(
                     buildBookingDetailMessage({
@@ -5332,15 +5888,15 @@ async function updateBooking() {
                         room,
                         organizer,
                         attendees
-                    }, `✅ <strong>批量更新完成！</strong>`),
+                    }, bulkHeading),
                     detailLines
                 );
-                
-                showModal('批量更新完成', message, null, { enableActions: true });
+
+                showModal(t('modal.bulkUpdateDone'), message, null, { enableActions: true });
                 cancelEdit();
                 setTimeout(() => loadBookings(), 1000);
             } else {
-                showModal('更新失敗', '所有預約更新都失敗了，請稍後重試。');
+                showModal(t('modal.updateFailed'), t('error.allUpdatesFailed'));
             }
         }
 
@@ -5407,10 +5963,10 @@ function buildBookingDetailMessage(booking, prefixHtml = '') {
         lines.push('');
     }
 
-    lines.push(`<strong>會議主題：</strong>${booking.title || '無標題'}`);
+    lines.push(`<strong>${escapeHtml(t('detail.subject'))}</strong>${escapeHtml(booking.title || t('table.untitled'))}`);
 
     if (booking.date) {
-        lines.push(`<strong>日期：</strong>${booking.date}`);
+        lines.push(`<strong>${escapeHtml(t('detail.date'))}</strong>${escapeHtml(booking.date)}`);
     }
 
     const formattedStartTime = booking.startTime ? formatTimeDisplay(booking.startTime) : '';
@@ -5420,14 +5976,14 @@ function buildBookingDetailMessage(booking, prefixHtml = '') {
         : (formattedStartTime || formattedEndTime);
 
     if (timeRange) {
-        lines.push(`<strong>時間：</strong>${timeRange}`);
+        lines.push(`<strong>${escapeHtml(t('detail.time'))}</strong>${escapeHtml(timeRange)}`);
     }
 
-    lines.push(`<strong>地點：</strong>${booking.room || '未知'}`);
-    lines.push(`<strong>登記者：</strong>${booking.organizer || '未知'}`);
+    lines.push(`<strong>${escapeHtml(t('detail.location'))}</strong>${escapeHtml(booking.room ? tRoom(booking.room) : t('table.unknown'))}`);
+    lines.push(`<strong>${escapeHtml(t('detail.organizer'))}</strong>${escapeHtml(booking.organizer || t('table.unknown'))}`);
 
     if (booking.attendees) {
-        lines.push(`<strong>與會者：</strong>${booking.attendees}`);
+        lines.push(`<strong>${escapeHtml(t('detail.attendees'))}</strong>${escapeHtml(booking.attendees)}`);
     }
 
     return lines.join('<br>');
@@ -5454,10 +6010,10 @@ async function copyModalContent(text) {
             textArea.remove();
         }
 
-        showNotification('已複製視窗內容', 'success');
+        showNotification(t('notify.modalCopied'), 'success');
     } catch (error) {
         console.error('複製失敗:', error);
-        showNotification('複製失敗，請稍後再試', 'error');
+        showNotification(t('notify.modalCopyFail'), 'error');
     }
 }
 
@@ -5491,23 +6047,23 @@ function createModalActions(message, options = {}) {
 
     const plainText = (options.actionText || htmlToPlainText(message)).trim();
     const copyText = plainText
-        .replace(/^(?:(?:✅\s*)?(?:預約成功|編輯成功|更新成功|修改成功)[！!]\s*(?:\r?\n)*|(?:✅\s*)?成功預約\s*\d+\s*場週期會議[！!]\s*(?:\r?\n)*)+/u, '')
+        .replace(/^(?:(?:✅\s*)?(?:預約成功|編輯成功|更新成功|修改成功|Booking Successful|Update Complete|Edit Complete)[！!.]\s*(?:\r?\n)*|(?:✅\s*)?成功預約\s*\d+\s*場週期會議[！!]\s*(?:\r?\n)*)+/u, '')
         .trim() || plainText;
     const lineText = options.lineShareText || plainText;
 
     const shareBtn = document.createElement('button');
     shareBtn.type = 'button';
     shareBtn.className = 'modal-action-btn';
-    shareBtn.setAttribute('aria-label', 'Share to LINE');
-    shareBtn.title = 'Share to LINE';
+    shareBtn.setAttribute('aria-label', t('action.shareLine'));
+    shareBtn.title = t('action.shareLine');
     shareBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.59 13.51 15.42 17.49"></path><path d="M15.41 6.51 8.59 10.49"></path></svg>';
     shareBtn.onclick = () => shareModalToLine(lineText);
 
     const copyBtn = document.createElement('button');
     copyBtn.type = 'button';
     copyBtn.className = 'modal-action-btn';
-    copyBtn.setAttribute('aria-label', '複製視窗內容');
-    copyBtn.title = '複製視窗內容';
+    copyBtn.setAttribute('aria-label', t('action.copyWindow'));
+    copyBtn.title = t('action.copyWindow');
     copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
     copyBtn.onclick = () => copyModalContent(copyText);
 
@@ -5546,7 +6102,7 @@ function showModal(title, message, onConfirm = null, options = {}) {
     if (onConfirm) {
         // 有確認回調時，顯示確定和取消按鈕
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = '取消';
+        cancelBtn.textContent = t('btn.cancel');
         cancelBtn.style.cssText = `
             background: #6c757d;
             color: white;
@@ -5561,7 +6117,7 @@ function showModal(title, message, onConfirm = null, options = {}) {
         cancelBtn.onclick = closeModal;
         
         const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = '刪除';
+        confirmBtn.textContent = t('btn.delete');
         confirmBtn.style.cssText = `
             background: #dc3545;
             color: white;
@@ -5583,7 +6139,7 @@ function showModal(title, message, onConfirm = null, options = {}) {
     } else {
         // 沒有確認回調時，只顯示確認按鈕
         const okBtn = document.createElement('button');
-        okBtn.textContent = '確認';
+        okBtn.textContent = t('btn.ok');
         okBtn.className = 'btn';
         okBtn.onclick = closeModal;
         buttonContainer.appendChild(okBtn);
@@ -5821,7 +6377,7 @@ function scrollToForm() {
     }
     
     // 提供視覺反饋
-    showNotification('請填寫預約資訊', 'info', 2000);
+    showNotification(t('notify.fillForm'), 'info', 2000);
     
     console.log('懸浮按鈕觸發：滾動到表單區域');
 }
@@ -5829,25 +6385,34 @@ function scrollToForm() {
 // 增強的初始化函數，包含多重檢查
         function initialize() {
             console.log('開始初始化系統...');
-            
+
+            // 套用語言（讀取 localStorage 或預設 en）
+            try {
+                document.documentElement.lang = currentLang === 'zh' ? 'zh-TW' : 'en';
+                applyStaticI18n();
+                updateLangSwitcherUI();
+            } catch (e) {
+                console.warn('語言初始化失敗:', e);
+            }
+
             initializeTimeSelects();
             initializeOrganizerPicker();
             initializeAttendeesPicker();
             setupEventListeners();
             setupAdditionalDateEvents();
-            
+
             // 更新週別顯示
             updateWeekDisplay();
-            
+
             // 初始化空的表格
             updateSchedule();
-            
+
             // 初始化 Supabase 並載入資料
             initializeSupabase();
-            
+
             // 初始化懸浮按鈕（多重檢查）
             initializeFloatingButton();
-            
+
             console.log('系統初始化完成');
         }
 
@@ -5933,25 +6498,25 @@ function scrollToForm() {
 <!-- 編輯模式選擇模態框 -->
     <div id="editModeModal" class="edit-mode-modal">
         <div class="edit-mode-modal-content">
-            <h3>🔧 編輯預約</h3>
-            
+            <h3 data-i18n="form.editModal.title">🔧 Edit Booking</h3>
+
             <div class="booking-info" id="editBookingInfo">
                 <!-- 動態填入預約資訊 -->
             </div>
-            
+
             <div class="mode-buttons">
                 <button class="mode-btn mode-btn-single" onclick="confirmEditMode('single')">
-                    📝 只編輯此次
-                    <small id="singleEditDesc">僅修改這一場會議</small>
+                    <span data-i18n="form.editModal.singleBtn">📝 Edit this one</span>
+                    <small id="singleEditDesc" data-i18n="form.editModal.singleDesc">Only change this meeting</small>
                 </button>
-                
+
                 <button class="mode-btn mode-btn-series" onclick="confirmEditMode('series')">
-                    🔄 編輯未來系列
-                    <small id="seriesEditDesc">修改從此次開始的所有後續會議</small>
+                    <span data-i18n="form.editModal.seriesBtn">🔄 Edit future series</span>
+                    <small id="seriesEditDesc" data-i18n="form.editModal.seriesDesc">Change this and all future meetings</small>
                 </button>
-                
-                <button class="mode-btn mode-btn-cancel" onclick="closeEditModeModal()">
-                   ❌ 取消
+
+                <button class="mode-btn mode-btn-cancel" onclick="closeEditModeModal()" data-i18n="form.editModal.cancel">
+                   ❌ Cancel
                 </button>
             </div>
         </div>
