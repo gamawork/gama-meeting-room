@@ -3166,10 +3166,10 @@
 
             // 填入預約資訊
             bookingInfo.innerHTML = `
-                <p><strong>${escapeHtml(t('detail.subject'))}</strong>${escapeHtml(targetBooking.title || '')}</p>
-                <p><strong>${escapeHtml(t('detail.time'))}</strong>${formatTimeDisplay(targetBooking.startTime)} - ${formatTimeDisplay(targetBooking.endTime)}</p>
-                <p><strong>${escapeHtml(t('detail.location'))}</strong>${escapeHtml(tRoom(targetBooking.room))}</p>
-                <p><strong>${escapeHtml(t('detail.detection'))}</strong>${escapeHtml(t('recurring.detectionLabel', { interval: intervalText, n: futureCount }))}</p>
+                <p><strong>${escapeHtml(t('detail.subject'))}</strong> ${escapeHtml(targetBooking.title || '')}</p>
+                <p><strong>${escapeHtml(t('detail.time'))}</strong> ${formatTimeDisplay(targetBooking.startTime)} - ${formatTimeDisplay(targetBooking.endTime)}</p>
+                <p><strong>${escapeHtml(t('detail.location'))}</strong> ${escapeHtml(tRoom(targetBooking.room))}</p>
+                <p><strong>${escapeHtml(t('detail.detection'))}</strong> ${escapeHtml(t('recurring.detectionLabel', { interval: intervalText, n: futureCount }))}</p>
             `;
 
             // 更新按鈕描述
@@ -5108,11 +5108,11 @@ function showEditConflictModal(conflicts, isSeriesEdit = false) {
     message.innerHTML = `
         <h4>${escapeHtml(t('conflict.title'))}</h4>
         <div class="conflict-details">
-            <p><strong>${escapeHtml(t('conflict.date'))}</strong>${escapeHtml(conflict.date)}</p>
-            <p><strong>${escapeHtml(t('conflict.room'))}</strong>${escapeHtml(tRoom(conflict.booking.room))}</p>
-            <p><strong>${escapeHtml(t('conflict.existingTime'))}</strong>${formatTimeDisplay(conflict.booking.startTime)} - ${formatTimeDisplay(conflict.booking.endTime)}</p>
-            <p><strong>${escapeHtml(t('conflict.existingMeeting'))}</strong>${escapeHtml(conflict.booking.title || '')}</p>
-            <p><strong>${escapeHtml(t('conflict.bookedBy'))}</strong>${escapeHtml(conflict.booking.organizer || '')}</p>
+            <p><strong>${escapeHtml(t('conflict.date'))}</strong> ${escapeHtml(conflict.date)}</p>
+            <p><strong>${escapeHtml(t('conflict.room'))}</strong> ${escapeHtml(tRoom(conflict.booking.room))}</p>
+            <p><strong>${escapeHtml(t('conflict.existingTime'))}</strong> ${formatTimeDisplay(conflict.booking.startTime)} - ${formatTimeDisplay(conflict.booking.endTime)}</p>
+            <p><strong>${escapeHtml(t('conflict.existingMeeting'))}</strong> ${escapeHtml(conflict.booking.title || '')}</p>
+            <p><strong>${escapeHtml(t('conflict.bookedBy'))}</strong> ${escapeHtml(conflict.booking.organizer || '')}</p>
         </div>
         <p class="conflict-suggestion">${escapeHtml(t('conflict.suggestion'))}</p>
     `;
@@ -5574,13 +5574,13 @@ if (recurringTypeValue === 'weekly') {
                 if (recurringType === 'biweekly') frequencyText = t('freqText.biweekly');
 
                 const recurringDetailLines = [
-                    `<strong>${escapeHtml(t('detail.frequency'))}</strong>${escapeHtml(frequencyText)}`,
-                    `<strong>${escapeHtml(t('detail.period'))}</strong>${escapeHtml(periodText)}`,
-                    `<strong>${escapeHtml(t('detail.created'))}</strong>${escapeHtml(t('detail.sessions', { n: successCount }))}`
+                    `<strong>${escapeHtml(t('detail.frequency'))}</strong> ${escapeHtml(frequencyText)}`,
+                    `<strong>${escapeHtml(t('detail.period'))}</strong> ${escapeHtml(periodText)}`,
+                    `<strong>${escapeHtml(t('detail.created'))}</strong> ${escapeHtml(t('detail.sessions', { n: successCount }))}`
                 ];
 
                 if (failedDates.length > 0) {
-                    recurringDetailLines.push(`<strong>${escapeHtml(t('detail.failedDates'))}</strong>${escapeHtml(failedDates.join(', '))}`);
+                    recurringDetailLines.push(`<strong>${escapeHtml(t('detail.failedDates'))}</strong> ${escapeHtml(failedDates.join(', '))}`);
                 }
 
                 successMessage = appendMessageDetails(
@@ -5869,7 +5869,7 @@ async function updateBooking() {
                 const rangeLabel = currentLang === 'en' ? 'Affected range:' : '影響範圍：';
                 const detailLines = [
                     t('update.success', { n: successCount }),
-                    `📅 <strong>${escapeHtml(rangeLabel)}</strong>${escapeHtml(rangeStart)} – ${escapeHtml(rangeEnd)}`
+                    `📅 <strong>${escapeHtml(rangeLabel)}</strong> ${escapeHtml(rangeStart)} – ${escapeHtml(rangeEnd)}`
                 ];
 
                 if (failedCount > 0) {
@@ -5963,10 +5963,10 @@ function buildBookingDetailMessage(booking, prefixHtml = '') {
         lines.push('');
     }
 
-    lines.push(`<strong>${escapeHtml(t('detail.subject'))}</strong>${escapeHtml(booking.title || t('table.untitled'))}`);
+    lines.push(`<strong>${escapeHtml(t('detail.subject'))}</strong> ${escapeHtml(booking.title || t('table.untitled'))}`);
 
     if (booking.date) {
-        lines.push(`<strong>${escapeHtml(t('detail.date'))}</strong>${escapeHtml(booking.date)}`);
+        lines.push(`<strong>${escapeHtml(t('detail.date'))}</strong> ${escapeHtml(booking.date)}`);
     }
 
     const formattedStartTime = booking.startTime ? formatTimeDisplay(booking.startTime) : '';
@@ -5976,14 +5976,14 @@ function buildBookingDetailMessage(booking, prefixHtml = '') {
         : (formattedStartTime || formattedEndTime);
 
     if (timeRange) {
-        lines.push(`<strong>${escapeHtml(t('detail.time'))}</strong>${escapeHtml(timeRange)}`);
+        lines.push(`<strong>${escapeHtml(t('detail.time'))}</strong> ${escapeHtml(timeRange)}`);
     }
 
-    lines.push(`<strong>${escapeHtml(t('detail.location'))}</strong>${escapeHtml(booking.room ? tRoom(booking.room) : t('table.unknown'))}`);
-    lines.push(`<strong>${escapeHtml(t('detail.organizer'))}</strong>${escapeHtml(booking.organizer || t('table.unknown'))}`);
+    lines.push(`<strong>${escapeHtml(t('detail.location'))}</strong> ${escapeHtml(booking.room ? tRoom(booking.room) : t('table.unknown'))}`);
+    lines.push(`<strong>${escapeHtml(t('detail.organizer'))}</strong> ${escapeHtml(booking.organizer || t('table.unknown'))}`);
 
     if (booking.attendees) {
-        lines.push(`<strong>${escapeHtml(t('detail.attendees'))}</strong>${escapeHtml(booking.attendees)}`);
+        lines.push(`<strong>${escapeHtml(t('detail.attendees'))}</strong> ${escapeHtml(booking.attendees)}`);
     }
 
     return lines.join('<br>');
