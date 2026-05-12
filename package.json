@@ -1,0 +1,18 @@
+{
+  "name": "gama-meeting-room",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Gama Meeting Room Booking System (static SPA)",
+  "scripts": {
+    "serve": "http-server -p 4321 -c-1 --silent .",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:cleanup": "node tests/scripts/cleanup-orphans.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "http-server": "^14.1.1"
+  }
+}
