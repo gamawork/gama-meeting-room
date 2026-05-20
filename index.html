@@ -640,32 +640,6 @@
             background: #f7fafc;
         }
 
-        .today-date-cell {
-            border-left: none !important;
-        }
-
-        .today-row .date-cell,
-        .today-row .day-cell,
-        .today-row .time-cell,
-        .today-row .room-cell,
-        .today-row .organizer-cell,
-        .today-row .attendees-cell,
-        .today-row .meeting-cell,
-        .today-row .action-cell {
-            background: #fff8db !important;
-        }
-
-        .today-row .date-cell:hover,
-        .today-row .day-cell:hover,
-        .today-row .time-cell:hover,
-        .today-row .room-cell:hover,
-        .today-row .organizer-cell:hover,
-        .today-row .attendees-cell:hover,
-        .today-row .meeting-cell:hover,
-        .today-row .action-cell:hover {
-            background: #fef0b3 !important;
-        }
-
         .date-cell {
             background: #f0fff4;
             font-weight: 600;
@@ -783,7 +757,7 @@
         .row-even .attendees-cell,
         .row-even .meeting-cell,
         .row-even .action-cell {
-                 background: #fffaf2;
+                 background: #fef5e7;
     		 border-bottom: 1px solid #cbd5e1 !important; /* 深灰色邊框 */
    		 border-right: 1px solid #cbd5e1 !important;  /* 深灰色邊框 */
         }
@@ -797,7 +771,7 @@
 	.row-odd .attendees-cell,
 	.row-odd .meeting-cell,
 	.row-odd .action-cell {
-    		background: #eff6ff;
+    		background: #dbeafe;
     		border-bottom: 1px solid #cbd5e1 !important; /* 深灰色邊框 */
     		border-right: 1px solid #cbd5e1 !important;  /* 深灰色邊框 */
 	}
@@ -810,7 +784,7 @@
         .row-even .attendees-cell:hover,
         .row-even .meeting-cell:hover,
         .row-even .action-cell:hover {
-            background: #feefd8;
+            background: #fed7aa;
         }
 
         .row-odd .date-cell:hover,
@@ -821,7 +795,7 @@
         .row-odd .attendees-cell:hover,
         .row-odd .meeting-cell:hover,
         .row-odd .action-cell:hover {
-            background: #dbeafe;
+            background: #bfdbfe;
         }
 
         .day-separator td {
@@ -3908,8 +3882,7 @@ function setTimeSelectValue(selectId, timeValue) {
             weekDates.forEach((date, dayIndex) => {
                 const dateStr = formatDate(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
-                const isToday = dateStr === formatDate(new Date());
-                
+
                 // 決定該天的顏色類別
                 const colorClass = dayIndex % 2 === 0 ? 'row-even' : 'row-odd';
                 
@@ -3919,9 +3892,9 @@ function setTimeSelectValue(selectId, timeValue) {
                 
                 if (dayBookings.length === 0) {
                     const row = document.createElement('tr');
-                    row.className = `${colorClass} day-separator${isToday ? ' today-row' : ''}`; // 空行也要有分隔線
+                    row.className = `${colorClass} day-separator`; // 空行也要有分隔線
                     row.innerHTML = `
-                        <td class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>
+                        <td class="date-cell">${shortDateDisplay}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="5" onclick="quickBook('${dateStr}')">
                             ${escapeHtml(t('table.emptyRow'))}
@@ -3934,7 +3907,7 @@ function setTimeSelectValue(selectId, timeValue) {
 
                     dayBookings.forEach((booking, index) => {
                         const row = document.createElement('tr');
-                        row.className = `${colorClass}${isToday ? ' today-row' : ''}`; // 同一天的所有行使用相同顏色
+                        row.className = colorClass; // 同一天的所有行使用相同顏色
 
                         // 如果是該天的最後一個預約，添加分隔線
                         if (index === dayBookings.length - 1) {
@@ -3945,7 +3918,7 @@ function setTimeSelectValue(selectId, timeValue) {
                         const titleDisplay = booking.title || t('table.untitled');
 
                         row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell ${isToday ? 'today-date-cell' : ''}">${shortDateDisplay}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
                             <td class="room-cell">${escapeHtml(roomDisplay)}</td>
