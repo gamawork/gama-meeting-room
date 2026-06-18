@@ -3989,7 +3989,9 @@ function setTimeSelectValue(selectId, timeValue) {
         // 固定國曆日期
         const CUSTOM_FIXED = {
             '02-14': { name: '情人節', emoji: '💕' },
+            '03-11': { name: '囧尼生日', emoji: '🎂' },
             '08-08': { name: '父親節', emoji: '👔' },
+            '12-02': { name: '街口生日', emoji: '🎂' },
             '12-25': { name: '聖誕節', emoji: '🎄' }, // 覆蓋同日的「行憲紀念日」顯示
         };
 
@@ -4082,6 +4084,16 @@ function setTimeSelectValue(selectId, timeValue) {
                 en: n => n === 1 ? 'Christmas is tomorrow!' : `${n} days to Christmas`,
                 sub: () => '禮物清單列了嗎？乖的人才有禮物喔 🎅'
             },
+            '囧尼生日': {
+                zh: n => n === 1 ? '囧尼生日就是明天！' : `囧尼生日倒數 ${n} 天`,
+                en: n => n === 1 ? "Johnny's birthday is tomorrow!" : `${n} days to Johnny's birthday`,
+                sub: () => '😈😈😈😈😈😈'
+            },
+            '街口生日': {
+                zh: n => n === 1 ? '街口生日就是明天！' : `街口生日倒數 ${n} 天`,
+                en: n => n === 1 ? "Jackal's birthday is tomorrow!" : `${n} days to Jackal's birthday`,
+                sub: () => '😈😈😈😈😈😈'
+            },
         };
 
         // 找出今天起 7 天內最近的「可倒數」自訂節日
@@ -4125,6 +4137,8 @@ function setTimeSelectValue(selectId, timeValue) {
             '母親節': "Mother's Day",
             '七夕': 'Qixi',
             '聖誕節': 'Christmas',
+            '囧尼生日': "Johnny's Birthday",
+            '街口生日': "Jackal's Birthday",
         };
 
         // 中文顯示名覆蓋（縮短／改用通俗名稱；不動底層資料與 emoji／英文比對）
