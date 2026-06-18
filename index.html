@@ -601,6 +601,83 @@
             text-align: center;
         }
 
+        /* This Week 右側：今日節日面板 */
+        .today-holiday {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .today-holiday.is-holiday {
+            background: linear-gradient(135deg, #fff4e6 0%, #ffe9d6 100%);
+            border: 1px solid #ffd8a8;
+            color: #8a5a00;
+        }
+
+        .today-holiday.is-countdown {
+            background: linear-gradient(135deg, #fef0f5 0%, #ffe3ee 100%);
+            border: 1px solid #ffc9de;
+            color: #9b2c5e;
+        }
+
+        .today-holiday.is-plain {
+            color: #a0aec0;
+            background: transparent;
+            font-style: italic;
+        }
+
+        .today-holiday .th-emoji {
+            font-size: 1.6rem;
+            display: inline-block;
+            animation: holidayBounce 1.6s ease-in-out infinite;
+            transform-origin: 50% 80%;
+        }
+
+        .today-holiday .th-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+
+        .today-holiday .th-label {
+            font-size: 0.72rem;
+            opacity: 0.7;
+        }
+
+        .today-holiday .th-name {
+            font-weight: 700;
+        }
+
+        @keyframes holidayBounce {
+            0%, 100% { transform: translateY(0) rotate(-4deg); }
+            50% { transform: translateY(-5px) rotate(4deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .today-holiday .th-emoji { animation: none; }
+        }
+
+        /* 日期格內的節日標籤 */
+        .holiday-tag {
+            margin-top: 4px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: #c05621;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            white-space: nowrap;
+        }
+
+        .holiday-tag-emoji {
+            font-size: 0.85rem;
+        }
+
         .schedule-table {
             width: 100%;
             border-collapse: collapse !important;
@@ -1825,6 +1902,7 @@
                         <button onclick="changeWeek(1)">▶</button>
                         <button class="today-btn" id="todayBtn" onclick="goToToday()" data-i18n="nav.backToThisWeek">Back to This Week</button>
                     </div>
+                    <div class="today-holiday is-plain" id="todayHolidayPanel"></div>
                 </div>
 
                 <div class="table-container" style="position: relative;">
@@ -2021,6 +2099,8 @@
                 'app.loading': 'Loading...',
                 'nav.thisWeek': 'This Week',
                 'nav.backToThisWeek': 'Back to This Week',
+                'holiday.today': 'Today is',
+                'holiday.greeting': 'Have a lovely day',
                 'table.date': 'Date',
                 'table.day': 'Day',
                 'table.time': 'Time',
@@ -2219,6 +2299,8 @@
                 'app.loading': '載入中...',
                 'nav.thisWeek': '本週',
                 'nav.backToThisWeek': '回到本週',
+                'holiday.today': '今天是',
+                'holiday.greeting': '願你有美好的一天',
                 'table.date': '日期',
                 'table.day': '星期',
                 'table.time': '時間',
@@ -2455,6 +2537,7 @@
             try {
                 if (typeof updateWeekDisplay === 'function') updateWeekDisplay();
                 if (typeof updateSchedule === 'function') updateSchedule();
+                if (typeof renderTodayHolidayPanel === 'function') renderTodayHolidayPanel();
                 if (typeof updateDateDisplay === 'function') updateDateDisplay();
                 if (typeof updateTodayButtonState === 'function') updateTodayButtonState();
                 if (typeof updateModeExplanation === 'function') updateModeExplanation();
@@ -3871,6 +3954,207 @@ function setTimeSelectValue(selectId, timeValue) {
             }
         }
 
+// ===== 政府行事曆（人事行政總處辦公日曆，資料來源：ruyut/TaiwanCalendar） =====
+        const holidayData = {};        // 'YYYY-MM-DD' -> { name, isHoliday, emoji }
+        const holidayYearsLoaded = {}; // year -> 'loading' | 'done' | 'error'
+
+        // 依節日名稱關鍵字對應小動圖 emoji
+        const HOLIDAY_EMOJI = [
+            { match: ['除夕', '春節'], emoji: '🧧' },
+            { match: ['開國', '元旦'], emoji: '🎉' },
+            { match: ['和平'], emoji: '🕊️' },
+            { match: ['兒童'], emoji: '🎈' },
+            { match: ['清明'], emoji: '🌿' },
+            { match: ['勞動'], emoji: '🛠️' },
+            { match: ['端午'], emoji: '🐉' },
+            { match: ['中秋'], emoji: '🥮' },
+            { match: ['教師', '孔子'], emoji: '📖' },
+            { match: ['國慶'], emoji: '🎆' },
+            { match: ['光復', '古寧頭'], emoji: '🇹🇼' },
+            { match: ['行憲'], emoji: '📜' },
+            { match: ['補假'], emoji: '🌴' },
+        ];
+
+        function holidayEmojiFor(name) {
+            for (const item of HOLIDAY_EMOJI) {
+                if (item.match.some(k => name.includes(k))) return item.emoji;
+            }
+            return '🎌';
+        }
+
+        // ===== 自訂節日（非政府行事曆假日，需額外定義） =====
+        // 固定國曆日期
+        const CUSTOM_FIXED = {
+            '02-14': { name: '情人節', emoji: '💕' },
+            '08-08': { name: '父親節', emoji: '👔' },
+            '12-25': { name: '聖誕節', emoji: '🎄' }, // 覆蓋同日的「行憲紀念日」顯示
+        };
+
+        // 七夕（農曆七月初七，逐年國曆日期；缺年份則不顯示）
+        const QIXI_DATES = {
+            2026: '2026-08-19',
+            2027: '2027-08-08',
+            2028: '2028-08-26',
+            2029: '2029-08-16',
+            2030: '2030-08-05',
+        };
+
+        // 母親節：每年 5 月第二個週日（自動計算）
+        function mothersDayOf(year) {
+            const may1 = new Date(year, 4, 1);
+            const firstSunOffset = (7 - may1.getDay()) % 7; // 到第一個週日的天數
+            const day = 1 + firstSunOffset + 7;             // 第二個週日
+            return `${year}-05-${String(day).padStart(2, '0')}`;
+        }
+
+        function getCustomHoliday(dateStr) {
+            const [y, m, d] = dateStr.split('-');
+            const md = `${m}-${d}`;
+            if (CUSTOM_FIXED[md]) return CUSTOM_FIXED[md];
+            if (QIXI_DATES[+y] === dateStr) return { name: '七夕', emoji: '💞' };
+            if (mothersDayOf(+y) === dateStr) return { name: '母親節', emoji: '💐' };
+            return null;
+        }
+
+        // 回傳當日節日；單純週末（isHoliday 但無描述）回傳 null
+        function getHoliday(dateStr) {
+            const gov = holidayData[dateStr];
+            const govNamed = (gov && gov.name) ? gov : null;
+            const custom = getCustomHoliday(dateStr);
+
+            // 優先顯示的自訂節日：聖誕節（覆蓋行憲紀念日）、情人節（即使落在春節等也優先）
+            if (custom && (custom.name === '聖誕節' || custom.name === '情人節')) return custom;
+            // 其餘優先採用政府國定假日
+            if (govNamed) return govNamed;
+            return custom; // 自訂的非假日節日（情人節 / 七夕 / 父親節 / 母親節）
+        }
+
+        async function loadHolidayCalendar(year) {
+            if (holidayYearsLoaded[year]) return;
+            holidayYearsLoaded[year] = 'loading';
+            try {
+                const res = await fetch(`https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/${year}.json`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const list = await res.json();
+                list.forEach(item => {
+                    const d = item.date; // YYYYMMDD
+                    if (!d || d.length !== 8) return;
+                    const key = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+                    const name = item.description || '';
+                    holidayData[key] = {
+                        name,
+                        isHoliday: !!item.isHoliday,
+                        emoji: name ? holidayEmojiFor(name) : ''
+                    };
+                });
+                holidayYearsLoaded[year] = 'done';
+            } catch (e) {
+                console.warn(`載入 ${year} 年行事曆失敗:`, e);
+                holidayYearsLoaded[year] = 'error';
+            }
+        }
+
+        // 確保指定年份的行事曆已載入；載入完成後執行 onReady（用於重繪）
+        async function ensureHolidayYears(years, onReady) {
+            const need = years.filter(y => !holidayYearsLoaded[y]);
+            if (need.length === 0) return;
+            await Promise.all(need.map(loadHolidayCalendar));
+            if (typeof onReady === 'function') onReady();
+        }
+
+        // 自訂節日倒數文案（僅這幾個節日做 7 天內倒數；其餘節日只在當天顯示）
+        const COUNTDOWN_COPY = {
+            '情人節': {
+                zh: n => n === 1 ? '情人節就是明天！' : `情人節倒數 ${n} 天`,
+                en: n => n === 1 ? "Valentine's is tomorrow!" : `${n} days to Valentine's`,
+                sub: () => '約會排了嗎？為了你的家庭和諧'
+            },
+            '七夕': {
+                zh: n => n === 1 ? '七夕就在明天' : `七夕倒數 ${n} 天`,
+                en: n => n === 1 ? 'Qixi is tomorrow' : `${n} days to Qixi`,
+                sub: n => `牛郎織女一年才見一次，你還有 ${n} 天準備 🌌`
+            },
+            '聖誕節': {
+                zh: n => n === 1 ? '聖誕節就是明天！' : `聖誕節倒數 ${n} 天`,
+                en: n => n === 1 ? 'Christmas is tomorrow!' : `${n} days to Christmas`,
+                sub: () => '禮物清單列了嗎？乖的人才有禮物喔 🎅'
+            },
+        };
+
+        // 找出今天起 7 天內最近的「可倒數」自訂節日
+        function upcomingCountdown(fromDate) {
+            for (let d = 1; d <= 7; d++) {
+                const dt = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate() + d);
+                const h = getCustomHoliday(formatDate(dt));
+                if (h && COUNTDOWN_COPY[h.name]) {
+                    return { emoji: h.emoji, days: d, copy: COUNTDOWN_COPY[h.name] };
+                }
+            }
+            return null;
+        }
+
+        // 產生日期格內容：MM/DD + （若為國定節日）小標籤
+        function renderDateCellInner(shortDateDisplay, dateStr) {
+            const holiday = getHoliday(dateStr);
+            if (!holiday) return shortDateDisplay;
+            return `${shortDateDisplay}<div class="holiday-tag" title="${escapeHtml(holiday.name)}"><span class="holiday-tag-emoji">${holiday.emoji}</span>${escapeHtml(holiday.name)}</div>`;
+        }
+
+        // 節日中文名 → 英文名（供英文介面顯示「Today is …」）
+        const HOLIDAY_NAME_EN = {
+            '開國紀念日': 'Founding Day',
+            '農曆除夕': "Lunar New Year's Eve",
+            '春節': 'Lunar New Year',
+            '補假': 'Substitute Holiday',
+            '和平紀念日': 'Peace Memorial Day',
+            '兒童節': "Children's Day",
+            '清明節': 'Tomb Sweeping Day',
+            '勞動節': 'Labor Day',
+            '端午節': 'Dragon Boat Festival',
+            '中秋節': 'Mid-Autumn Festival',
+            '孔子誕辰紀念日/教師節': "Teachers' Day",
+            '國慶日': 'National Day',
+            '臺灣光復暨金門古寧頭大捷紀念日': 'Retrocession Day',
+            '行憲紀念日': 'Constitution Day',
+            '情人節': "Valentine's Day",
+            '父親節': "Father's Day",
+            '母親節': "Mother's Day",
+            '七夕': 'Qixi',
+            '聖誕節': 'Christmas',
+        };
+
+        // 依介面語言取得節日顯示名（英文無對照時退回中文）
+        function holidayNameFor(name) {
+            return (currentLang === 'en' && HOLIDAY_NAME_EN[name]) ? HOLIDAY_NAME_EN[name] : name;
+        }
+
+        // This Week 右側：今日節日面板（依真實今天，不隨切換週改變）
+        function renderTodayHolidayPanel() {
+            const el = document.getElementById('todayHolidayPanel');
+            if (!el) return;
+            const today = new Date();
+            ensureHolidayYears([today.getFullYear()], renderTodayHolidayPanel);
+            const holiday = getHoliday(formatDate(today));
+            if (holiday) {
+                el.className = 'today-holiday is-holiday';
+                el.innerHTML = `<span class="th-emoji">${holiday.emoji}</span>` +
+                    `<span class="th-text"><span class="th-label">${escapeHtml(t('holiday.today'))}</span>` +
+                    `<span class="th-name">${escapeHtml(holidayNameFor(holiday.name))}</span></span>`;
+            } else {
+                const up = upcomingCountdown(today);
+                if (up) {
+                    const line = (currentLang === 'en' ? up.copy.en : up.copy.zh)(up.days);
+                    el.className = 'today-holiday is-countdown';
+                    el.innerHTML = `<span class="th-emoji">${up.emoji}</span>` +
+                        `<span class="th-text"><span class="th-name">${escapeHtml(line)}</span>` +
+                        `<span class="th-label">${escapeHtml(up.copy.sub(up.days))}</span></span>`;
+                } else {
+                    el.className = 'today-holiday is-plain';
+                    el.innerHTML = `<span class="th-text"><span class="th-greeting">${escapeHtml(t('holiday.greeting'))}</span></span>`;
+                }
+            }
+        }
+
 // 界面更新函數
         function updateSchedule() {
             const scheduleBody = document.getElementById('scheduleBody');
@@ -3878,7 +4162,11 @@ function setTimeSelectValue(selectId, timeValue) {
             
             scheduleBody.innerHTML = '';
             const weekDates = getWeekDates(currentWeekStart);
-            
+
+            // 確保本週涵蓋年份的行事曆已載入（可能跨年），載入後重繪
+            const yearsInWeek = [...new Set(weekDates.map(d => d.getFullYear()))];
+            ensureHolidayYears(yearsInWeek, updateSchedule);
+
             weekDates.forEach((date, dayIndex) => {
                 const dateStr = formatDate(date);
                 const dayBookings = bookings.filter(booking => booking.date === dateStr);
@@ -3894,7 +4182,7 @@ function setTimeSelectValue(selectId, timeValue) {
                     const row = document.createElement('tr');
                     row.className = `${colorClass} day-separator`; // 空行也要有分隔線
                     row.innerHTML = `
-                        <td class="date-cell">${shortDateDisplay}</td>
+                        <td class="date-cell">${renderDateCellInner(shortDateDisplay, dateStr)}</td>
                         <td class="day-cell">${getDayName(date)}</td>
                         <td class="empty-cell" colspan="5" onclick="quickBook('${dateStr}')">
                             ${escapeHtml(t('table.emptyRow'))}
@@ -3918,7 +4206,7 @@ function setTimeSelectValue(selectId, timeValue) {
                         const titleDisplay = booking.title || t('table.untitled');
 
                         row.innerHTML = `
-                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${shortDateDisplay}</td>` : ''}
+                            ${index === 0 ? `<td rowspan="${dayBookings.length}" class="date-cell">${renderDateCellInner(shortDateDisplay, dateStr)}</td>` : ''}
                             ${index === 0 ? `<td rowspan="${dayBookings.length}" class="day-cell">${getDayName(date)}</td>` : ''}
                             <td class="time-cell">${formatTimeDisplay(booking.startTime)}-${formatTimeDisplay(booking.endTime)}</td>
                             <td class="room-cell">${escapeHtml(roomDisplay)}</td>
@@ -6379,6 +6667,13 @@ function scrollToForm() {
 
             // 初始化空的表格
             updateSchedule();
+
+            // 載入政府行事曆，並渲染今日節日面板（載入完成後重繪日期標籤）
+            renderTodayHolidayPanel();
+            ensureHolidayYears([new Date().getFullYear()], () => {
+                updateSchedule();
+                renderTodayHolidayPanel();
+            });
 
             // 初始化 Supabase 並載入資料
             initializeSupabase();
