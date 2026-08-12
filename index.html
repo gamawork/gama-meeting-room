@@ -2669,6 +2669,7 @@
         let supabaseClient = null;
         let realtimeSubscription = null;
         let pendingDeleteBooking = null; // 暫存待刪除的預約資訊
+        let isSubmitting = false; // 送出中旗標，防止雙擊產生重複預約
 	// 編輯功能相關變數
         let currentEditingBooking = null;
         let isEditMode = false;
@@ -3841,6 +3842,11 @@ function cancelEdit() {
                         if (payload.eventType === 'INSERT') {
                             // 新增預約
                             const newBooking = formatBookingFromDB(payload.new);
+                            // 去重：loadBookings() 可能已載入同一筆，再 push 會讓畫面出現兩列相同紀錄
+                            if (bookings.some(b => b.id === newBooking.id)) {
+                                console.log('略過重複的即時新增:', newBooking.id);
+                                return;
+                            }
                             bookings.push(newBooking);
                             updateSchedule();
                             
@@ -5983,6 +5989,15 @@ function resetForm() {
 
 // 預約提交函數 - 完整繁體中文版本
 async function submitBooking() {
+    // 衝突檢查到寫入之間有空窗（一次 DB 來回），期間按鈕仍可按，
+    // 雙擊會讓兩次檢查都通過而寫入兩筆相同預約，故在最前面就上鎖。
+    if (isSubmitting) {
+        console.log('預約提交中，忽略重複點擊');
+        return;
+    }
+    isSubmitting = true;
+    showLoading(true);
+
     try {
 	// 如果是編輯模式，調用編輯函數
 	if (isEditMode && currentEditingBooking) {
@@ -6188,6 +6203,9 @@ if (recurringTypeValue === 'weekly') {
     } catch (error) {
         console.error('提交預約時發生未預期的錯誤:', error);
         showModal(t('modal.systemError'), t('error.submitUnexpected', { err: error.message }));
+    } finally {
+        isSubmitting = false;
+        showLoading(false);
     }
 }
 
