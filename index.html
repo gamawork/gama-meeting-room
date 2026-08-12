@@ -2615,15 +2615,96 @@
         let futureBookingsToEdit = [];
         const attendeeGroups = [
             ['囧尼', 'Vicky', 'Joanne', 'Renee', 'Norah', 'Jessie', 'Travis'],
-            ['Jackal', 'Rex', 'Ryan'],
+            ['Jackal', 'Rex'],
             ['Mei', 'Faust', 'Yi', 'Louis', 'Jason', 'Dylan'],
-            ['姿驊', 'Moy', 'TY', 'Jackson', 'Ray', 'Eason', 'Angus', 'Alyce', 'Casey', 'Ken', 'Hans', 'Jimmy'],
-            ['Stan', 'Jill', 'Howard', 'Betty'],
+            ['姿驊', 'Moy', 'TY', 'Jackson', 'Ray', 'Angus', 'Alyce', 'Casey', 'Ken', 'Hans', 'Jimmy'],
+            ['Ryan', 'Stan', 'Jill', 'Howard', 'Betty'],
             ['小威', 'Ren', 'Allen', 'Wei', 'Hunter'],
             ['Victor', '鵬富', '子萱']
         ];
         const attendeeDirectory = attendeeGroups.flat();
         const organizerDirectory = [...attendeeDirectory];
+
+        // 成員中英文對照：key 為 attendeeGroups 內的正規名（實際寫入 DB 的值），
+        // value 為別名清單，只參與搜尋比對，不會顯示出來。新增成員時兩邊都要補。
+        const MEMBER_ALIASES = {
+            '囧尼': ['Johnny'],
+            'Vicky': ['賴蕙娟'],
+            'Joanne': ['郭景涵'],
+            'Renee': ['邱宇柔'],
+            'Norah': ['何沛蓉'],
+            'Jessie': ['潘亮妤'],
+            'Travis': ['黃郁絢'],
+            'Jackal': ['陳俊良'],
+            'Rex': ['黃元邑'],
+            'Mei': ['黃眉瑜'],
+            'Faust': ['郭慧彬'],
+            'Yi': ['黃易'],
+            'Louis': ['李宣槿'],
+            'Jason': ['王正頡'],
+            'Dylan': ['林東慶'],
+            '姿驊': ['Ivory'],
+            'Moy': ['吳莤郁'],
+            'TY': ['杜亭燁'],
+            'Jackson': ['林峻賢'],
+            'Ray': ['張家銘'],
+            'Angus': ['黃奕翔'],
+            'Alyce': ['黃玟瑜'],
+            'Casey': ['楊智婷'],
+            'Ken': ['江益愷'],
+            'Hans': ['杜佳瀚'],
+            'Jimmy': ['陳俊豪'],
+            'Ryan': ['陳協駿'],
+            'Stan': ['張育豪'],
+            'Jill': ['牛景婧'],
+            'Howard': ['江浩文'],
+            'Betty': ['楊瑩淑'],
+            '小威': ['Brian'],
+            'Ren': ['江仁豪'],
+            'Allen': ['林泰安'],
+            'Wei': ['宋煥為'],
+            'Hunter': ['黃群哲'],
+            'Victor': ['朱余晟'],
+            '鵬富': ['Kasen'],
+            '子萱': ['Yuna']
+        };
+
+        // 反向索引：任何名稱形式（小寫）→ 正規名。正規名本身優先，別名不覆寫既有 key。
+        const MEMBER_ALIAS_INDEX = (function() {
+            const index = {};
+            attendeeDirectory.forEach(name => {
+                index[normalizeAttendeeName(name).toLowerCase()] = name;
+            });
+            Object.keys(MEMBER_ALIASES).forEach(canonical => {
+                (MEMBER_ALIASES[canonical] || []).forEach(alias => {
+                    const key = normalizeAttendeeName(alias).toLowerCase();
+                    if (key && !index[key]) index[key] = canonical;
+                });
+            });
+            return index;
+        })();
+
+        // 別名 → 正規名；查不到就回傳原字串，保留名單外自由輸入的能力
+        function resolveMemberName(input) {
+            const normalized = normalizeAttendeeName(input);
+            return MEMBER_ALIAS_INDEX[normalized.toLowerCase()] || normalized;
+        }
+
+        // 正規名 + 全部別名，供搜尋比對用
+        function getMemberSearchForms(name) {
+            const canonical = normalizeAttendeeName(name);
+            return [canonical].concat(MEMBER_ALIASES[canonical] || []);
+        }
+
+        // 中文名用「包含」比對（習慣從名字打起），純英數維持「開頭」比對
+        function matchesMemberQuery(name, query) {
+            if (!query) return true;
+            return getMemberSearchForms(name).some(function(form) {
+                const target = normalizeAttendeeName(form).toLowerCase();
+                return /[一-鿿]/.test(form) ? target.includes(query) : target.startsWith(query);
+            });
+        }
+
         let selectedAttendees = [];
         let organizerActiveIndex = -1;
         let attendeeActiveIndex = -1;
@@ -2769,7 +2850,7 @@
             const query = normalizeAttendeeName(keyword).toLowerCase();
             return attendeeDirectory.filter(name => {
                 if (isAttendeeSelected(name)) return false;
-                return !query || name.toLowerCase().startsWith(query);
+                return matchesMemberQuery(name, query);
             });
         }
 
@@ -2808,7 +2889,7 @@
             if (!organizerInput || !dropdown) return;
 
             const query = normalizeAttendeeName(organizerInput.value).toLowerCase();
-            const filtered = organizerDirectory.filter(name => !query || name.toLowerCase().startsWith(query));
+            const filtered = organizerDirectory.filter(name => matchesMemberQuery(name, query));
 
             if (filtered.length === 0) {
                 dropdown.innerHTML = '<div class="attendees-empty">' + escapeHtml(t('dropdown.noMatchOrganizer')) + '</div>';
@@ -2857,6 +2938,12 @@
                 organizerActiveIndex = -1;
                 clearFieldValidation('organizer');
                 renderOrganizerDropdown();
+            });
+
+            // 直接手打別名（未經下拉選取）時，離開欄位就正規化成正規名，
+            // 讓後續三處讀取 organizer.value 的流程都拿到一致的值
+            organizerInput.addEventListener('blur', function() {
+                organizerInput.value = resolveMemberName(organizerInput.value);
             });
 
             organizerInput.addEventListener('keydown', function(event) {
@@ -2926,7 +3013,7 @@
         }
 
         function getTagToneClass(name) {
-            const normalized = normalizeAttendeeName(name);
+            const normalized = resolveMemberName(name);
             const tones = [
                 'booking-tag-amber',
                 'booking-tag-red',
@@ -3008,7 +3095,7 @@
         }
 
         function addAttendee(name) {
-            const normalized = normalizeAttendeeName(name);
+            const normalized = resolveMemberName(name);
             if (!normalized || isAttendeeSelected(normalized)) return;
 
             selectedAttendees.push(normalized);
