@@ -268,6 +268,7 @@
         }
 
         .attendees-picker {
+            position: relative;
             width: 100%;
             border: 2px solid #e2e8f0;
             border-radius: 10px;
@@ -276,6 +277,34 @@
             min-height: 50px;
             cursor: text;
             transition: all 0.3s ease;
+        }
+
+        .attendees-clear {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            padding: 0;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .attendees-clear:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* hidden 屬性的預設 display:none 會被上面的 inline-flex 蓋掉，要補這條 */
+        .attendees-clear[hidden] {
+            display: none;
         }
 
         .attendees-picker:focus-within {
@@ -288,6 +317,7 @@
             flex-wrap: wrap;
             gap: 6px;
             margin-bottom: 6px;
+            padding-right: 30px; /* 讓開右上角的清空鈕，避免 chip 被蓋住 */
         }
 
         .attendees-selected:empty {
@@ -452,6 +482,29 @@
 
         .attendee-option:hover {
             background: #edf2ff;
+        }
+
+        .attendee-option-team {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-weight: 600;
+            background: #f6f8ff;
+        }
+
+        .attendee-option-team:hover {
+            background: #e4ebff;
+        }
+
+        .attendee-team-count {
+            flex: none;
+            font-weight: 500;
+            font-size: 12px;
+            color: #41527a;
+            background: #dbe4ff;
+            border-radius: 999px;
+            padding: 2px 8px;
         }
 
         .attendees-empty {
@@ -1989,6 +2042,11 @@
                         <div class="form-group">
                             <label for="attendeesSearch" data-i18n="form.attendees">Attendees (optional)</label>
                             <div class="attendees-picker" id="attendeesPicker">
+                                <button type="button" class="attendees-clear" id="attendeesClear" hidden>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/>
+                                    </svg>
+                                </button>
                                 <div class="attendees-selected" id="attendeesSelected"></div>
                                 <input type="text" id="attendeesSearch" class="attendees-search-input" data-i18n-placeholder="form.attendees.placeholder" placeholder="Click or search attendees">
                                 <div class="attendees-dropdown" id="attendeesDropdown"></div>
@@ -2273,6 +2331,7 @@
                 'dropdown.noMatchOrganizer': 'No matching name — type to enter directly',
                 'dropdown.noMatchAttendees': 'No matching name — press Enter to add directly',
                 'dropdown.remove': 'Remove {name}',
+                'dropdown.clearAll': 'Clear all {n} attendees',
                 'calendar.google': 'Google Calendar',
                 'calendar.appleOutlook': 'Apple & Outlook Calendar',
                 'calendar.recurringSummary': 'Recurring booking, {n} sessions',
@@ -2473,6 +2532,7 @@
                 'dropdown.noMatchOrganizer': '找不到符合的人員，可直接輸入',
                 'dropdown.noMatchAttendees': '找不到符合的人員，可直接按 Enter 新增',
                 'dropdown.remove': '移除 {name}',
+                'dropdown.clearAll': '清空全部 {n} 位與會者',
                 'calendar.google': 'Google 日曆',
                 'calendar.appleOutlook': 'Apple & Outlook 日曆',
                 'calendar.recurringSummary': '週期預約，共 {n} 場',
@@ -2541,6 +2601,8 @@
                 if (typeof updateDateDisplay === 'function') updateDateDisplay();
                 if (typeof updateTodayButtonState === 'function') updateTodayButtonState();
                 if (typeof updateModeExplanation === 'function') updateModeExplanation();
+                // 讓 chip 的移除鈕與清空鈕的 aria-label / title 跟著語言切換
+                if (typeof renderSelectedAttendees === 'function') renderSelectedAttendees();
             } catch (e) {
                 console.warn('refreshDynamicUI partial failure:', e);
             }
@@ -2697,12 +2759,92 @@
         }
 
         // 中文名用「包含」比對（習慣從名字打起），純英數維持「開頭」比對
-        function matchesMemberQuery(name, query) {
+        function matchesNameForms(forms, query) {
             if (!query) return true;
-            return getMemberSearchForms(name).some(function(form) {
+            return forms.some(function(form) {
                 const target = normalizeAttendeeName(form).toLowerCase();
                 return /[一-鿿]/.test(form) ? target.includes(query) : target.startsWith(query);
             });
+        }
+
+        function matchesMemberQuery(name, query) {
+            return matchesNameForms(getMemberSearchForms(name), query);
+        }
+
+        // 群組名單。members 一律填正規名；選取群組時會展開成個別人名寫入，
+        // DB 不存群組名稱，因此日後改這裡不會動到既有預約的與會者紀錄。
+        // 陣列順序即下拉選單的顯示順序
+        const ATTENDEE_TEAMS = [
+            { name: 'C++', aliases: [], members: ['Mei', 'Faust', 'Yi', 'Louis', 'Jason', 'Dylan'] },
+            { name: 'Web', aliases: [], members: ['姿驊', 'Moy', 'TY', 'Jackson', 'Ray', 'Angus', 'Alyce', 'Casey', 'Ken', 'Hans', 'Jimmy'] },
+            { name: 'QA', aliases: [], members: ['Ryan', 'Stan', 'Jill', 'Howard', 'Betty'] },
+            { name: 'TSE', aliases: [], members: ['小威', 'Ren', 'Allen', 'Hunter'] },
+            { name: 'IT', aliases: [], members: ['小威', 'Wei'] },
+            { name: 'DBA', aliases: [], members: ['Victor', '鵬富', '子萱'] },
+            { name: 'GGM', aliases: ['管理部'], members: ['囧尼', 'Joanne', 'Renee', 'Norah'] },
+            { name: 'BD', aliases: ['業務部'], members: ['Travis', 'Jessie'] },
+            { name: 'Book Club', aliases: ['讀書會'], members: ['囧尼', 'Joanne', 'Jackal', 'Rex', 'Faust', '姿驊', 'TY', 'Ryan', '小威', 'Victor'] }
+        ];
+
+        // 成員被改名或刪除時，群組會默默少加人；開發階段先在 console 示警
+        (function validateAttendeeTeams() {
+            ATTENDEE_TEAMS.forEach(function(team) {
+                const unknown = team.members.filter(member => !attendeeDirectory.includes(member));
+                if (unknown.length) {
+                    console.warn('[ATTENDEE_TEAMS] ' + team.name + ' 含名單外成員：' + unknown.join(', '));
+                }
+            });
+        })();
+
+        // 下拉顯示用；中英不同名才括號附註，例如 GGM（管理部）
+        function getTeamLabel(team) {
+            const alias = (team.aliases || [])[0];
+            return alias && alias !== team.name ? team.name + '（' + alias + '）' : team.name;
+        }
+
+        function matchesTeamQuery(team, query) {
+            return matchesNameForms([team.name].concat(team.aliases || []), query);
+        }
+
+        // 全員都已在名單上的群組就不再出現在下拉，行為比照個別成員
+        function isTeamFullySelected(team) {
+            return team.members.every(member => isAttendeeSelected(resolveMemberName(member)));
+        }
+
+        function getFilteredTeams(keyword) {
+            const query = normalizeAttendeeName(keyword).toLowerCase();
+            return ATTENDEE_TEAMS.filter(function(team) {
+                if (isTeamFullySelected(team)) return false;
+                return matchesTeamQuery(team, query);
+            });
+        }
+
+        // 展開群組成員；已在名單上的（含跨群組重複者）直接略過
+        function addAttendeeTeam(teamName) {
+            const team = ATTENDEE_TEAMS.find(item => item.name === teamName);
+            if (!team) return;
+
+            let added = 0;
+            team.members.forEach(function(member) {
+                const canonical = resolveMemberName(member);
+                if (!canonical || isAttendeeSelected(canonical)) return;
+                selectedAttendees.push(canonical);
+                added++;
+            });
+
+            if (added > 0) renderSelectedAttendees();
+            renderAttendeesDropdown();
+        }
+
+        // 下拉選項的共同入口：群組展開成員，個人照舊單筆加入
+        function applyAttendeeOption(button) {
+            if (!button) return;
+            const teamName = button.getAttribute('data-attendee-team');
+            if (teamName) {
+                addAttendeeTeam(teamName);
+                return;
+            }
+            addAttendee(button.getAttribute('data-attendee-option'));
         }
 
         let selectedAttendees = [];
@@ -3009,7 +3151,24 @@
                     <button type="button" class="attendee-chip-remove" data-remove-attendee="${escapeHtml(name)}" aria-label="${escapeHtml(t('dropdown.remove', { name: name }))}">&times;</button>
                 </span>
             `).join('');
+
+            // 沒人可清時就不顯示，避免出現一顆按了沒作用的按鈕
+            const clearBtn = document.getElementById('attendeesClear');
+            if (clearBtn) {
+                clearBtn.hidden = selectedAttendees.length === 0;
+                const clearLabel = t('dropdown.clearAll', { n: selectedAttendees.length });
+                clearBtn.setAttribute('aria-label', clearLabel);
+                clearBtn.title = clearLabel;
+            }
+
             syncAttendeesField();
+        }
+
+        function clearAllAttendees() {
+            if (selectedAttendees.length === 0) return;
+            selectedAttendees = [];
+            renderSelectedAttendees();
+            renderAttendeesDropdown();
         }
 
         function getTagToneClass(name) {
@@ -3072,16 +3231,28 @@
             const dropdown = document.getElementById('attendeesDropdown');
             if (!searchInput || !dropdown) return;
 
+            const teams = getFilteredTeams(searchInput.value);
             const filtered = getFilteredAttendees(searchInput.value);
 
-            if (filtered.length === 0) {
+            // 群組排在個人前面。data-attendee-option 兩者都帶，讓鍵盤上下選取
+            // 與點擊處理維持同一套；data-attendee-team 只用來分辨要展開成員。
+            const teamsHtml = teams.map(team => `
+                <button type="button" class="attendee-option attendee-option-team" data-attendee-option="${escapeHtml(team.name)}" data-attendee-team="${escapeHtml(team.name)}">
+                    <span>${escapeHtml(getTeamLabel(team))}</span>
+                    <span class="attendee-team-count">${team.members.length}</span>
+                </button>
+            `).join('');
+
+            const membersHtml = filtered.map(name => `
+                <button type="button" class="attendee-option" data-attendee-option="${escapeHtml(name)}">
+                    ${escapeHtml(name)}
+                </button>
+            `).join('');
+
+            if (!teamsHtml && !membersHtml) {
                 dropdown.innerHTML = '<div class="attendees-empty">' + escapeHtml(t('dropdown.noMatchAttendees')) + '</div>';
             } else {
-                dropdown.innerHTML = filtered.map(name => `
-                    <button type="button" class="attendee-option" data-attendee-option="${escapeHtml(name)}">
-                        ${escapeHtml(name)}
-                    </button>
-                `).join('');
+                dropdown.innerHTML = teamsHtml + membersHtml;
             }
 
             dropdown.classList.add('open');
@@ -3145,6 +3316,18 @@
 
             setAttendeesFromString(document.getElementById('attendees')?.value || '');
 
+            const clearBtn = document.getElementById('attendeesClear');
+            if (clearBtn) {
+                // 監聽掛在 button 本身，內層 svg/path 觸發時 currentTarget 仍是這顆按鈕；
+                // stopPropagation 是為了不讓 picker 的點擊處理再跑一次
+                clearBtn.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    clearAllAttendees();
+                    searchInput.focus();
+                    renderAttendeesDropdown();
+                });
+            }
+
             picker.addEventListener('click', function() {
                 searchInput.focus();
                 renderAttendeesDropdown();
@@ -3193,7 +3376,7 @@
                 if (event.key === 'Enter') {
                     if (dropdown.classList.contains('open') && options.length > 0 && attendeeActiveIndex >= 0) {
                         event.preventDefault();
-                        addAttendee(options[attendeeActiveIndex].getAttribute('data-attendee-option'));
+                        applyAttendeeOption(options[attendeeActiveIndex]);
                         searchInput.focus();
                     } else {
                         event.preventDefault();
@@ -3226,7 +3409,7 @@
                 event.stopPropagation();
                 const button = event.target?.closest?.('[data-attendee-option]');
                 if (!button) return;
-                addAttendee(button.getAttribute('data-attendee-option'));
+                applyAttendeeOption(button);
                 searchInput.focus();
             });
 
