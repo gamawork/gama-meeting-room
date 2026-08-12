@@ -2839,6 +2839,12 @@
         // 下拉選項的共同入口：群組展開成員，個人照舊單筆加入
         function applyAttendeeOption(button) {
             if (!button) return;
+
+            // 選完立刻清掉搜尋字串，下拉回到完整名單，可直接接著打下一個人。
+            // 必須在 add 之前清，因為 add 結束時會依這個值重新渲染下拉。
+            const searchInput = document.getElementById('attendeesSearch');
+            if (searchInput) searchInput.value = '';
+
             const teamName = button.getAttribute('data-attendee-team');
             if (teamName) {
                 addAttendeeTeam(teamName);
