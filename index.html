@@ -2319,6 +2319,7 @@
                 'error.submitUnexpected': 'Unexpected error submitting booking:<br><strong>{err}</strong><br><br>Please refresh the page and try again, or contact admin.',
                 'error.loadFail': 'Failed to load bookings: {err}',
                 'error.saveFail': 'Failed to save booking: {err}',
+                'error.slotTaken': 'That time slot in this room was just taken.<br><br>Someone else may have booked it while you were filling in the form. Please refresh the page and pick another time.',
                 'error.deleteFail': 'Failed to delete booking: {err}',
                 'error.updateFail': 'Failed to update booking: {err}',
                 'error.partialUpdate': 'Error during partial update: {err}',
@@ -2520,6 +2521,7 @@
                 'error.submitUnexpected': '提交預約時發生未預期的錯誤：<br><strong>{err}</strong><br><br>請重新整理頁面後再試，或聯絡系統管理員。',
                 'error.loadFail': '無法載入預約資料: {err}',
                 'error.saveFail': '無法儲存預約: {err}',
+                'error.slotTaken': '這個會議室的該時段剛剛已被預約。<br><br>可能有人在你填表的同時完成了預約。請重新整理頁面後改選其他時段。',
                 'error.deleteFail': '無法刪除預約: {err}',
                 'error.updateFail': '無法更新預約：{err}',
                 'error.partialUpdate': '部分更新時發生錯誤：{err}',
@@ -3929,6 +3931,13 @@ async function loadBookings() {
     }
 }
 
+        // 判斷是否為資料庫層擋下的時段衝突
+        // 23P01 = EXCLUDE 約束（時段重疊）、23505 = UNIQUE 約束（完全相同時段）
+        // 前端衝突檢查與寫入之間仍有競態空窗，穿過去時由資料庫擋下，這裡把它翻成人話
+        function isSlotConflictError(error) {
+            return error?.code === '23P01' || error?.code === '23505';
+        }
+
         // 新增預約
         async function saveBooking(booking) {
             if (!supabaseClient) {
@@ -3961,7 +3970,11 @@ async function loadBookings() {
                 
             } catch (error) {
                 console.error('儲存預約失敗:', error);
-                showModal(t('modal.saveFailed'), t('error.saveFail', { err: error.message }));
+                if (isSlotConflictError(error)) {
+                    showModal(t('modal.bookingFailedConflict'), t('error.slotTaken'));
+                } else {
+                    showModal(t('modal.saveFailed'), t('error.saveFail', { err: error.message }));
+                }
                 return false;
             } finally {
                 showLoading(false);
@@ -6347,7 +6360,11 @@ async function updateBooking() {
             
         } catch (error) {
             console.error('衝突檢查過程發生錯誤:', error);
-            showModal(t('modal.conflictCheckFailed'), t('error.conflictCheck', { err: error.message }));
+            if (isSlotConflictError(error)) {
+                showModal(t('modal.bookingFailedConflict'), t('error.slotTaken'));
+            } else {
+                showModal(t('modal.conflictCheckFailed'), t('error.conflictCheck', { err: error.message }));
+            }
         }
 
     } catch (error) {
