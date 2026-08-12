@@ -35,6 +35,33 @@ alter table public.bookings
 add column if not exists attendees text;
 ```
 
+### 時段防撞（三層，缺一層就會再出現重複預約）
+
+1. 前端送出前的 `checkRecurringConflicts(...)` 衝突檢查。
+2. `submitBooking(...)` 開頭的 `isSubmitting` 重入鎖，擋同一分頁雙擊。
+   衝突檢查到寫入之間有一次 DB 來回的空窗，沒有這道鎖，雙擊會寫入兩筆相同預約。
+3. 資料庫 `bookings_no_overlap` EXCLUDE 約束，擋跨分頁／跨使用者的競態。
+
+第 3 層的建立 SQL（2026-08-12 已套用到正式資料庫）：
+
+```sql
+create extension if not exists btree_gist;
+
+alter table public.bookings
+add constraint bookings_no_overlap
+exclude using gist (
+    room with =,
+    tsrange((date + start_time)::timestamp, (date + end_time)::timestamp) with &&
+);
+```
+
+- `btree_gist` 是為了讓 `room with =` 這種純量比較能跟時間範圍放進同一個 GiST 索引。
+- `tsrange` 預設為半開區間 `[)`，所以 `10:00-11:00` 與 `11:00-12:00` 這種背靠背預約不會被誤擋。
+- 建立或修改這道約束前，全表必須沒有重疊資料，否則 `alter table` 會失敗。
+- 約束擋下時 PostgREST 回 SQLSTATE `23P01`，前端由 `isSlotConflictError(...)` 接住，
+  改顯示 `error.slotTaken` 的中文衝突提示，不讓 Postgres 原始英文訊息外洩到畫面。
+  該函式同時接 `23505`（UNIQUE）；若日後改用別種約束，記得同步這個判斷。
+
 ## Git 帳號
 
 - Git user.name：`gamawork`
