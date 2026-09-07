@@ -2,11 +2,8 @@
 
 ## 檔案編碼
 
-- `index.html` 為單檔大型頁面，且包含大量繁體中文內容。
-- 修改 `index.html` 時，避免使用會整份重寫檔案內容的方式，特別是 PowerShell 的 `Set-Content`、`Out-File`、`>` 重新導出。
-- 原因：這類做法容易在編碼轉換時把中文內容寫壞，造成亂碼。
-- 優先使用局部編輯方式，例如 `apply_patch`。
-- 如果真的需要整檔處理，先確認原始編碼，再以完全相同編碼寫回。
+`index.html` 單檔、大量中文。只用 Edit 做局部修改；禁 PowerShell `Set-Content`／`Out-File`／`>` 整檔重寫
+（編碼守則見全域 delegation-templates 通用結尾）。
 
 ## 修改策略
 
@@ -64,17 +61,8 @@ exclude using gist (
 
 ## Git 帳號
 
-- Git user.name：`gamawork`
-- Git user.email：`gamawork2025@gmail.com`
-- Remote：`https://github.com/gamawork/gama-meeting-room.git`
-- 個人帳號 `ryanchen945` 無 push 權限，操作前確認身分：
-
-```bash
-git config user.name "gamawork"
-git config user.email "gamawork2025@gmail.com"
-```
-
-- 若遇到 403，清除 Windows 憑證管理員中 `github.com` 的記錄後重新登入。
+Git 身分：工作帳號 `gamawork`，見 `~/.claude/environments/GitHub.md`（L18-24）。
+remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）。
 
 ## 發生亂碼時的處理
 
