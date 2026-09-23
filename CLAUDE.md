@@ -3,7 +3,7 @@
 ## 檔案編碼
 
 `index.html` 單檔、大量中文。只用 Edit 做局部修改；禁 PowerShell `Set-Content`／`Out-File`／`>` 整檔重寫
-（編碼守則見全域 delegation-templates 通用結尾）。
+（編碼守則見全域 `rules/judgment.md` R5「改文字檔的底線（Windows）」）。
 
 ## 修改策略
 
