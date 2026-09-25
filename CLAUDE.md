@@ -70,7 +70,24 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 - 先用 git 版本還原乾淨內容，再重新套用必要修改。
 - 還原後先確認中文可正常顯示，再繼續改功能。
 
-## 驗證節奏：分風險收工（試行 2026-09）
+## 測試時機（R8 層對照）
+
+通則（一句話判準、分層時機、縮範圍跑、變異驗證、假回應常數）在全域 `rules/judgment.md` R8，這裡只填本專案的層對照。
+
+| 本專案路徑 | 對應 R8 的層 | 什麼時候寫 |
+|---|---|---|
+| `checkRecurringConflicts(...)`（`index.html:5591`，時段防撞第 1 層） | 核心邏輯（R8：業務規則，防重複預約） | 寫程式之前（R8）；目前無單元測試框架，待建立（見 `TODO.md` 待辦） |
+| `tests/i18n.spec.mjs`（`npm test` 走 Playwright） | **E2E**（不是核心邏輯層測試） | 只守 3–5 條關鍵使用者旅程，不拿來覆蓋狀態組合（狀態組合歸核心邏輯層） |
+| `index.html` 其餘畫面渲染（週表、modal、表單） | 畫面 | 穩定後只補兩類（顯示對的數字、關閉路徑） |
+
+- 驗證 UI：`preview_start`（見 `.claude/launch.json`）；不用 Bash 起 server。
+- commit 前不跑 `npm test`：它會執行 `tests/i18n.spec.mjs`，對正式 Supabase 送出真實預約（見「Supabase」節，已套用到正式資料庫）。只在動到 i18n 或預約流程、且經使用者確認後手動跑，跑完務必確認清理（afterEach）成功，殘留假預約會被 `bookings_no_overlap` 擋住真實時段。
+- 全跑：目前沒有可安全自動跑的測試。
+- 本專案的「單一定義處」（假回應要從這裡推導）：目前無假回應常數；核心邏輯尚未拆出獨立單元測試前不適用。
+- 函式內嵌在 7000+ 行的 `index.html` 裡，要為 `checkRecurringConflicts` 這類函式寫單元測試前得先抽出來，
+  這會跟本檔「修改策略：不要一次重整整份 index.html」有張力，抽取時只動需要的函式、不整檔重排。
+
+### 驗證節奏：分風險收工（試行 2026-09）
 
 > **逐字複本**：本段的正本在 `~/.claude/playbooks/project-claude-template.md` 第七節，各專案 CLAUDE.md
 > 逐字複製、不改寫；要改條文先改正本，再 `grep -rl "驗證節奏：分風險收工"` 找出所有複本一起同步。
@@ -116,7 +133,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 
 #### 本專案對照（驗證節奏與今天的測試規則落在哪）
 
-- 審查規模看改動型態（小修不開審查、新功能完成後審、大改版先審規格、金額加第二意見）：全域 model-dispatch §6。
+- 審查規模看改動型態（方向未定只做樣稿不審、小修不開審查、新功能完成後審、大改版先審規格、金額加第二意見）：全域 model-dispatch §6。
 - 追蹤檔與「延後的 M」清單：`TODO.md` 的「延後的 M」段；接手先讀 `TODO.md` 的「下一步入口」。
 - 風險類在本專案具體指：`bookings` 預約資料（時段防撞三層失效造成重複預約）、Supabase 資料遺失或毀損。
 - 瀏覽器重複檢查登記簿：`tests/checks.md`（還沒建時照 browser-verify 守則由主對話建）；腳本目錄：`tests/scripts/`。
