@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: '**/unit/**', // tests/unit 只走 npm run test:unit（playwright.unit.config.js），這裡只跑 i18n
   fullyParallel: false,            // 寫入測試需序列以利清理
   workers: 1,                      // 同時 1 個 worker 避免測試之間搶 booking 時段
   forbidOnly: !!process.env.CI,

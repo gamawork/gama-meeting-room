@@ -1937,6 +1937,338 @@
         font-size: 24px !important;
     }
 }
+
+/* ========== 「我的行事曆」頁籤（移植自 docs/ideas/my-calendar/mockup.html，class 一律加 mycal- 前綴避免撞名） ========== */
+:root {
+    --mycal-navy: #1f3560;
+    --mycal-navy-2: #2b4a80;
+    --mycal-ink: #1e293b;
+    --mycal-muted: #64748b;
+    --mycal-faint: #94a3b8;
+    --mycal-line: #e2e8f0;
+    --mycal-card: #ffffff;
+    --mycal-cream: #fbf3e2;
+    --mycal-sky: #e2ecfa;
+    --mycal-off: #eef1f5;
+    --mycal-accent: #f5c542;
+    --mycal-hl-bg: #fde68a;
+    --mycal-hl-bar: #d69e0b;
+    --mycal-danger: #dc2626;
+    --mycal-ok: #059669;
+    --mycal-row: 34px;
+}
+
+.mycal-tabbar {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 10px 24px;
+    background: linear-gradient(120deg, var(--mycal-navy-2), var(--mycal-navy));
+    color: #fff;
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+}
+.mycal-tabs { display: flex; gap: 4px; background: rgba(255,255,255,.1); padding: 4px; border-radius: 10px; }
+.mycal-tab {
+    border: 0; background: transparent; color: #cbd5e1;
+    padding: 7px 14px; border-radius: 7px; font-weight: 600; white-space: nowrap; font-size: 14px; cursor: pointer; font-family: inherit;
+}
+.mycal-tab[aria-selected="true"] { background: #fff; color: var(--mycal-navy); }
+.mycal-me-chip {
+    margin-left: auto; display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08);
+    color: #fff; padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-size: 14px; cursor: pointer; font-family: inherit;
+}
+.mycal-me-chip .mycal-avatar {
+    width: 24px; height: 24px; border-radius: 50%; background: var(--mycal-accent); color: var(--mycal-navy);
+    display: grid; place-items: center; font-weight: 800; font-size: 12px;
+}
+.mycal-me-chip small { color: #cbd5e1; }
+
+.mycal-tab-panel { padding: 20px 24px 40px; font-family: 'Microsoft JhengHei', Arial, sans-serif; color: var(--mycal-ink); font-size: 14px; }
+.mycal-tab-panel button { font: inherit; cursor: pointer; }
+.mycal-tab-panel [hidden], .mycal-overlay[hidden] { display: none !important; }
+
+.mycal-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.mycal-badge {
+    display: inline-flex; align-items: baseline; gap: 10px;
+    background: var(--mycal-navy); color: #fff; padding: 9px 18px; border-radius: 999px;
+    box-shadow: 0 6px 16px rgba(31,53,96,.25); border: 0; transition: transform .15s, box-shadow .15s;
+}
+.mycal-badge:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(31,53,96,.32); }
+.mycal-badge:disabled { cursor: default; transform: none; }
+.mycal-badge .mycal-scale { color: var(--mycal-accent); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.mycal-badge .mycal-title { font-weight: 800; font-size: 17px; }
+.mycal-badge .mycal-caret { font-size: 11px; opacity: .75; align-self: center; transition: transform .2s; }
+.mycal-badge[aria-expanded="true"] .mycal-caret { transform: rotate(180deg); }
+.mycal-nav button:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ---------- 尺度膠囊的跳轉面板 ---------- */
+.mycal-overlay.mycal-pop-layer { background: transparent; display: block; padding: 0; animation: none; }
+.mycal-pop {
+    position: absolute; background: #fff; border-radius: 16px; width: 320px; max-width: calc(100vw - 32px);
+    box-shadow: 0 20px 50px rgba(15,23,42,.25); padding: 10px; animation: mycal-rise .18s ease-out;
+    max-height: min(60vh, 480px); overflow: auto;
+}
+.mycal-pop h3 { margin: 4px 8px 8px; font-size: 13px; color: var(--mycal-muted); font-weight: 600; }
+.mycal-wk-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+    border: 0; background: none; padding: 10px 12px; border-radius: 10px; text-align: left; color: var(--mycal-ink);
+}
+.mycal-wk-row:hover { background: #f1f5f9; }
+.mycal-wk-row .mycal-rng { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mycal-wk-row .mycal-rel { font-size: 11px; color: var(--mycal-faint); margin-left: 8px; font-weight: 600; }
+.mycal-wk-row .mycal-cnt { font-size: 12px; color: var(--mycal-muted); font-weight: 600; white-space: nowrap; }
+.mycal-wk-row.mycal-cur { background: var(--mycal-navy); color: #fff; }
+.mycal-wk-row.mycal-cur .mycal-rel, .mycal-wk-row.mycal-cur .mycal-cnt { color: #cbd5e1; }
+.mycal-mc-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 10px; }
+.mycal-mc-head b { font-size: 15px; }
+.mycal-mc-head button { border: 1px solid var(--mycal-line); background: #fff; width: 32px; height: 32px; border-radius: 8px; font-weight: 700; }
+.mycal-mc-head button:disabled { opacity: .3; cursor: not-allowed; }
+.mycal-mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.mycal-mc-wd { text-align: center; font-size: 11px; color: var(--mycal-faint); font-weight: 600; padding-bottom: 4px; }
+.mycal-mc-day {
+    border: 0; background: none; border-radius: 10px; padding: 6px 0 5px; min-height: 42px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-weight: 700; color: var(--mycal-ink);
+}
+.mycal-mc-day:hover:not(:disabled) { background: #f1f5f9; }
+.mycal-mc-day.mycal-we { color: var(--mycal-faint); }
+.mycal-mc-day.mycal-out { visibility: hidden; }
+.mycal-mc-day:disabled { color: #cbd5e1; cursor: not-allowed; }
+.mycal-mc-day.mycal-today { box-shadow: inset 0 0 0 2px var(--mycal-accent); }
+.mycal-mc-day.mycal-sel { background: var(--mycal-navy); color: #fff; }
+.mycal-mc-day .mycal-mdots { display: flex; gap: 2px; height: 5px; }
+.mycal-mc-day .mycal-mdots i { width: 5px; height: 5px; border-radius: 50%; background: var(--mycal-bar); }
+.mycal-pop-foot { font-size: 11px; color: var(--mycal-faint); padding: 8px 8px 2px; }
+
+.mycal-count { color: var(--mycal-muted); font-weight: 600; }
+.mycal-nav { display: flex; gap: 4px; }
+.mycal-nav button, .mycal-seg button {
+    border: 1px solid var(--mycal-line); background: #fff; color: var(--mycal-ink);
+    padding: 7px 12px; border-radius: 8px; font-weight: 600;
+}
+.mycal-nav button:hover, .mycal-seg button:hover { border-color: var(--mycal-faint); }
+.mycal-seg { display: flex; background: #fff; border: 1px solid var(--mycal-line); border-radius: 10px; padding: 3px; margin-left: auto; }
+.mycal-seg button { border: 0; padding: 6px 16px; border-radius: 7px; color: var(--mycal-muted); }
+.mycal-seg button[aria-pressed="true"] { background: var(--mycal-navy); color: #fff; }
+/* 「只看我的／全部」跟月週日的尺度切換共用同一顆 .mycal-seg 樣式；兩顆並排時第二顆改用固定間距，
+   否則兩顆都 margin-left:auto 會平分剩餘空間、中間留一條大縫 */
+.mycal-toolbar .mycal-seg + .mycal-seg { margin-left: 8px; }
+.mycal-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--mycal-muted); margin-bottom: 12px; }
+.mycal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.mycal-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* ---------- 檢視切換的縮放感 ---------- */
+.mycal-view { animation: mycal-zoomIn .28s ease-out; }
+.mycal-view.mycal-zoom-out { animation: mycal-zoomOut .28s ease-out; }
+@keyframes mycal-zoomIn { from { opacity: 0; transform: scale(.965); } to { opacity: 1; transform: none; } }
+@keyframes mycal-zoomOut { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+
+/* ---------- 月檢視 ---------- */
+.mycal-month { background: var(--mycal-card); border-radius: 18px; padding: 14px; box-shadow: 0 10px 30px rgba(15,23,42,.08); }
+.mycal-month-head, .mycal-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.mycal-month-head div { text-align: center; font-weight: 600; color: var(--mycal-muted); padding: 4px 0 8px; }
+.mycal-month-head div.mycal-we { color: var(--mycal-faint); }
+.mycal-day-cell {
+    min-height: 118px; border-radius: 12px; padding: 8px; cursor: pointer;
+    border: 2px solid transparent; transition: border-color .15s, transform .15s;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0;
+}
+.mycal-day-cell:hover { border-color: rgba(31,53,96,.35); }
+.mycal-day-cell.mycal-locked { cursor: default; opacity: .45; }
+.mycal-day-cell.mycal-locked:hover { border-color: transparent; }
+.mycal-day-cell.mycal-w0 { background: var(--mycal-cream); }
+.mycal-day-cell.mycal-w1 { background: var(--mycal-sky); }
+.mycal-day-cell.mycal-out { background: var(--mycal-off); opacity: .7; }
+.mycal-day-cell .mycal-num { font-weight: 800; font-size: 16px; margin-bottom: 2px; }
+.mycal-day-cell.mycal-we .mycal-num, .mycal-day-cell.mycal-out .mycal-num { color: var(--mycal-faint); }
+.mycal-day-cell.mycal-today .mycal-num {
+    background: var(--mycal-navy); color: #fff; width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 14px;
+}
+.mycal-ev {
+    display: block; width: 100%; text-align: left; border: 0;
+    border-left: 3px solid var(--mycal-bar); background: var(--mycal-soft); color: var(--mycal-text);
+    padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mycal-ev b { font-weight: 700; margin-right: 4px; }
+/* 切到「全部」時別人的會議淡顯，跟週/日時間網格的 .mycal-blk.mycal-other 同一套配色 */
+.mycal-ev.mycal-other { background: #f1f5f9; color: #94a3b8; border-left-color: #cbd5e1; }
+.mycal-more { font-size: 11px; color: var(--mycal-muted); font-weight: 600; padding-left: 4px; }
+.mycal-dots { display: none; flex-wrap: wrap; gap: 4px; }
+.mycal-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--mycal-bar); }
+.mycal-dots i.mycal-dot-other { opacity: .35; }
+
+/* ---------- 時間網格（週、日共用） ---------- */
+.mycal-tg-wrap { background: var(--mycal-card); border-radius: 18px; box-shadow: 0 10px 30px rgba(15,23,42,.08); overflow: hidden; }
+.mycal-tg-scroll { overflow: auto; max-height: calc(100vh - 230px); min-height: 360px; }
+.mycal-tg { display: grid; grid-template-columns: 64px repeat(var(--mycal-cols), minmax(var(--mycal-colmin), 1fr)); position: relative; }
+.mycal-tg-corner, .mycal-tg-head {
+    position: sticky; top: 0; z-index: 3; background: var(--mycal-navy); color: #fff;
+    padding: 10px 6px; text-align: center; font-weight: 700;
+}
+.mycal-tg-corner { left: 0; z-index: 4; }
+.mycal-tg-head.mycal-clickable { cursor: pointer; }
+.mycal-tg-head.mycal-clickable:hover { background: var(--mycal-navy-2); }
+.mycal-tg-head small { display: block; font-weight: 500; color: #cbd5e1; font-size: 11px; margin-top: 1px; }
+.mycal-tg-head.mycal-today { box-shadow: inset 0 -3px 0 var(--mycal-accent); }
+.mycal-tg-head .mycal-rdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--mycal-bar); }
+.mycal-tg-times { position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid var(--mycal-line); }
+.mycal-tg-times div { height: var(--mycal-row); display: grid; place-items: center; color: var(--mycal-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mycal-tg-times div:nth-child(odd), .mycal-slot:nth-child(odd) { background: #f8fafc; }
+.mycal-tg-col { position: relative; border-right: 1px solid var(--mycal-line); }
+.mycal-tg-col.mycal-we { background: #fafafa; }
+.mycal-slot { height: var(--mycal-row); position: relative; cursor: pointer; }
+.mycal-slot:hover::after {
+    content: attr(data-label); position: absolute; inset: 2px 4px;
+    border: 2px dashed var(--mycal-navy); border-radius: 6px; background: rgba(255,255,255,.85);
+    display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 700; color: var(--mycal-navy);
+    z-index: 1;
+}
+.mycal-blk {
+    position: absolute; z-index: 2; border: 0; text-align: left; overflow: hidden;
+    border-left: 4px solid var(--mycal-bar); background: var(--mycal-soft); color: var(--mycal-text);
+    border-radius: 6px; padding: 4px 8px; font-size: 12px; line-height: 1.35;
+    box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: opacity .3s, transform .3s;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+}
+.mycal-blk .mycal-t { max-width: 100%; font-weight: 700; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mycal-blk .mycal-m { display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,.7); }
+.mycal-blk.mycal-short { flex-direction: row; align-items: center; gap: 6px; padding-top: 0; padding-bottom: 0; }
+.mycal-blk.mycal-short .mycal-t { flex: 0 1 auto; min-width: 0; }
+.mycal-blk.mycal-short .mycal-m { margin-top: 0; flex: none; }
+.mycal-blk.mycal-other { background: #f1f5f9; color: #94a3b8; border-left-color: #cbd5e1; box-shadow: none; }
+.mycal-blk.mycal-other .mycal-m { background: #e2e8f0; color: #64748b; }
+.mycal-blk:hover { filter: brightness(.97); }
+.mycal-blk.mycal-new { background: var(--mycal-hl-bg); border-left-color: var(--mycal-hl-bar); color: var(--mycal-navy); animation: mycal-pop .5s ease-out; z-index: 3; }
+.mycal-spotlight .mycal-blk:not(.mycal-new), .mycal-spotlight .mycal-ev:not(.mycal-new) { opacity: .3; }
+.mycal-ev.mycal-new { background: var(--mycal-hl-bg); border-left-color: var(--mycal-hl-bar); color: var(--mycal-navy); }
+@keyframes mycal-pop { 0% { transform: scale(.9); } 60% { transform: scale(1.04); } 100% { transform: none; } }
+.mycal-now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--mycal-danger); z-index: 3; pointer-events: none; }
+.mycal-now-line::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--mycal-danger); }
+
+/* ---------- 空狀態 ---------- */
+.mycal-empty {
+    background: var(--mycal-card); border-radius: 18px; padding: 60px 24px; text-align: center;
+    box-shadow: 0 10px 30px rgba(15,23,42,.08);
+}
+.mycal-empty h2 { margin: 0 0 8px; }
+.mycal-empty p { color: var(--mycal-muted); margin: 0 0 20px; }
+.mycal-btn-primary {
+    border: 0; background: linear-gradient(120deg, var(--mycal-navy-2), var(--mycal-navy)); color: #fff;
+    padding: 11px 22px; border-radius: 10px; font-weight: 700;
+}
+.mycal-btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ---------- 彈窗 ---------- */
+.mycal-overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 5000;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+    animation: mycal-fade .15s ease-out;
+    font-family: 'Microsoft JhengHei', Arial, sans-serif; font-size: 14px; color: var(--mycal-ink);
+}
+@keyframes mycal-fade { from { opacity: 0; } }
+.mycal-dialog {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 860px; max-height: calc(100vh - 32px);
+    overflow: auto; padding: 28px 32px; box-shadow: 0 30px 60px rgba(15,23,42,.3); position: relative;
+    animation: mycal-rise .2s ease-out;
+}
+@keyframes mycal-rise { from { transform: translateY(12px); opacity: 0; } }
+.mycal-dialog.mycal-sm { max-width: 460px; }
+.mycal-dialog-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding-right: 32px; }
+.mycal-dialog-head h2 { margin: 0; font-size: 26px; }
+.mycal-hint { font-weight: 600; color: var(--mycal-muted); font-size: 13px; }
+.mycal-hint.mycal-ok { color: var(--mycal-ok); }
+.mycal-hint.mycal-bad { color: var(--mycal-danger); }
+.mycal-x {
+    position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border-radius: 50%;
+    border: 0; background: #f1f5f9; color: var(--mycal-muted); font-size: 18px; line-height: 1;
+}
+.mycal-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
+.mycal-field { display: flex; flex-direction: column; gap: 6px; }
+.mycal-field.mycal-full { grid-column: 1 / -1; }
+/* 週期性頻率/持續期間那一列平常用 hidden 屬性收起來。.mycal-field 的 display:flex 是 author 樣式，
+   優先權比瀏覽器內建的 [hidden]{display:none} 高，兩者衝突時 hidden 屬性會被蓋掉而一直顯示，要另外補這條 */
+.mycal-field[hidden] { display: none; }
+.mycal-field label { font-weight: 600; color: #334155; }
+.mycal-field input, .mycal-field select {
+    border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 15px;
+    background: #fff; color: var(--mycal-ink);
+}
+.mycal-field input:focus, .mycal-field select:focus { outline: none; border-color: var(--mycal-navy); box-shadow: 0 0 0 3px rgba(31,53,96,.12); }
+.mycal-chips {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 7px 10px; min-height: 46px;
+}
+.mycal-chips:focus-within { border-color: var(--mycal-navy); box-shadow: 0 0 0 3px rgba(31,53,96,.12); }
+.mycal-chips input { border: 0; padding: 4px; flex: 1; min-width: 120px; box-shadow: none !important; }
+.mycal-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+    background: #dbeafe; color: #1e40af; font-weight: 600; font-size: 13px;
+}
+.mycal-chip button { border: 0; background: none; color: inherit; padding: 0; font-size: 14px; line-height: 1; opacity: .7; }
+.mycal-form-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; gap: 12px; flex-wrap: wrap; }
+.mycal-form-foot label { display: flex; align-items: center; gap: 8px; color: var(--mycal-muted); }
+.mycal-form-foot .mycal-note { font-size: 12px; color: var(--mycal-faint); }
+
+/* 名字選擇 */
+.mycal-picker-search { width: 100%; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 15px; margin-bottom: 12px; }
+.mycal-picker-search:focus { outline: none; border-color: var(--mycal-navy); }
+.mycal-picker-list { max-height: min(50vh, 280px); overflow: auto; border: 1px solid #d8e0ed; border-radius: 8px; background: #fff; }
+.mycal-picker-list .organizer-option.mycal-cur { font-weight: 700; color: var(--mycal-navy); }
+.mycal-picker-list .mycal-picker-hint { margin: 0; padding: 10px 12px; }
+.mycal-picker-hint { color: var(--mycal-muted); margin: -8px 0 16px; }
+
+/* 詳情 */
+.mycal-detail-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+.mycal-detail-row dt { width: 72px; color: var(--mycal-muted); flex: none; }
+.mycal-detail-row dd { margin: 0; font-weight: 600; }
+.mycal-role { display: inline-block; margin-top: 14px; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #ecfdf5; color: var(--mycal-ok); }
+.mycal-role.mycal-no { background: #f1f5f9; color: var(--mycal-muted); }
+
+/* 詳情彈窗底部的四個操作：沿用週表 action-buttons 的按鈕與圖示，這裡只縮小尺寸 */
+.mycal-detail-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #f1f5f9; }
+.mycal-detail-actions .mycal-detail-btn { width: 30px; height: 30px; }
+.mycal-detail-actions .mycal-detail-btn svg { width: 14px; height: 14px; }
+.mycal-detail-actions { align-items: center; }
+/* 任何彈窗開著時隱藏手機浮動新增鈕，免得它壓在彈窗的按鈕上；
+   週表的彈窗都是用 style.display='block' 打開，日曆的彈窗用 hidden 屬性 */
+body:has(.mycal-overlay:not([hidden])) #floatingAddBtn,
+body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-conflict-modal[style*="block"], .edit-mode-modal[style*="block"]) #floatingAddBtn { display: none !important; }
+.mycal-detail-actions .mycal-detail-copytext { width: 32px; height: 32px; }
+.mycal-detail-actions .mycal-detail-copytext svg { width: 14px; height: 14px; }
+/* 詳情彈窗是 mycal-sm（矮），下拉選單往下開容易被 .mycal-dialog 的 overflow:auto 裁掉，改往上開 */
+.mycal-detail-actions .calendar-menu { top: auto; bottom: 100%; }
+.mycal-detail-actions .calendar-menu::before { top: auto; bottom: -8px; border-bottom: none; border-top: 8px solid #ddd; }
+.mycal-detail-actions .calendar-menu::after { top: auto; bottom: -7px; border-bottom: none; border-top: 8px solid white; }
+
+.mycal-toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 6000;
+    background: var(--mycal-navy); color: #fff; padding: 12px 20px; border-radius: 12px; font-weight: 600;
+    box-shadow: 0 10px 30px rgba(15,23,42,.3); animation: mycal-rise .2s ease-out;
+    font-family: 'Microsoft JhengHei', Arial, sans-serif;
+}
+
+/* ---------- 窄螢幕 ---------- */
+@media (max-width: 760px) {
+    .mycal-tab-panel { --mycal-row: 40px; padding: 14px 16px 32px; }
+    .mycal-tabbar { padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
+    .mycal-me-chip small { display: none; }
+    .mycal-seg { margin-left: 0; width: 100%; }
+    .mycal-seg button { flex: 1; }
+    .mycal-toolbar .mycal-seg + .mycal-seg { margin-left: 0; } /* 桌面版的 8px 固定間距在窄螢幕改回 0，避免兩顆各佔滿版寬時橫向溢出 */
+    .mycal-badge .mycal-title { font-size: 15px; }
+    .mycal-month { padding: 8px; }
+    .mycal-month-head, .mycal-month-grid { gap: 4px; }
+    .mycal-day-cell { min-height: 64px; padding: 5px; border-radius: 8px; }
+    .mycal-day-cell .mycal-num { font-size: 13px; }
+    .mycal-day-cell.mycal-today .mycal-num { width: 22px; height: 22px; font-size: 12px; }
+    .mycal-day-cell .mycal-ev, .mycal-day-cell .mycal-more { display: none; }
+    .mycal-dots { display: flex; }
+    .mycal-dialog { padding: 22px 18px; border-radius: 16px; }
+    .mycal-dialog-head { flex-direction: column; gap: 4px; }
+    .mycal-dialog-head h2 { font-size: 22px; }
+    .mycal-form-grid { grid-template-columns: 1fr; }
+    .mycal-tg-scroll { max-height: calc(100vh - 260px); }
+}
 </style>
 </head>
 <body>
@@ -1946,7 +2278,19 @@
             <button type="button" id="langSwitch" class="lang-switch" onclick="toggleLang()" aria-label="Switch language"><span class="lang-active">EN</span> | <span>中</span></button>
         </div>
 
-<div class="main-content">
+        <div class="mycal-tabbar">
+            <nav class="mycal-tabs" role="tablist">
+                <button type="button" class="mycal-tab" id="mycalTabTable" role="tab" aria-selected="true" data-i18n="mycal.tab.table">Weekly Table</button>
+                <button type="button" class="mycal-tab" id="mycalTabMycal" role="tab" aria-selected="false" data-i18n="mycal.tab.mycal">My Calendar</button>
+            </nav>
+            <button type="button" class="mycal-me-chip" id="mycalMeChip" data-i18n-title="mycal.chip.title" title="Change name">
+                <span class="mycal-avatar" id="mycalMeAvatar">?</span>
+                <span id="mycalMeName" data-i18n="mycal.chip.default">Choose your name</span>
+                <small data-i18n="mycal.chip.change">Change</small>
+            </button>
+        </div>
+
+<div class="main-content" id="tabTable">
             <div class="schedule-area">
                 <div class="schedule-header">
                     <div class="date-nav">
@@ -2087,6 +2431,113 @@
                 </div>
             </div>
         </div>
+
+        <section id="tabMycal" class="mycal-tab-panel" hidden>
+            <div class="mycal-toolbar">
+                <button type="button" class="mycal-badge" id="mycalScaleBadge" aria-haspopup="dialog" aria-expanded="false"><span class="mycal-scale" id="mycalScaleLabel">MONTH</span><span class="mycal-title" id="mycalViewTitle"></span><span class="mycal-caret" id="mycalBadgeCaret" aria-hidden="true">▼</span></button>
+                <span class="mycal-count" id="mycalViewCount"></span>
+                <div class="mycal-nav">
+                    <button type="button" id="mycalPrevBtn" data-i18n-title="mycal.nav.prev" aria-label="Previous">‹</button>
+                    <button type="button" id="mycalTodayBtn" data-i18n="mycal.nav.today">Today</button>
+                    <button type="button" id="mycalNextBtn" data-i18n-title="mycal.nav.next" aria-label="Next">›</button>
+                </div>
+                <div class="mycal-seg" id="mycalFilterSeg" role="group" data-i18n-title="mycal.filter.groupLabel" aria-label="Filter">
+                    <button type="button" data-filter="mine" aria-pressed="true" data-i18n="mycal.filter.mine">Mine</button>
+                    <button type="button" data-filter="all" aria-pressed="false" data-i18n="mycal.filter.all">All</button>
+                </div>
+                <div class="mycal-seg" id="mycalScaleSeg" role="group" data-i18n-title="mycal.seg.groupLabel" aria-label="View scale">
+                    <button type="button" data-scale="month" aria-pressed="true" data-i18n="mycal.seg.month">Month</button>
+                    <button type="button" data-scale="week" aria-pressed="false" data-i18n="mycal.seg.week">Week</button>
+                    <button type="button" data-scale="day" aria-pressed="false" data-i18n="mycal.seg.day">Day</button>
+                </div>
+            </div>
+            <div class="mycal-legend" id="mycalLegend"></div>
+            <div id="mycalView" class="mycal-view"></div>
+        </section>
+
+    <!-- 選名字（我的行事曆） -->
+    <div class="mycal-overlay" id="mycalPickerModal" hidden>
+        <div class="mycal-dialog mycal-sm" role="dialog" aria-modal="true" aria-labelledby="mycalPickerTitle">
+            <button class="mycal-x" type="button" data-close data-i18n-title="mycal.common.close" aria-label="Close">×</button>
+            <div class="mycal-dialog-head"><h2 id="mycalPickerTitle" data-i18n="mycal.picker.title">Who are you?</h2></div>
+            <p class="mycal-picker-hint" data-i18n="mycal.picker.hint">Pick once — this browser will remember.</p>
+            <input class="mycal-picker-search" id="mycalPickerSearch" type="search" data-i18n-placeholder="mycal.picker.searchPlaceholder" placeholder="Search by name" autocomplete="off">
+            <div class="mycal-picker-list" id="mycalPickerList"></div>
+        </div>
+    </div>
+
+    <!-- 新增預約（我的行事曆） -->
+    <div class="mycal-overlay" id="mycalBookingModal" hidden>
+        <div class="mycal-dialog" role="dialog" aria-modal="true" aria-labelledby="mycalBookingTitle">
+            <button class="mycal-x" type="button" data-close data-i18n-title="mycal.common.close" aria-label="Close">×</button>
+            <div class="mycal-dialog-head">
+                <h2 id="mycalBookingTitle" data-i18n="mycal.booking.title">New Booking</h2>
+                <span class="mycal-hint" id="mycalFreeHint"></span>
+            </div>
+            <form id="mycalBookingForm" novalidate>
+                <div class="mycal-form-grid">
+                    <div class="mycal-field"><label for="mycalFDate" data-i18n="mycal.booking.date">Date</label><input type="date" id="mycalFDate" required></div>
+                    <div class="mycal-field"><label for="mycalFStart" data-i18n="mycal.booking.start">Start Time</label><select id="mycalFStart"></select></div>
+                    <div class="mycal-field"><label for="mycalFTitle" data-i18n="mycal.booking.subject">Subject</label><input id="mycalFTitle" data-i18n-placeholder="mycal.booking.subjectPlaceholder" placeholder="e.g. Design Review" autocomplete="off"></div>
+                    <div class="mycal-field"><label for="mycalFEnd" data-i18n="mycal.booking.end">End Time</label><select id="mycalFEnd"></select></div>
+                    <div class="mycal-field"><label for="mycalFRoom" data-i18n="mycal.booking.room">Room</label><select id="mycalFRoom"></select></div>
+                    <div class="mycal-field"><label for="mycalFOrganizer" data-i18n="mycal.booking.organizer">Organizer</label><select id="mycalFOrganizer"></select></div>
+                    <div class="mycal-field mycal-full">
+                        <label for="mycalFAttInput" data-i18n="mycal.booking.attendees">Attendees (optional)</label>
+                        <div class="mycal-chips" id="mycalAttChips"><input id="mycalFAttInput" list="mycalPeopleList" data-i18n-placeholder="mycal.booking.attendeesPlaceholder" placeholder="Type a name and press Enter" autocomplete="off"></div>
+                        <datalist id="mycalPeopleList"></datalist>
+                    </div>
+                    <div class="mycal-field mycal-full" id="mycalRecurRow" hidden>
+                        <div class="mycal-form-grid">
+                            <div class="mycal-field"><label for="mycalFRecurType" data-i18n="form.frequency">Frequency</label>
+                                <select id="mycalFRecurType">
+                                    <option value="weekly" data-i18n="form.freq.weekly">Weekly</option>
+                                    <option value="biweekly" data-i18n="form.freq.biweekly">Every Two Weeks</option>
+                                    <option value="monthly" data-i18n="form.freq.monthly">Monthly (Nth weekday)</option>
+                                </select>
+                            </div>
+                            <div class="mycal-field"><label for="mycalFRecurWeeks" data-i18n="form.duration">Duration</label><select id="mycalFRecurWeeks"></select></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mycal-form-foot">
+                    <label><input type="checkbox" id="mycalFRecurring"> <span data-i18n="mycal.booking.recurringLabel">Recurring booking</span></label>
+                    <button class="mycal-btn-primary" type="submit" id="mycalConfirmBtn" data-i18n="mycal.booking.confirm">Confirm Booking</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 會議詳情（我的行事曆） -->
+    <div class="mycal-overlay" id="mycalDetailModal" hidden>
+        <div class="mycal-dialog mycal-sm" role="dialog" aria-modal="true" aria-labelledby="mycalDetailTitle">
+            <button class="mycal-x" type="button" data-close data-i18n-title="mycal.common.close" aria-label="Close">×</button>
+            <div class="mycal-dialog-head"><h2 id="mycalDetailTitle"></h2></div>
+            <dl id="mycalDetailBody" style="margin:0"></dl>
+            <div id="mycalDetailRole"></div>
+            <div class="mycal-detail-actions">
+                <div class="calendar-dropdown">
+                    <button type="button" class="calendar-btn-dropdown mycal-detail-btn" id="mycalDetailCalBtn" data-i18n-title="action.calendar" aria-label="Calendar" title="Calendar"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="m9 16 2 2 4-4"></path></svg></button>
+                    <div class="calendar-menu" id="mycalDetailCalMenu">
+                        <div class="calendar-option" id="mycalDetailGoogleOpt" data-i18n="calendar.google">Google Calendar</div>
+                        <div class="calendar-option" id="mycalDetailAppleOpt" data-i18n="calendar.appleOutlook">Apple &amp; Outlook Calendar</div>
+                    </div>
+                </div>
+                <button type="button" class="copy-btn mycal-detail-btn" id="mycalDetailCopyBtn" data-i18n-title="action.copy" aria-label="Copy" title="Copy"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                <button type="button" class="edit-btn mycal-detail-btn" id="mycalDetailEditBtn" data-i18n-title="action.edit" aria-label="Edit" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3Z"></path><path d="m15 5 4 4"></path></svg></button>
+                <button type="button" class="delete-btn mycal-detail-btn" id="mycalDetailDeleteBtn" data-i18n-title="action.delete" aria-label="Delete" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></button>
+                <button type="button" class="modal-action-btn mycal-detail-copytext" id="mycalDetailCopyTextBtn" data-i18n-title="action.copyWindow" aria-label="Copy window content" title="Copy window content"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 尺度膠囊跳轉（我的行事曆）：週檢視列週、日檢視出月曆 -->
+    <div class="mycal-overlay mycal-pop-layer" id="mycalJumpModal" hidden>
+        <div class="mycal-pop" id="mycalJumpPop" role="dialog" aria-modal="true" data-i18n-title="mycal.jump.ariaLabel" aria-label="Jump to another week or date"></div>
+    </div>
+
+    <div class="mycal-toast" id="mycalToast" hidden></div>
+
     <!-- Modal -->
     <div id="bookingModal" class="modal">
         <div class="modal-content">
@@ -2352,7 +2803,92 @@
                 'monthly.relativeExplain': 'Relative weekday mode: every {ordinal} {dayName} of the month',
                 'ordinal.1': 'first', 'ordinal.2': 'second', 'ordinal.3': 'third', 'ordinal.4': 'fourth', 'ordinal.5': 'fifth',
                 'throw.invalidDateTime': 'Invalid date/time format',
-                'throw.conflictCheck': 'Conflict check failed: {err}'
+                'throw.conflictCheck': 'Conflict check failed: {err}',
+
+                // ===== 我的行事曆頁籤 =====
+                'mycal.tab.table': 'Weekly Table',
+                'mycal.tab.mycal': 'My Calendar',
+                'mycal.chip.default': 'Choose your name',
+                'mycal.chip.change': 'Change',
+                'mycal.chip.title': 'Change name',
+                'mycal.common.close': 'Close',
+                'mycal.picker.title': 'Who are you?',
+                'mycal.picker.hint': 'Pick once — this browser will remember.',
+                'mycal.picker.searchPlaceholder': 'Search by name',
+                'mycal.picker.noMatch': 'No matching name.',
+                'mycal.picker.group': 'Group {n}',
+                'mycal.empty.title': 'Tell us who you are first',
+                'mycal.empty.desc': "Once you pick a name, this only lists meetings you organize or attend.",
+                'mycal.empty.pick': 'Choose name',
+                'mycal.viewTitle.default': 'My Calendar',
+                'mycal.nav.prev': 'Previous',
+                'mycal.nav.next': 'Next',
+                'mycal.nav.today': 'Today',
+                'mycal.seg.month': 'Month',
+                'mycal.seg.week': 'Week',
+                'mycal.seg.day': 'Day',
+                'mycal.seg.groupLabel': 'View scale',
+                'mycal.filter.mine': 'Mine',
+                'mycal.filter.all': 'All',
+                'mycal.filter.groupLabel': 'Show meetings',
+                'mycal.badge.jumpWeek': 'Jump to another week',
+                'mycal.badge.jumpDay': 'Jump to another date',
+                'mycal.count.mine': '{n} of my meetings',
+                'mycal.count.dayMix': 'Mine {mine} · All {all}',
+                'mycal.month.title': '{m}/{y}',
+                'mycal.month.more': '+{n} more',
+                'mycal.day.ariaLabel': '{m}/{d}, {n} meetings',
+                'mycal.week.headTitle': "See this day's rooms",
+                'mycal.week.headCount': '{n} mtgs',
+                'mycal.day.title': '{wd}, {m}/{d}',
+                'mycal.slot.free': 'Free',
+                'mycal.slot.add': '+ Add',
+                'mycal.detail.time': 'Time',
+                'mycal.detail.room': 'Room',
+                'mycal.detail.organizer': 'Organizer',
+                'mycal.detail.attendees': 'Attendees',
+                'mycal.detail.sep': ', ',
+                'mycal.role.organizer': "You're the organizer",
+                'mycal.role.attendee': "You're an attendee",
+                'mycal.role.none': "You're not in this meeting",
+                'mycal.booking.title': 'New Booking',
+                'mycal.booking.date': 'Date',
+                'mycal.booking.start': 'Start Time',
+                'mycal.booking.end': 'End Time',
+                'mycal.booking.subject': 'Subject',
+                'mycal.booking.subjectPlaceholder': 'e.g. Design Review',
+                'mycal.booking.room': 'Room',
+                'mycal.booking.roomPlaceholder': 'Select a room',
+                'mycal.booking.roomTaken': ' (booked)',
+                'mycal.booking.organizer': 'Organizer',
+                'mycal.booking.attendees': 'Attendees (optional)',
+                'mycal.booking.attendeesPlaceholder': 'Type a name and press Enter',
+                'mycal.booking.removeAttendee': 'Remove {name}',
+                'mycal.booking.recurringLabel': 'Recurring booking',
+                'mycal.booking.recurringNote': "Use the weekly table's form for recurring bookings",
+                'mycal.booking.confirm': 'Confirm Booking',
+                'mycal.booking.hintPickDateRoom': 'Please choose a date and room',
+                'mycal.booking.hintTaken': '{room} is already booked for this time',
+                'mycal.booking.hintFree': '{room} is free · {n} min',
+                'mycal.booking.hintFreeRecurring': '{room} is free for the 1st time · {n} min · {times} total, checked one by one on submit',
+                'mycal.booking.hintRecurringIncomplete': 'Please choose a frequency and duration',
+                'mycal.booking.hintOutOfRange': 'Please choose a date within the visible range',
+                'mycal.toast.added': 'Added: {title} ({room}, {start}–{end})',
+                'mycal.toast.addedRecurring': 'Added {n} recurring bookings: {title} ({room}, {start}–{end})',
+                'mycal.toast.deletedElsewhere': 'This booking has been deleted.',
+                'mycal.jump.ariaLabel': 'Jump to another week or date',
+                'mycal.jump.weekTitle': 'Jump to another week',
+                'mycal.jump.thisWeek': 'This week',
+                'mycal.jump.nextWeek': 'Next week',
+                'mycal.jump.lastWeek': 'Last week',
+                'mycal.jump.weeksAgo': '{n} weeks ago',
+                'mycal.jump.weeksAhead': 'In {n} weeks',
+                'mycal.jump.mineCount': '{n} mine',
+                'mycal.jump.rangeHintWeek': 'Visible range: {back} weeks back, {fwd} weeks ahead (same as weekly table)',
+                'mycal.jump.rangeHintMonth': 'Selectable range: {back} weeks back, {fwd} weeks ahead (same as weekly table)',
+                'mycal.jump.prevMonth': 'Previous month',
+                'mycal.jump.nextMonth': 'Next month',
+                'mycal.wd.0': 'Su', 'mycal.wd.1': 'Mo', 'mycal.wd.2': 'Tu', 'mycal.wd.3': 'We', 'mycal.wd.4': 'Th', 'mycal.wd.5': 'Fr', 'mycal.wd.6': 'Sa'
             },
             zh: {
                 'app.title': 'Gama 會議室預約系統',
@@ -2554,7 +3090,92 @@
                 'monthly.relativeExplain': '相對週日模式：每月{ordinal}{dayName}',
                 'ordinal.1': '第一個', 'ordinal.2': '第二個', 'ordinal.3': '第三個', 'ordinal.4': '第四個', 'ordinal.5': '第五個',
                 'throw.invalidDateTime': '無效的日期時間格式',
-                'throw.conflictCheck': '衝突檢測失敗：{err}'
+                'throw.conflictCheck': '衝突檢測失敗：{err}',
+
+                // ===== 我的行事曆頁籤 =====
+                'mycal.tab.table': '週表',
+                'mycal.tab.mycal': '我的行事曆',
+                'mycal.chip.default': '選擇你的名字',
+                'mycal.chip.change': '更換',
+                'mycal.chip.title': '更換名字',
+                'mycal.common.close': '關閉',
+                'mycal.picker.title': '你是誰？',
+                'mycal.picker.hint': '選一次就好，這台瀏覽器會記住。',
+                'mycal.picker.searchPlaceholder': '搜尋名字或中文姓名',
+                'mycal.picker.noMatch': '找不到這個名字。',
+                'mycal.picker.group': '第 {n} 組',
+                'mycal.empty.title': '先告訴我們你是誰',
+                'mycal.empty.desc': '選好名字後，這裡只會列出你主辦或參加的會議。',
+                'mycal.empty.pick': '選擇名字',
+                'mycal.viewTitle.default': '我的行事曆',
+                'mycal.nav.prev': '上一段',
+                'mycal.nav.next': '下一段',
+                'mycal.nav.today': '今天',
+                'mycal.seg.month': '月',
+                'mycal.seg.week': '週',
+                'mycal.seg.day': '日',
+                'mycal.seg.groupLabel': '檢視尺度',
+                'mycal.filter.mine': '只看我的',
+                'mycal.filter.all': '全部',
+                'mycal.filter.groupLabel': '顯示範圍',
+                'mycal.badge.jumpWeek': '跳到其他週',
+                'mycal.badge.jumpDay': '跳到其他日期',
+                'mycal.count.mine': '我的會議 {n} 場',
+                'mycal.count.dayMix': '我的 {mine} 場 · 全部 {all} 場',
+                'mycal.month.title': '{y} 年 {m} 月',
+                'mycal.month.more': '+{n} 場',
+                'mycal.day.ariaLabel': '{m}月{d}日，{n} 場',
+                'mycal.week.headTitle': '看這天的會議室',
+                'mycal.week.headCount': '{n} 場',
+                'mycal.day.title': '{m} 月 {d} 日（{wd}）',
+                'mycal.slot.free': '空檔',
+                'mycal.slot.add': '＋ 新增',
+                'mycal.detail.time': '時間',
+                'mycal.detail.room': '會議室',
+                'mycal.detail.organizer': '主辦人',
+                'mycal.detail.attendees': '與會者',
+                'mycal.detail.sep': '、',
+                'mycal.role.organizer': '你是主辦人',
+                'mycal.role.attendee': '你是與會者',
+                'mycal.role.none': '你不在這場會議',
+                'mycal.booking.title': '新增預約',
+                'mycal.booking.date': '日期',
+                'mycal.booking.start': '開始時間',
+                'mycal.booking.end': '結束時間',
+                'mycal.booking.subject': '主題',
+                'mycal.booking.subjectPlaceholder': '例如：設計審查',
+                'mycal.booking.room': '會議室',
+                'mycal.booking.roomPlaceholder': '選擇會議室',
+                'mycal.booking.roomTaken': '（這段已被預約）',
+                'mycal.booking.organizer': '主辦人',
+                'mycal.booking.attendees': '與會者（選填）',
+                'mycal.booking.attendeesPlaceholder': '輸入名字後按 Enter',
+                'mycal.booking.removeAttendee': '移除 {name}',
+                'mycal.booking.recurringLabel': '週期性預約',
+                'mycal.booking.recurringNote': '週期性請用週表的表單',
+                'mycal.booking.confirm': '確認預約',
+                'mycal.booking.hintPickDateRoom': '請選日期與會議室',
+                'mycal.booking.hintTaken': '{room} 這段時間已被預約',
+                'mycal.booking.hintFree': '{room} 空著 · {n} 分鐘',
+                'mycal.booking.hintFreeRecurring': '{room} 首次空著 · {n} 分鐘 · 共 {times} 次，送出時逐一檢查',
+                'mycal.booking.hintRecurringIncomplete': '請選擇頻率與持續期間',
+                'mycal.booking.hintOutOfRange': '請選擇可瀏覽範圍內的日期',
+                'mycal.toast.added': '已新增：{title}（{room}，{start}–{end}）',
+                'mycal.toast.addedRecurring': '已新增 {n} 筆週期預約：{title}（{room}，{start}–{end}）',
+                'mycal.toast.deletedElsewhere': '這筆預約已被刪除。',
+                'mycal.jump.ariaLabel': '跳到其他週或日期',
+                'mycal.jump.weekTitle': '跳到其他週',
+                'mycal.jump.thisWeek': '本週',
+                'mycal.jump.nextWeek': '下週',
+                'mycal.jump.lastWeek': '上週',
+                'mycal.jump.weeksAgo': '{n} 週前',
+                'mycal.jump.weeksAhead': '{n} 週後',
+                'mycal.jump.mineCount': '我的 {n} 場',
+                'mycal.jump.rangeHintWeek': '可看範圍：往前 {back} 週、往後 {fwd} 週（同週表）',
+                'mycal.jump.rangeHintMonth': '可選範圍：往前 {back} 週、往後 {fwd} 週（同週表）',
+                'mycal.jump.prevMonth': '上個月',
+                'mycal.jump.nextMonth': '下個月',
+                'mycal.wd.0': '日', 'mycal.wd.1': '一', 'mycal.wd.2': '二', 'mycal.wd.3': '三', 'mycal.wd.4': '四', 'mycal.wd.5': '五', 'mycal.wd.6': '六'
             }
         };
 
@@ -2605,6 +3226,8 @@
                 if (typeof updateModeExplanation === 'function') updateModeExplanation();
                 // 讓 chip 的移除鈕與清空鈕的 aria-label / title 跟著語言切換
                 if (typeof renderSelectedAttendees === 'function') renderSelectedAttendees();
+                // 「我的行事曆」的動態文案（月/週/日標題、提示等）不是靠 data-i18n，語言切換要另外重繪
+                if (typeof mycalOnLangChanged === 'function') mycalOnLangChanged();
             } catch (e) {
                 console.warn('refreshDynamicUI partial failure:', e);
             }
@@ -2667,6 +3290,9 @@
         // 全域變數
         let currentWeekStart = getCurrentWeekStart();
         let todayWeekStart = getCurrentWeekStart(); // 儲存今天所在週的週一日期
+        // 可瀏覽範圍上限：今天所在週往前幾週、往後幾週。changeWeek() 與「我的行事曆」共用同一組數字。
+        const WEEK_RANGE_BACK = 4;
+        const WEEK_RANGE_FORWARD = 20;
         let bookings = [];
         let supabaseClient = null;
         let realtimeSubscription = null;
@@ -3851,7 +4477,8 @@ function cancelEdit() {
                             }
                             bookings.push(newBooking);
                             updateSchedule();
-                            
+                            if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
+
                             // 顯示通知
                             if (payload.new.organizer !== getCurrentUser()) {
                                 showNotification(t('notify.newBooking', { title: payload.new.title, organizer: payload.new.organizer }));
@@ -3860,12 +4487,14 @@ function cancelEdit() {
                             // 刪除預約
                             bookings = bookings.filter(b => b.id !== payload.old.id);
                             updateSchedule();
+                            if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
                         } else if (payload.eventType === 'UPDATE') {
                             // 更新預約
                             const index = bookings.findIndex(b => b.id === payload.new.id);
                             if (index !== -1) {
                                 bookings[index] = formatBookingFromDB(payload.new);
                                 updateSchedule();
+                                if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
                             }
                         }
                     }
@@ -3894,30 +4523,44 @@ async function loadBookings() {
         startDate.setDate(startDate.getDate() - 30);    // 前30天（約4週）
         const endDate = new Date(todayWeekStart);
         endDate.setDate(endDate.getDate() + 150);        // 後150天（約21週）
-        
+
+        // 「我的行事曆」月檢視在可瀏覽範圍的邊界月份要能整月算對，取上面這段跟
+        // MYCAL_RANGE_START/END 兩端所在月份整月的聯集（下界取較早者、上界取較晚者），
+        // 邊界從 WEEK_RANGE_BACK/FORWARD 推導，不寫死日期
+        let queryStart = startDate, queryEnd = endDate;
+        if (typeof MYCAL_RANGE_START !== 'undefined' && typeof MYCAL_RANGE_END !== 'undefined') {
+            const mycalStartMonthFirst = new Date(MYCAL_RANGE_START.getFullYear(), MYCAL_RANGE_START.getMonth(), 1);
+            const mycalEndMonthLast = new Date(MYCAL_RANGE_END.getFullYear(), MYCAL_RANGE_END.getMonth() + 1, 0);
+            if (mycalStartMonthFirst < queryStart) queryStart = mycalStartMonthFirst;
+            if (mycalEndMonthLast > queryEnd) queryEnd = mycalEndMonthLast;
+        }
+
         console.log('查詢範圍（固定基準）:', {
             基準週: formatDate(todayWeekStart),
-            開始日期: formatDate(startDate),
-            結束日期: formatDate(endDate),
+            開始日期: formatDate(queryStart),
+            結束日期: formatDate(queryEnd),
             當前顯示週: formatDate(currentWeekStart)
         });
-        
+
+        // 用本地日期格式化（formatDate），不要用 formatDateForDB／toISOString：
+        // 後者在 UTC+8 會把本地午夜換算成前一天，邊界月份的月底那天會從查詢範圍消失。
         const { data, error } = await supabaseClient
             .from('bookings')
             .select('*')
-            .gte('date', formatDateForDB(startDate))
-            .lte('date', formatDateForDB(endDate))
+            .gte('date', formatDate(queryStart))
+            .lte('date', formatDate(queryEnd))
             .order('date', { ascending: true })
             .order('start_time', { ascending: true });
-        
+
         if (error) {
             throw error;
         }
-        
+
         // 格式化資料
         bookings = data.map(formatBookingFromDB);
-        
+
         updateSchedule();
+        if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged(); // 「我的行事曆」若正顯示中，資料重載後跟著重繪
         updateStatus('connected', t('status.connected'));
 
         console.log(`載入 ${bookings.length} 筆預約資料（固定範圍）`);
@@ -3939,15 +4582,18 @@ async function loadBookings() {
         }
 
         // 新增預約
-        async function saveBooking(booking) {
+        // onError 可選：失敗時怎麼顯示交給呼叫端決定（日曆彈窗要把錯誤顯示在彈窗內，
+        // 不能用 showModal——它會被日曆彈窗蓋住）。不傳時維持原本的 showModal 行為，側欄不受影響。
+        async function saveBooking(booking, onError) {
+            const reportError = onError || showModal;
             if (!supabaseClient) {
-                showModal(t('modal.notConnected'), t('error.dbNotConnected'));
+                reportError(t('modal.notConnected'), t('error.dbNotConnected'));
                 return false;
             }
-            
+
             try {
                 showLoading(true);
-                
+
                 const { data, error } = await supabaseClient
                     .from('bookings')
                     .insert([{
@@ -3960,20 +4606,20 @@ async function loadBookings() {
                         attendees: booking.attendees || null
                     }])
                     .select();
-                
+
                 if (error) {
                     throw error;
                 }
-                
+
                 console.log('預約儲存成功:', data[0]);
-                return true;
-                
+                return data[0]; // 真值，呼叫端既有的 if(success) 判斷不受影響；「我的行事曆」需要新記錄的 id 來標黃
+
             } catch (error) {
                 console.error('儲存預約失敗:', error);
                 if (isSlotConflictError(error)) {
-                    showModal(t('modal.bookingFailedConflict'), t('error.slotTaken'));
+                    reportError(t('modal.bookingFailedConflict'), t('error.slotTaken'));
                 } else {
-                    showModal(t('modal.saveFailed'), t('error.saveFail', { err: error.message }));
+                    reportError(t('modal.saveFailed'), t('error.saveFail', { err: error.message }));
                 }
                 return false;
             } finally {
@@ -4027,10 +4673,15 @@ async function loadBookings() {
         }
 
         // 動態更新持續期間選項
-function updateRecurringPeriodOptions() {
-    const recurringType = document.getElementById('recurringType').value;
-    const recurringWeeksSelect = document.getElementById('recurringWeeks');
-    const monthlyModeOption = document.getElementById('monthlyModeOption');
+        // 參數預設指向側欄欄位，行為不變；「我的行事曆」新增彈窗傳自己的 select id 共用同一份選項表，
+        // 不必另抄一份。monthlyOptionId 傳 null 表示這個表單沒有月模式說明文字區塊（目前只有側欄有）。
+function updateRecurringPeriodOptions(typeSelectId, weeksSelectId, monthlyOptionId) {
+    typeSelectId = typeSelectId || 'recurringType';
+    weeksSelectId = weeksSelectId || 'recurringWeeks';
+    if (monthlyOptionId === undefined) monthlyOptionId = 'monthlyModeOption';
+    const recurringType = document.getElementById(typeSelectId).value;
+    const recurringWeeksSelect = document.getElementById(weeksSelectId);
+    const monthlyModeOption = monthlyOptionId ? document.getElementById(monthlyOptionId) : null;
     
     // 清空現有選項
     recurringWeeksSelect.innerHTML = '';
@@ -4042,7 +4693,7 @@ function updateRecurringPeriodOptions() {
 
     if (recurringType === 'weekly') {
         // 隱藏月模式選項
-        monthlyModeOption.style.display = 'none';
+        if (monthlyModeOption) monthlyModeOption.style.display = 'none';
 
         // 每週重複的選項
         const weeklyOptions = [
@@ -4069,7 +4720,7 @@ function updateRecurringPeriodOptions() {
 
     } else if (recurringType === 'biweekly') {
         // 隱藏月模式選項
-        monthlyModeOption.style.display = 'none';
+        if (monthlyModeOption) monthlyModeOption.style.display = 'none';
 
         // 每雙週重複的選項
         const biweeklyOptions = [
@@ -4094,9 +4745,11 @@ function updateRecurringPeriodOptions() {
         recurringWeeksSelect.value = '12';
 
     } else if (recurringType === 'monthly') {
-        // 顯示月模式選項
-        monthlyModeOption.style.display = 'block';
-        updateModeExplanation(); // 更新說明文字
+        // 顯示月模式選項（目前只有側欄表單有這個說明文字區塊）
+        if (monthlyModeOption) {
+            monthlyModeOption.style.display = 'block';
+            updateModeExplanation(); // 更新說明文字
+        }
 
         // 每月重複的選項 (內部仍使用週數計算)
         const monthlyOptions = [
@@ -4573,9 +5226,9 @@ function setTimeSelectValue(selectId, timeValue) {
     // 計算與今天所在週的差距（以週為單位）
     const weeksDiff = Math.round((newWeekStart - todayWeekStart) / (7 * 24 * 60 * 60 * 1000));
     
-    // 檢查是否超出範圍：往前最多4週，往後最多20週
-    if (weeksDiff < -4 || weeksDiff > 20) {
-        console.log(`週數限制：目前差距 ${weeksDiff} 週，超出範圍 (-4 到 +20)`);
+    // 檢查是否超出範圍：往前最多 WEEK_RANGE_BACK 週，往後最多 WEEK_RANGE_FORWARD 週
+    if (weeksDiff < -WEEK_RANGE_BACK || weeksDiff > WEEK_RANGE_FORWARD) {
+        console.log(`週數限制：目前差距 ${weeksDiff} 週，超出範圍 (-${WEEK_RANGE_BACK} 到 +${WEEK_RANGE_FORWARD})`);
         return; // 超出範圍，不執行切換
     }
     
@@ -5015,7 +5668,10 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
                 
                 // 立即重新渲染表格
                 updateSchedule();
-                
+                // 本機刪除不會等 Realtime 才重繪「我的行事曆」，跟其他改動 bookings 陣列的地方（loadBookings、
+                // Realtime handler）走同一個掛勾點，不必等對面事件進來
+                if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
+
                 const deleteCount = bookingIds.length;
                 const message = deleteCount === 1 ? t('notify.deleted') : t('notify.deletedN', { n: deleteCount });
                 showNotification(message);
@@ -6000,6 +6656,70 @@ function resetForm() {
     }
 }
 
+// 檢查衝突並批量寫入：側欄 submitBooking() 與「我的行事曆」新增彈窗共用，
+// 確保時段防撞三層（呼叫端的 isSubmitting 重入鎖、這裡的 checkRecurringConflicts、saveBooking）走同一條路徑。
+// 回傳 null 表示衝突或檢查失敗（原因已顯示，呼叫端不用再處理）；
+// 否則回傳 { successCount, failedDates, savedRecords }，savedRecords 是 saveBooking() 回傳的已寫入資料列。
+// onError 可選 (title, message) => void：預設 showModal（側欄行為不變）。
+// 「我的行事曆」新增彈窗傳自己的顯示函式，因為 showModal 的 #bookingModal 會被日曆彈窗蓋住看不到。
+async function checkAndSaveBookings(datesToBook, room, startTime, endTime, title, organizer, attendees, onError) {
+    const reportError = onError || showModal;
+    console.log('開始檢查衝突...');
+    try {
+        const conflicts = await checkRecurringConflicts(datesToBook, room, startTime, endTime);
+        if (conflicts.length > 0) {
+            let conflictMessage = escapeHtml(t('conflict.listHeader')) + '<br><br>';
+            conflicts.forEach(conflict => {
+                conflictMessage += `📅 <strong>${escapeHtml(conflict.date)}</strong><br>`;
+                conflictMessage += `🏢 ${escapeHtml(tRoom(conflict.booking.room))}<br>`;
+                conflictMessage += `⏰ ${formatTimeDisplay(conflict.booking.startTime)}-${formatTimeDisplay(conflict.booking.endTime)}<br>`;
+                conflictMessage += `📋 ${escapeHtml(conflict.booking.title || '')}<br>`;
+                conflictMessage += `👤 ${escapeHtml(conflict.booking.organizer || '')}<br><br>`;
+            });
+            reportError(t('modal.bookingFailedConflict'), conflictMessage);
+            return null;
+        }
+        console.log('衝突檢查通過');
+    } catch (error) {
+        console.error('衝突檢測失敗:', error);
+        reportError(t('modal.bookingFailed'), t('error.conflictCheckFail', { err: error.message }));
+        return null;
+    }
+
+    console.log('開始儲存預約...');
+    let successCount = 0;
+    let failedDates = [];
+    let savedRecords = [];
+
+    for (const bookingDate of datesToBook) {
+        try {
+            const booking = {
+                date: bookingDate,
+                room: room,
+                startTime: startTime,
+                endTime: endTime,
+                title: title,
+                organizer: organizer,
+                attendees: attendees
+            };
+
+            const saved = await saveBooking(booking, onError);
+            if (saved) {
+                successCount++;
+                savedRecords.push(saved);
+                console.log(`預約成功: ${bookingDate}`);
+            } else {
+                failedDates.push(bookingDate);
+                console.log(`預約失敗: ${bookingDate}`);
+            }
+        } catch (error) {
+            failedDates.push(bookingDate);
+            console.error(`儲存預約失敗 (${bookingDate}):`, error);
+        }
+    }
+    return { successCount, failedDates, savedRecords };
+}
+
 // 預約提交函數 - 完整繁體中文版本
 async function submitBooking() {
     // 衝突檢查到寫入之間有空窗（一次 DB 來回），期間按鈕仍可按，
@@ -6055,60 +6775,11 @@ async function submitBooking() {
             return;
         }
 
-        // 檢查衝突
-        console.log('開始檢查衝突...');
-        try {
-            const conflicts = await checkRecurringConflicts(datesToBook, room, startTime, endTime);
-            if (conflicts.length > 0) {
-                let conflictMessage = escapeHtml(t('conflict.listHeader')) + '<br><br>';
-                conflicts.forEach(conflict => {
-                    conflictMessage += `📅 <strong>${escapeHtml(conflict.date)}</strong><br>`;
-                    conflictMessage += `🏢 ${escapeHtml(tRoom(conflict.booking.room))}<br>`;
-                    conflictMessage += `⏰ ${formatTimeDisplay(conflict.booking.startTime)}-${formatTimeDisplay(conflict.booking.endTime)}<br>`;
-                    conflictMessage += `📋 ${escapeHtml(conflict.booking.title || '')}<br>`;
-                    conflictMessage += `👤 ${escapeHtml(conflict.booking.organizer || '')}<br><br>`;
-                });
-                showModal(t('modal.bookingFailedConflict'), conflictMessage);
-                return;
-            }
-            console.log('衝突檢查通過');
-        } catch (error) {
-            console.error('衝突檢測失敗:', error);
-            showModal(t('modal.bookingFailed'), t('error.conflictCheckFail', { err: error.message }));
-            return;
-        }
-        
-        // 批量儲存預約
-        console.log('開始儲存預約...');
-        let successCount = 0;
-        let failedDates = [];
-        
-        for (const bookingDate of datesToBook) {
-            try {
-                const booking = {
-                    date: bookingDate,
-                    room: room,
-                    startTime: startTime,
-                    endTime: endTime,
-                    title: title,
-                    organizer: organizer,
-                    attendees: attendees
-                };
-                
-                const success = await saveBooking(booking);
-                if (success) {
-                    successCount++;
-                    console.log(`預約成功: ${bookingDate}`);
-                } else {
-                    failedDates.push(bookingDate);
-                    console.log(`預約失敗: ${bookingDate}`);
-                }
-            } catch (error) {
-                failedDates.push(bookingDate);
-                console.error(`儲存預約失敗 (${bookingDate}):`, error);
-            }
-        }
-        
+        // 檢查衝突＋批量儲存：抽成 checkAndSaveBookings()，「我的行事曆」新增彈窗共用同一條路徑
+        const saveResult = await checkAndSaveBookings(datesToBook, room, startTime, endTime, title, organizer, attendees);
+        if (!saveResult) return; // 已由 checkAndSaveBookings 顯示衝突或錯誤原因
+        const { successCount, failedDates } = saveResult;
+
         // 顯示結果
         if (successCount > 0) {
             let successMessage;
@@ -7003,6 +7674,7 @@ function scrollToForm() {
             initializeAttendeesPicker();
             setupEventListeners();
             setupAdditionalDateEvents();
+            if (typeof initMycalCalendar === 'function') initMycalCalendar();
 
             // 更新週別顯示
             updateWeekDisplay();
@@ -7024,9 +7696,921 @@ function scrollToForm() {
         }
 
         // 頁面載入完成後初始化
-        document.addEventListener('DOMContentLoaded', initialize);  
-  
+        document.addEventListener('DOMContentLoaded', initialize);
 
+// ========================================================================
+// 「我的行事曆」頁籤（移植自 docs/ideas/my-calendar/mockup.html）。
+// 名單、時段防撞、i18n 全部接現有程式：attendeeGroups/MEMBER_ALIASES、
+// checkAndSaveBookings()／isSubmitting（跟側欄共用同一條防撞路徑）、I18N/t()/tRoom()。
+// 識別碼一律加 mycal 前綴，避免跟既有 id/class 撞名（#bookingModal、#bookingForm、#todayBtn 都已存在）。
+// ========================================================================
+const MYCAL_STORE_KEY = 'gama_my_name';
+const MYCAL_ROOMS = [
+    { id: '302',        bar: '#3b82f6', soft: '#dbeafe', text: '#1e3a8a' },
+    { id: '301',        bar: '#e11d48', soft: '#ffe4e6', text: '#881337' },
+    { id: '茶水間',     bar: '#10b981', soft: '#d1fae5', text: '#065f46' },
+    { id: '囧尼辦公室', bar: '#8b5cf6', soft: '#ede9fe', text: '#4c1d95' },
+    { id: '街口辦公室', bar: '#f97316', soft: '#ffedd5', text: '#7c2d12' },
+    { id: '會客區',     bar: '#06b6d4', soft: '#cffafe', text: '#155e75' }
+];
+const MYCAL_ROOM_BY_ID = Object.fromEntries(MYCAL_ROOMS.map(r => [r.id, r]));
+// 跟側欄表單一致的 09:00-18:00 半小時網格（見 initializeTimeSelects()）
+const MYCAL_DAY_START = 9 * 60, MYCAL_DAY_END = 18 * 60, MYCAL_STEP = 30;
+const MYCAL_SLOTS = (MYCAL_DAY_END - MYCAL_DAY_START) / MYCAL_STEP;
+const MYCAL_SCALE_ORDER = { month: 0, week: 1, day: 2 };
+
+// ---------- 日期工具 ----------
+function mycalPad(n) { return String(n).padStart(2, '0'); }
+function mycalAddDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function mycalMondayOf(d) { const day = d.getDay(); return mycalAddDays(d, day === 0 ? -6 : 1 - day); }
+function mycalParseDate(s) { const parts = s.split('-').map(Number); return new Date(parts[0], parts[1] - 1, parts[2]); }
+function mycalHm(min) { return `${mycalPad(Math.floor(min / 60))}:${mycalPad(min % 60)}`; }
+function mycalIsWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
+const MYCAL_TODAY = new Date(); MYCAL_TODAY.setHours(0, 0, 0, 0);
+// 可瀏覽範圍照週表 changeWeek() 的上限（WEEK_RANGE_BACK/FORWARD，見全域變數區），
+// 逐日瀏覽落在 loadBookings() 原本的區間（前 30／後 150 天）內；月檢視在邊界月份要整月算對，
+// loadBookings() 另外把這兩端所在月份整月納入查詢範圍（見該函式）。
+const MYCAL_RANGE_START = mycalAddDays(mycalMondayOf(MYCAL_TODAY), -7 * WEEK_RANGE_BACK);
+const MYCAL_RANGE_END = mycalAddDays(mycalMondayOf(MYCAL_TODAY), 7 * WEEK_RANGE_FORWARD + 6);
+function mycalInRange(d) { return d >= MYCAL_RANGE_START && d <= MYCAL_RANGE_END; }
+function mycalClampDate(d) { return d < MYCAL_RANGE_START ? new Date(MYCAL_RANGE_START) : (d > MYCAL_RANGE_END ? new Date(MYCAL_RANGE_END) : d); }
+
+// ---------- 狀態 ----------
+function mycalLoadName() {
+    try {
+        const v = localStorage.getItem(MYCAL_STORE_KEY);
+        return attendeeDirectory.includes(v) ? v : null;
+    } catch (e) { return null; }
+}
+function mycalSaveName(v) {
+    try { localStorage.setItem(MYCAL_STORE_KEY, v); } catch (e) { /* 私密視窗等情況存不了，這次 session 仍可用 */ }
+}
+const MYCAL_FILTER_KEY = 'gama_mycal_filter';
+function mycalLoadFilter() {
+    try {
+        const v = localStorage.getItem(MYCAL_FILTER_KEY);
+        return v === 'all' ? 'all' : 'mine';
+    } catch (e) { return 'mine'; }
+}
+function mycalSaveFilter(v) {
+    try { localStorage.setItem(MYCAL_FILTER_KEY, v); } catch (e) { /* 私密視窗等情況存不了，這次 session 仍可用 */ }
+}
+const mycalState = { me: null, scale: 'month', filter: 'mine', cursor: new Date(MYCAL_TODAY), highlightId: null, active: false };
+let mycalPickMonth = null;
+let mycalAttendees = [];
+let mycalHlTimer = null;
+let mycalToastTimer = null;
+let mycalCurrentCols = [];
+const mycalModalStack = [];
+let mycalSkipPop = 0;
+let mycalDetailOpenId = null; // 詳情彈窗目前顯示的預約 id；Realtime 重繪要靠它判斷那筆是否被刪了
+
+// ---------- 資料：只讀全域 bookings，前端篩選 ----------
+function mycalBookingsOnDate(ds) {
+    return bookings.filter(b => b.date === ds)
+        .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime) || a.room.localeCompare(b.room));
+}
+// 「我的會議」＝主辦人是我，或與會者（逗號分隔字串，先 split、trim）含我
+function mycalIsMine(b) {
+    if (!mycalState.me) return false;
+    if (b.organizer === mycalState.me) return true;
+    return splitAttendeesText(b.attendees).includes(mycalState.me);
+}
+function mycalIsFree(ds, room, sMin, eMin, ignoreId) {
+    return !mycalBookingsOnDate(ds).some(b => b.room === room && b.id !== ignoreId
+        && timeToMinutes(b.startTime) < eMin && sMin < timeToMinutes(b.endTime));
+}
+function mycalRoomStyle(id) {
+    const r = MYCAL_ROOM_BY_ID[id];
+    return r ? `--mycal-bar:${r.bar};--mycal-soft:${r.soft};--mycal-text:${r.text}` : '';
+}
+// 時間網格用：把真實預約資料包成 mockup 內部慣用的 {b:{...,s,e 分鐘數}, mine} 形狀
+function mycalToGridItem(b, mine) {
+    return { b: Object.assign({}, b, { s: timeToMinutes(b.startTime), e: timeToMinutes(b.endTime) }), mine: mine };
+}
+
+// ---------- 彈窗堆疊（Esc／點外面／返回鍵都能關） ----------
+function mycalOpenModal(el, focusSel) {
+    el.hidden = false;
+    mycalModalStack.push(el);
+    try { history.pushState({ mycalModal: mycalModalStack.length }, ''); } catch (e) { /* 部分環境不給 pushState，略過即可 */ }
+    const f = focusSel ? el.querySelector(focusSel) : null;
+    if (f) setTimeout(() => f.focus(), 30);
+}
+function mycalCloseTop(fromPop) {
+    const el = mycalModalStack.pop();
+    if (!el) return;
+    el.hidden = true;
+    if (el.id === 'mycalJumpModal') {
+        const badge = document.getElementById('mycalScaleBadge');
+        if (badge) badge.setAttribute('aria-expanded', 'false');
+    }
+    if (el.id === 'mycalDetailModal') {
+        mycalDetailOpenId = null; // 關掉詳情彈窗後不再追蹤，Realtime 重繪才不會誤判它還開著
+        const detailCalMenu = document.getElementById('mycalDetailCalMenu');
+        if (detailCalMenu) detailCalMenu.style.display = 'none'; // 選單跟著詳情一起收起，下次開詳情不會是已展開狀態
+    }
+    if (!fromPop) { mycalSkipPop++; try { history.back(); } catch (e) { mycalSkipPop--; } }
+}
+function mycalBindOverlayClose() {
+    document.querySelectorAll('.mycal-overlay').forEach(ov => {
+        ov.addEventListener('mousedown', e => { if (e.target === ov) mycalCloseTop(false); });
+        const closeBtn = ov.querySelector('[data-close]');
+        if (closeBtn) closeBtn.addEventListener('click', () => mycalCloseTop(false));
+    });
+}
+
+// ---------- 頁籤（週表 ↔ 我的行事曆） ----------
+function mycalBindTabs() {
+    const tabTable = document.getElementById('mycalTabTable');
+    const tabMycal = document.getElementById('mycalTabMycal');
+    const panelTable = document.getElementById('tabTable');
+    const panelMycal = document.getElementById('tabMycal');
+    function selectTab(which) {
+        tabTable.setAttribute('aria-selected', String(which === 'table'));
+        tabMycal.setAttribute('aria-selected', String(which === 'mycal'));
+        panelTable.style.display = which === 'table' ? '' : 'none';
+        panelMycal.hidden = which !== 'mycal';
+        // 手機浮動新增鈕（週表專用）：用 !important 蓋掉 CSS 媒體查詢的 display:flex !important
+        const floatingBtn = document.getElementById('floatingAddBtn');
+        if (floatingBtn) {
+            if (which === 'mycal') floatingBtn.style.setProperty('display', 'none', 'important');
+            else floatingBtn.style.removeProperty('display');
+        }
+        mycalState.active = which === 'mycal';
+        if (which === 'mycal') {
+            mycalRender();
+            // 規格第 2 條要求第一次進來跳「你是誰？」；正式版預設頁籤是週表，
+            // 開場跳窗會打擾只用週表的人，改成每次切進「我的行事曆」才檢查還沒選過名字這個條件。
+            if (!mycalState.me) mycalOpenPicker();
+        }
+    }
+    tabTable.addEventListener('click', () => selectTab('table'));
+    tabMycal.addEventListener('click', () => selectTab('mycal'));
+}
+
+// ---------- 選名字 ----------
+// 跟主辦人欄位同一套：同一份名單（organizerDirectory）、同一個比對（matchesMemberQuery，含別名）、同樣的選項樣式
+let mycalPickerActive = 0;
+function mycalRenderPicker(q) {
+    const query = normalizeAttendeeName(q || '').toLowerCase();
+    const names = organizerDirectory.filter(n => matchesMemberQuery(n, query));
+    mycalPickerActive = 0;
+    document.getElementById('mycalPickerList').innerHTML = names.length
+        ? names.map((n, i) => `<button type="button" class="organizer-option mycal-name-btn${n === mycalState.me ? ' mycal-cur' : ''}${i === 0 ? ' keyboard-active' : ''}" data-name="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join('')
+        : `<p class="mycal-picker-hint">${escapeHtml(t('mycal.picker.noMatch'))}</p>`;
+}
+function mycalOpenPicker() {
+    document.getElementById('mycalPickerSearch').value = '';
+    mycalRenderPicker('');
+    mycalOpenModal(document.getElementById('mycalPickerModal'), '#mycalPickerSearch');
+}
+function mycalRenderMeChip() {
+    document.getElementById('mycalMeName').textContent = mycalState.me || t('mycal.chip.default');
+    document.getElementById('mycalMeAvatar').textContent = mycalState.me ? mycalState.me.slice(0, 1).toUpperCase() : '?';
+}
+function mycalBindPicker() {
+    const search = document.getElementById('mycalPickerSearch');
+    search.addEventListener('input', e => mycalRenderPicker(e.target.value));
+    search.addEventListener('keydown', e => {
+        const options = Array.from(document.querySelectorAll('#mycalPickerList .mycal-name-btn'));
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            mycalPickerActive = moveKeyboardIndex(mycalPickerActive, options.length, e.key === 'ArrowDown' ? 1 : -1);
+            updateKeyboardActive(options, mycalPickerActive);
+            options[mycalPickerActive]?.scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            options[mycalPickerActive]?.click();
+        }
+    });
+    document.getElementById('mycalPickerList').addEventListener('click', e => {
+        const btn = e.target.closest('.mycal-name-btn');
+        if (!btn) return;
+        mycalState.me = btn.dataset.name;
+        mycalSaveName(mycalState.me);
+        mycalCloseTop(false);
+        mycalRenderMeChip();
+        mycalRender();
+    });
+    document.getElementById('mycalMeChip').addEventListener('click', mycalOpenPicker);
+}
+
+// ---------- 工具列：圖例、上一段/下一段/今天、尺度切換 ----------
+function mycalRenderLegend() {
+    document.getElementById('mycalLegend').innerHTML = MYCAL_ROOMS.map(r =>
+        `<span><i style="background:${r.bar}"></i>${escapeHtml(tRoom(r.id))}</span>`).join('');
+}
+function mycalSetScale(scale, date) {
+    const zoomOut = MYCAL_SCALE_ORDER[scale] < MYCAL_SCALE_ORDER[mycalState.scale];
+    mycalState.scale = scale;
+    if (date) mycalState.cursor = mycalParseDate(date);
+    // 月檢視的游標可能停在範圍外的月初，切進週／日時拉回可瀏覽範圍內
+    if (scale !== 'month') mycalState.cursor = mycalClampDate(mycalState.cursor);
+    mycalRender(zoomOut);
+}
+// 回傳上一段／下一段的游標；超出可瀏覽範圍回 null（用來決定 ‹ › 是否要 disabled）
+function mycalStepped(dir) {
+    const c = mycalState.cursor;
+    if (mycalState.scale === 'month') {
+        const first = new Date(c.getFullYear(), c.getMonth() + dir, 1);
+        const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+        return (last >= MYCAL_RANGE_START && first <= MYCAL_RANGE_END) ? first : null;
+    }
+    if (mycalState.scale === 'week') {
+        const n = mycalAddDays(c, 7 * dir);
+        return mycalInRange(mycalMondayOf(n)) ? n : null;
+    }
+    const n = mycalAddDays(c, dir);
+    return mycalInRange(n) ? n : null;
+}
+function mycalMove(dir) {
+    const next = mycalStepped(dir);
+    if (!next) return;
+    mycalState.cursor = next;
+    mycalRender();
+}
+// 只看我的／全部：月、週檢視用；選擇存 localStorage，日檢視一律顯示全部（不提供這顆切換）
+function mycalSetFilter(v) {
+    if (v !== 'mine' && v !== 'all') return;
+    mycalState.filter = v;
+    mycalSaveFilter(v);
+    mycalRender();
+}
+function mycalBindToolbar() {
+    document.querySelectorAll('#mycalScaleSeg button').forEach(b => b.addEventListener('click', () => mycalSetScale(b.dataset.scale)));
+    document.querySelectorAll('#mycalFilterSeg button').forEach(b => b.addEventListener('click', () => mycalSetFilter(b.dataset.filter)));
+    document.getElementById('mycalPrevBtn').addEventListener('click', () => mycalMove(-1));
+    document.getElementById('mycalNextBtn').addEventListener('click', () => mycalMove(1));
+    document.getElementById('mycalTodayBtn').addEventListener('click', () => { mycalState.cursor = new Date(MYCAL_TODAY); mycalRender(); });
+    document.getElementById('mycalScaleBadge').addEventListener('click', mycalOnBadgeClick);
+}
+
+// ---------- 尺度膠囊跳轉：週檢視列週、日檢視出小月曆 ----------
+function mycalOnBadgeClick() {
+    if (mycalState.scale === 'month' || !mycalState.me) return;
+    if (mycalState.scale === 'week') mycalRenderWeekList();
+    else { mycalPickMonth = new Date(mycalState.cursor.getFullYear(), mycalState.cursor.getMonth(), 1); mycalRenderMiniCal(); }
+    const badge = document.getElementById('mycalScaleBadge');
+    mycalOpenModal(document.getElementById('mycalJumpModal'));
+    badge.setAttribute('aria-expanded', 'true');
+    const r = badge.getBoundingClientRect();
+    const pop = document.getElementById('mycalJumpPop');
+    pop.style.top = (r.bottom + 8) + 'px';
+    pop.style.left = Math.max(16, Math.min(r.left, window.innerWidth - pop.offsetWidth - 16)) + 'px';
+    const focusEl = pop.querySelector('.mycal-wk-row.mycal-cur, .mycal-mc-day.mycal-sel') || pop.querySelector('button:not(:disabled)');
+    if (focusEl) { focusEl.scrollIntoView({ block: 'center' }); focusEl.focus({ preventScroll: true }); }
+}
+function mycalRenderWeekList() {
+    const cur = formatDate(mycalMondayOf(mycalState.cursor));
+    const thisMon = mycalMondayOf(MYCAL_TODAY);
+    let rows = '';
+    for (let mon = new Date(MYCAL_RANGE_START); mon <= MYCAL_RANGE_END; mon = mycalAddDays(mon, 7)) {
+        const off = Math.round((mon - thisMon) / (7 * 864e5));
+        const sun = mycalAddDays(mon, 6);
+        let n = 0;
+        for (let i = 0; i < 7; i++) n += mycalBookingsOnDate(formatDate(mycalAddDays(mon, i))).filter(mycalIsMine).length;
+        const rel = off === 0 ? t('mycal.jump.thisWeek') : off === 1 ? t('mycal.jump.nextWeek') : off === -1 ? t('mycal.jump.lastWeek')
+            : off < 0 ? t('mycal.jump.weeksAgo', { n: -off }) : t('mycal.jump.weeksAhead', { n: off });
+        rows += `<button type="button" class="mycal-wk-row${formatDate(mon) === cur ? ' mycal-cur' : ''}" data-week="${formatDate(mon)}">
+            <span><span class="mycal-rng">${mon.getMonth() + 1}/${mon.getDate()} – ${sun.getMonth() + 1}/${sun.getDate()}</span><span class="mycal-rel">${escapeHtml(rel)}</span></span>
+            <span class="mycal-cnt">${escapeHtml(t('mycal.jump.mineCount', { n: n }))}</span></button>`;
+    }
+    document.getElementById('mycalJumpPop').innerHTML = `<h3>${escapeHtml(t('mycal.jump.weekTitle'))}</h3>${rows}<div class="mycal-pop-foot">${escapeHtml(t('mycal.jump.rangeHintWeek', { back: WEEK_RANGE_BACK, fwd: WEEK_RANGE_FORWARD }))}</div>`;
+}
+function mycalRenderMiniCal() {
+    const y = mycalPickMonth.getFullYear(), m = mycalPickMonth.getMonth();
+    const last = new Date(y, m + 1, 0);
+    const prevOk = new Date(y, m, 0) >= MYCAL_RANGE_START;
+    const nextOk = new Date(y, m + 1, 1) <= MYCAL_RANGE_END;
+    const sel = formatDate(mycalState.cursor), today = formatDate(MYCAL_TODAY);
+    let cells = [1, 2, 3, 4, 5, 6, 0].map(wd => `<div class="mycal-mc-wd">${escapeHtml(t('mycal.wd.' + wd))}</div>`).join('');
+    for (let d = mycalMondayOf(mycalPickMonth); d <= last || d.getDay() !== 1; d = mycalAddDays(d, 1)) {
+        const ds = formatDate(d);
+        const out = d.getMonth() !== m;
+        const ok = mycalInRange(d) && !out;
+        const mine = ok ? mycalBookingsOnDate(ds).filter(mycalIsMine) : [];
+        const cls = ['mycal-mc-day', out ? 'mycal-out' : '', mycalIsWeekend(d) ? 'mycal-we' : '', ds === today ? 'mycal-today' : '', ds === sel ? 'mycal-sel' : ''].join(' ');
+        cells += `<button type="button" class="${cls}" data-date="${ds}"${ok ? '' : ' disabled'} aria-label="${escapeHtml(t('mycal.day.ariaLabel', { m: m + 1, d: d.getDate(), n: mine.length }))}">
+            <span>${d.getDate()}</span><span class="mycal-mdots">${mine.slice(0, 3).map(b => `<i style="${mycalRoomStyle(b.room)}"></i>`).join('')}</span></button>`;
+    }
+    document.getElementById('mycalJumpPop').innerHTML = `<div class="mycal-mc-head">
+            <button type="button" data-mc="-1"${prevOk ? '' : ' disabled'} aria-label="${escapeHtml(t('mycal.jump.prevMonth'))}">‹</button>
+            <b>${escapeHtml(t('mycal.month.title', { y: y, m: m + 1 }))}</b>
+            <button type="button" data-mc="1"${nextOk ? '' : ' disabled'} aria-label="${escapeHtml(t('mycal.jump.nextMonth'))}">›</button>
+        </div>
+        <div class="mycal-mc-grid">${cells}</div>
+        <div class="mycal-pop-foot">${escapeHtml(t('mycal.jump.rangeHintMonth', { back: WEEK_RANGE_BACK, fwd: WEEK_RANGE_FORWARD }))}</div>`;
+}
+function mycalBindJumpPop() {
+    document.getElementById('mycalJumpPop').addEventListener('click', e => {
+        const wk = e.target.closest('.mycal-wk-row');
+        if (wk) { mycalState.cursor = mycalParseDate(wk.dataset.week); mycalCloseTop(false); mycalRender(); return; }
+        const nav = e.target.closest('[data-mc]');
+        if (nav) { if (!nav.disabled) { mycalPickMonth = new Date(mycalPickMonth.getFullYear(), mycalPickMonth.getMonth() + Number(nav.dataset.mc), 1); mycalRenderMiniCal(); } return; }
+        const day = e.target.closest('.mycal-mc-day');
+        if (day && !day.disabled) { mycalState.cursor = mycalParseDate(day.dataset.date); mycalCloseTop(false); mycalRender(); }
+    });
+}
+
+// ---------- 主繪製 ----------
+function mycalRender(zoomOut) {
+    document.querySelectorAll('#mycalScaleSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scale === mycalState.scale)));
+    document.querySelectorAll('#mycalFilterSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === mycalState.filter)));
+    // 日檢視一律顯示全部、不提供這顆切換（藏起別人的預約會讓已佔用的時段看起來是空的）
+    document.getElementById('mycalFilterSeg').hidden = mycalState.scale === 'day';
+    const view = document.getElementById('mycalView');
+    view.className = 'mycal-view';
+    void view.offsetWidth; // 重播縮放動畫
+    view.className = 'mycal-view' + (zoomOut ? ' mycal-zoom-out' : '') + (mycalState.highlightId ? ' mycal-spotlight' : '');
+    document.getElementById('mycalScaleLabel').textContent = { month: 'MONTH', week: 'WEEK', day: 'DAY' }[mycalState.scale];
+    const badge = document.getElementById('mycalScaleBadge');
+    const noJump = mycalState.scale === 'month' || !mycalState.me;
+    badge.disabled = noJump;
+    badge.title = mycalState.scale === 'week' ? t('mycal.badge.jumpWeek') : mycalState.scale === 'day' ? t('mycal.badge.jumpDay') : '';
+    document.getElementById('mycalBadgeCaret').hidden = noJump;
+    document.getElementById('mycalPrevBtn').disabled = !mycalStepped(-1);
+    document.getElementById('mycalNextBtn').disabled = !mycalStepped(1);
+    mycalRenderLegend();
+    if (!mycalState.me) {
+        document.getElementById('mycalViewTitle').textContent = t('mycal.viewTitle.default');
+        document.getElementById('mycalViewCount').textContent = '';
+        view.innerHTML = `<div class="mycal-empty"><h2>${escapeHtml(t('mycal.empty.title'))}</h2><p>${escapeHtml(t('mycal.empty.desc'))}</p><button class="mycal-btn-primary" type="button" id="mycalEmptyPick">${escapeHtml(t('mycal.empty.pick'))}</button></div>`;
+        document.getElementById('mycalEmptyPick').addEventListener('click', mycalOpenPicker);
+        return;
+    }
+    ({ month: mycalRenderMonth, week: mycalRenderWeek, day: mycalRenderDay })[mycalState.scale](view);
+}
+
+// 「全部」時要在同一格內區分我的／別人的：回傳 {b, mine} 清單，維持 mycalBookingsOnDate() 已排好的時間序
+function mycalMonthDayItems(ds) {
+    const all = mycalBookingsOnDate(ds);
+    if (mycalState.filter === 'all') return all.map(b => ({ b: b, mine: mycalIsMine(b) }));
+    return all.filter(mycalIsMine).map(b => ({ b: b, mine: true }));
+}
+function mycalRenderMonth(view) {
+    const c = mycalState.cursor;
+    const first = new Date(c.getFullYear(), c.getMonth(), 1);
+    const last = new Date(c.getFullYear(), c.getMonth() + 1, 0);
+    const start = mycalMondayOf(first);
+    const end = mycalAddDays(mycalMondayOf(last), 6);
+    document.getElementById('mycalViewTitle').textContent = t('mycal.month.title', { y: c.getFullYear(), m: c.getMonth() + 1 });
+    let totalMine = 0, totalAll = 0, cells = '', week = 0;
+    for (let d = start; d <= end; d = mycalAddDays(d, 1)) {
+        const ds = formatDate(d);
+        const out = d.getMonth() !== c.getMonth();
+        const dayAll = mycalBookingsOnDate(ds);
+        const dayMineCount = dayAll.filter(mycalIsMine).length;
+        if (!out) { totalMine += dayMineCount; totalAll += dayAll.length; }
+        const items = mycalMonthDayItems(ds);
+        const shown = items.slice(0, 4);
+        cells += `<div class="mycal-day-cell mycal-w${week % 2}${out ? ' mycal-out' : ''}${mycalInRange(d) ? '' : ' mycal-locked'}${mycalIsWeekend(d) ? ' mycal-we' : ''}${ds === formatDate(MYCAL_TODAY) ? ' mycal-today' : ''}" data-date="${ds}" role="button" tabindex="0" aria-label="${escapeHtml(t('mycal.day.ariaLabel', { m: d.getMonth() + 1, d: d.getDate(), n: dayMineCount }))}">
+            <span class="mycal-num">${d.getDate()}</span>
+            ${shown.map(it => `<button type="button" class="mycal-ev${it.mine ? '' : ' mycal-other'}${it.b.id === mycalState.highlightId ? ' mycal-new' : ''}" data-id="${it.b.id}" style="${mycalRoomStyle(it.b.room)}"><b>${formatTimeDisplay(it.b.startTime)}</b>${escapeHtml(it.b.title || t('table.untitled'))}</button>`).join('')}
+            ${items.length > shown.length ? `<span class="mycal-more">${escapeHtml(t('mycal.month.more', { n: items.length - shown.length }))}</span>` : ''}
+            <span class="mycal-dots">${items.map(it => `<i class="${it.mine ? '' : 'mycal-dot-other'}" style="${mycalRoomStyle(it.b.room)}"></i>`).join('')}</span>
+        </div>`;
+        if (d.getDay() === 0) week++;
+    }
+    document.getElementById('mycalViewCount').textContent = t('mycal.count.dayMix', { mine: totalMine, all: totalAll });
+    view.innerHTML = `<div class="mycal-month">
+        <div class="mycal-month-head">${[1, 2, 3, 4, 5, 6, 0].map((wd, i) => `<div class="${i > 4 ? 'mycal-we' : ''}">${escapeHtml(t('mycal.wd.' + wd))}</div>`).join('')}</div>
+        <div class="mycal-month-grid">${cells}</div></div>`;
+}
+
+// 同一欄內重疊的會議分成並排的 lane（逐字搬自 mockup.html 的 lanes()）
+function mycalLanes(items) {
+    const out = [];
+    let group = [], groupEnd = -1;
+    const flush = () => {
+        const ends = [];
+        group.forEach(it => {
+            let i = ends.findIndex(end => end <= it.b.s);
+            if (i < 0) { i = ends.length; ends.push(0); }
+            ends[i] = it.b.e; it.lane = i;
+        });
+        group.forEach(it => it.lanes = ends.length);
+        out.push(...group); group = [];
+    };
+    items.forEach(it => {
+        if (group.length && it.b.s >= groupEnd) { flush(); groupEnd = -1; }
+        group.push(it); groupEnd = Math.max(groupEnd, it.b.e);
+    });
+    if (group.length) flush();
+    return out;
+}
+
+function mycalRenderTimeGrid(view, cols, colMin) {
+    mycalCurrentCols = cols;
+    // --mycal-row 在窄螢幕媒體查詢裡是設在 .mycal-tab-panel（#tabMycal）上，不是 :root，
+    // 從 documentElement 讀永遠拿到桌面版的值，手機寬度時會議方塊位置會算錯。
+    const mycalPanelEl = document.getElementById('tabMycal') || document.documentElement;
+    const rowPx = parseFloat(getComputedStyle(mycalPanelEl).getPropertyValue('--mycal-row')) || 34;
+    const times = Array.from({ length: MYCAL_SLOTS }, (_, i) => `<div>${mycalHm(MYCAL_DAY_START + i * MYCAL_STEP)}</div>`).join('');
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    const body = cols.map((col, ci) => {
+        const slots = Array.from({ length: MYCAL_SLOTS }, (_, i) => {
+            const s = MYCAL_DAY_START + i * MYCAL_STEP;
+            const label = `${mycalHm(s)} – ${mycalHm(s + MYCAL_STEP)}  ${col.room ? t('mycal.slot.free') : t('mycal.slot.add')}`;
+            return `<div class="mycal-slot" data-col="${ci}" data-s="${s}" data-label="${escapeHtml(label)}"></div>`;
+        }).join('');
+        const blocks = mycalLanes(col.items.map(it => ({ ...it }))).map(it => {
+            const b = it.b;
+            const top = (b.s - MYCAL_DAY_START) / MYCAL_STEP * rowPx + 2;
+            const h = (b.e - b.s) / MYCAL_STEP * rowPx - 4;
+            const w = 100 / it.lanes;
+            const cls = ['mycal-blk', it.mine ? '' : 'mycal-other', b.id === mycalState.highlightId ? 'mycal-new' : '', (b.e - b.s) <= MYCAL_STEP ? 'mycal-short' : ''].join(' ');
+            const meta = col.room ? (b.organizer || '') : tRoom(b.room);
+            return `<button type="button" class="${cls}" data-id="${b.id}" style="${mycalRoomStyle(b.room)};top:${top}px;height:${h}px;left:calc(${w * it.lane}% + 4px);width:calc(${w}% - 8px)">
+                <span class="mycal-t">${escapeHtml(b.title || t('table.untitled'))}</span><span class="mycal-m">${escapeHtml(meta)}</span></button>`;
+        }).join('');
+        const nowLine = col.date === formatDate(MYCAL_TODAY) && nowMin >= MYCAL_DAY_START && nowMin <= MYCAL_DAY_END
+            ? `<div class="mycal-now-line" style="top:${(nowMin - MYCAL_DAY_START) / MYCAL_STEP * rowPx}px"></div>` : '';
+        return `<div class="mycal-tg-col${col.weekend ? ' mycal-we' : ''}" style="grid-row:2">${slots}${blocks}${nowLine}</div>`;
+    }).join('');
+    view.innerHTML = `<div class="mycal-tg-wrap"><div class="mycal-tg-scroll"><div class="mycal-tg" style="--mycal-cols:${cols.length};--mycal-colmin:${colMin}px">
+        <div class="mycal-tg-corner">${escapeHtml(t('table.time'))}</div>
+        ${cols.map(c => c.head).join('')}
+        <div class="mycal-tg-times" style="grid-row:2">${times}</div>
+        ${body}
+    </div></div></div>`;
+    const hl = view.querySelector('.mycal-blk.mycal-new');
+    const scroller = view.querySelector('.mycal-tg-scroll');
+    if (hl) hl.scrollIntoView({ block: 'center', inline: 'center' });
+    else if (scroller) scroller.scrollTop = 0;
+}
+
+function mycalRenderWeek(view) {
+    const mon = mycalMondayOf(mycalState.cursor);
+    const sun = mycalAddDays(mon, 6);
+    document.getElementById('mycalViewTitle').textContent = `${mon.getMonth() + 1}/${mon.getDate()} – ${sun.getMonth() + 1}/${sun.getDate()}`;
+    let totalMine = 0, totalAll = 0;
+    const cols = Array.from({ length: 7 }, (_, i) => {
+        const d = mycalAddDays(mon, i);
+        const ds = formatDate(d);
+        const dayAll = mycalBookingsOnDate(ds);
+        const mineList = dayAll.filter(mycalIsMine);
+        totalMine += mineList.length;
+        totalAll += dayAll.length;
+        // 「全部」時別人的會議也一起放進時間網格，跟我的一樣照 lanes 並排，用 mine:false 淡顯（見 mycalRenderTimeGrid）
+        const items = mycalState.filter === 'all'
+            ? dayAll.map(b => mycalToGridItem(b, mycalIsMine(b)))
+            : mineList.map(b => mycalToGridItem(b, true));
+        return {
+            date: ds, weekend: mycalIsWeekend(d), items: items, room: null,
+            // 欄頭的場次數維持只算我的，跟尺度膠囊跳轉面板／小月曆一致，不受這顆切換影響
+            head: `<div class="mycal-tg-head mycal-clickable${ds === formatDate(MYCAL_TODAY) ? ' mycal-today' : ''}" data-date="${ds}" title="${escapeHtml(t('mycal.week.headTitle'))}">${escapeHtml(getDayName(d))}<small>${d.getMonth() + 1}/${d.getDate()} · ${escapeHtml(t('mycal.week.headCount', { n: mineList.length }))}</small></div>`
+        };
+    });
+    document.getElementById('mycalViewCount').textContent = t('mycal.count.dayMix', { mine: totalMine, all: totalAll });
+    mycalRenderTimeGrid(view, cols, 120);
+}
+
+function mycalRenderDay(view) {
+    const d = mycalState.cursor;
+    const ds = formatDate(d);
+    document.getElementById('mycalViewTitle').textContent = t('mycal.day.title', { m: d.getMonth() + 1, d: d.getDate(), wd: getDayName(d) });
+    const all = mycalBookingsOnDate(ds);
+    const mineCount = all.filter(mycalIsMine).length;
+    document.getElementById('mycalViewCount').textContent = t('mycal.count.dayMix', { mine: mineCount, all: all.length });
+    const cols = MYCAL_ROOMS.map(r => ({
+        date: ds, weekend: false, room: r.id,
+        items: all.filter(b => b.room === r.id).map(b => mycalToGridItem(b, mycalIsMine(b))),
+        head: `<div class="mycal-tg-head" style="${mycalRoomStyle(r.id)}"><span class="mycal-rdot"></span>${escapeHtml(tRoom(r.id))}</div>`
+    }));
+    mycalRenderTimeGrid(view, cols, 140);
+}
+
+// ---------- 檢視上的點擊：會議 → 詳情；欄頭/日期格 → 跳日檢視；空白格 → 開新增表單 ----------
+function mycalBindViewClicks() {
+    const view = document.getElementById('mycalView');
+    view.addEventListener('click', e => {
+        const item = e.target.closest('.mycal-ev, .mycal-blk');
+        if (item) {
+            e.stopPropagation();
+            // 月檢視範圍外（locked）的格子照樣顯示會議，但不能點開詳情（規格第12條）
+            if (item.closest('.mycal-day-cell.mycal-locked')) return;
+            mycalOpenDetail(item.dataset.id);
+            return;
+        }
+        const head = e.target.closest('.mycal-tg-head.mycal-clickable');
+        if (head) { mycalSetScale('day', head.dataset.date); return; }
+        const cell = e.target.closest('.mycal-day-cell');
+        if (cell) { if (!cell.classList.contains('mycal-locked')) mycalSetScale('day', cell.dataset.date); return; }
+        const slot = e.target.closest('.mycal-slot');
+        if (slot) {
+            const col = mycalCurrentCols[+slot.dataset.col];
+            const s = +slot.dataset.s;
+            mycalOpenBooking({ date: col.date, s: s, e: s + MYCAL_STEP, room: col.room });
+        }
+    });
+    view.addEventListener('keydown', e => {
+        const cell = e.target.closest('.mycal-day-cell');
+        if (cell && !cell.classList.contains('mycal-locked') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); mycalSetScale('day', cell.dataset.date); }
+    });
+}
+
+// ---------- 會議詳情 ----------
+// 只填內容，不開彈窗、不動 mycalDetailOpenId：mycalOpenDetail() 首次開啟跟 mycalOnDataChanged()
+// 靠它重新整份填回去（Realtime UPDATE 進來時內容要跟著更新）共用同一份渲染邏輯，不重複寫兩次。
+function mycalRenderDetailContent(b) {
+    const d = mycalParseDate(b.date);
+    document.getElementById('mycalDetailTitle').textContent = b.title || t('table.untitled');
+    const row = (k, v) => `<div class="mycal-detail-row"><dt>${k}</dt><dd>${v}</dd></div>`;
+    const atts = splitAttendeesText(b.attendees);
+    const roomInfo = MYCAL_ROOM_BY_ID[b.room] || { soft: '#eee', text: '#333' };
+    document.getElementById('mycalDetailBody').innerHTML =
+        row(escapeHtml(t('mycal.detail.time')), `${d.getMonth() + 1}/${d.getDate()}（${escapeHtml(getDayName(d))}） ${formatTimeDisplay(b.startTime)} – ${formatTimeDisplay(b.endTime)}`) +
+        row(escapeHtml(t('mycal.detail.room')), `<span class="mycal-chip" style="background:${roomInfo.soft};color:${roomInfo.text}">${escapeHtml(tRoom(b.room))}</span>`) +
+        row(escapeHtml(t('mycal.detail.organizer')), escapeHtml(b.organizer || '')) +
+        row(escapeHtml(t('mycal.detail.attendees')), atts.map(escapeHtml).join(t('mycal.detail.sep')) || '—');
+    const role = b.organizer === mycalState.me ? t('mycal.role.organizer') : atts.includes(mycalState.me) ? t('mycal.role.attendee') : null;
+    document.getElementById('mycalDetailRole').innerHTML = role
+        ? `<span class="mycal-role">${escapeHtml(role)}</span>`
+        : `<span class="mycal-role mycal-no">${escapeHtml(t('mycal.role.none'))}</span>`;
+}
+function mycalOpenDetail(id) {
+    const b = bookings.find(x => String(x.id) === String(id));
+    if (!b) return;
+    mycalDetailOpenId = b.id; // Realtime 重繪要靠它判斷詳情彈窗目前顯示的是哪一筆
+    mycalRenderDetailContent(b);
+    mycalOpenModal(document.getElementById('mycalDetailModal'), '[data-close]');
+}
+
+// ---------- 詳情彈窗底部的四個操作：全部呼叫週表現有的函式，不另寫一套 ----------
+// 編輯／刪除／複製要先關掉詳情彈窗，讓週表原本的確認視窗、編輯表單疊在最上層（不然會被 mycal-overlay 蓋住）
+function mycalDetailCopy() {
+    const id = mycalDetailOpenId;
+    if (id == null) return;
+    mycalCloseTop(false);
+    document.getElementById('mycalTabTable').click(); // copyBooking() 會捲動到週表側欄，先切回去才看得到
+    copyBooking(id);
+}
+function mycalDetailEdit() {
+    const id = mycalDetailOpenId;
+    if (id == null) return;
+    const b = bookings.find(x => String(x.id) === String(id));
+    if (!b) return;
+    mycalCloseTop(false);
+    document.getElementById('mycalTabTable').click(); // 編輯表單在週表側欄，先切回去才看得到
+    mycalJumpTableToWeek(b.date); // 翻到那筆預約所在的週，遵守 WEEK_RANGE
+    editBooking(id);
+}
+function mycalDetailDelete() {
+    const id = mycalDetailOpenId;
+    if (id == null) return;
+    mycalCloseTop(false); // 刪除確認視窗是獨立的固定疊層，不必依賴週表畫面，只要不被剛關的彈窗蓋住
+    deleteBooking(id);
+}
+// 直接跳到任意週：changeWeek() 只能 ±1 週步進，跳到週期預約隨機落在哪一週需要一次到位；
+// 收尾步驟（updateWeekDisplay/updateTodayButtonState/updateSchedule/按需 reload）照抄 changeWeek()
+function mycalJumpTableToWeek(dateStr) {
+    const targetMonday = mycalMondayOf(mycalParseDate(dateStr));
+    const weeksDiff = Math.round((targetMonday - todayWeekStart) / (7 * 24 * 60 * 60 * 1000));
+    if (weeksDiff < -WEEK_RANGE_BACK || weeksDiff > WEEK_RANGE_FORWARD) return; // 理論上不會發生：可瀏覽範圍已跟 WEEK_RANGE 對齊
+    currentWeekStart = targetMonday;
+    updateWeekDisplay();
+    updateTodayButtonState();
+    updateSchedule();
+    const weekDates = getWeekDates(currentWeekStart);
+    const hasDataForWeek = weekDates.some(date => bookings.some(b => b.date === formatDate(date)));
+    if (!hasDataForWeek && supabaseClient) loadBookings();
+}
+// 加入行事曆只開新視窗或下載檔案，不用關詳情彈窗。詳情自己開關這份選單，呼叫跟週表一樣的
+// addToGoogleCalendar／addToAppleCalendar，但不搬動、不改寫週表那一筆選單的 DOM 或 id——
+// 之前借用 id="menu-<bookingId>" 給 toggleCalendarMenu() 用，會讓週表那份選單失去 id，
+// 在下次重繪之前完全點不開。點外面關掉靠既有的「點擊 .calendar-dropdown 外面」全域監聽
+// （document click，見 setupEventListeners），關詳情彈窗時選單一起收起見 mycalCloseTop()。
+function mycalBindDetailActions() {
+    const calBtn = document.getElementById('mycalDetailCalBtn');
+    const calMenu = document.getElementById('mycalDetailCalMenu');
+    calBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        if (mycalDetailOpenId == null) return;
+        const willOpen = calMenu.style.display !== 'block';
+        hideAllCalendarMenus(); // 跟 toggleCalendarMenu() 一樣先收掉所有選單（含週表開著的那份），再視情況展開自己這份
+        if (willOpen) calMenu.style.display = 'block';
+    });
+    document.getElementById('mycalDetailGoogleOpt').addEventListener('click', () => { if (mycalDetailOpenId != null) addToGoogleCalendar(mycalDetailOpenId); });
+    document.getElementById('mycalDetailAppleOpt').addEventListener('click', () => { if (mycalDetailOpenId != null) addToAppleCalendar(mycalDetailOpenId); });
+    document.getElementById('mycalDetailCopyBtn').addEventListener('click', mycalDetailCopy);
+    // 跟週表「會議詳情」視窗的複製內容同一份文字格式與複製函式
+    document.getElementById('mycalDetailCopyTextBtn').addEventListener('click', () => {
+        const b = bookings.find(x => String(x.id) === String(mycalDetailOpenId));
+        if (!b) return;
+        copyModalContent(htmlToPlainText(buildBookingDetailMessage({
+            title: b.title, date: b.date, startTime: b.startTime, endTime: b.endTime,
+            room: b.room, organizer: b.organizer, attendees: b.attendees
+        })).trim());
+    });
+    document.getElementById('mycalDetailEditBtn').addEventListener('click', mycalDetailEdit);
+    document.getElementById('mycalDetailDeleteBtn').addEventListener('click', mycalDetailDelete);
+}
+
+// ---------- 新增預約：跟側欄共用 checkAndSaveBookings()／isSubmitting ----------
+function mycalInitBookingStatics() {
+    document.getElementById('mycalFOrganizer').innerHTML = attendeeDirectory.map(p => `<option>${escapeHtml(p)}</option>`).join('');
+    document.getElementById('mycalPeopleList').innerHTML = attendeeDirectory.map(p => `<option value="${escapeHtml(p)}">`).join('');
+    // 日期欄限制在可瀏覽範圍內：送出前 mycalValidate()／mycalSubmitBooking() 還會再檢查一次
+    document.getElementById('mycalFDate').min = formatDate(MYCAL_RANGE_START);
+    document.getElementById('mycalFDate').max = formatDate(MYCAL_RANGE_END);
+}
+function mycalTimeOpts(from, to, sel) {
+    let h = '';
+    for (let tm = from; tm <= to; tm += MYCAL_STEP) h += `<option value="${tm}"${tm === sel ? ' selected' : ''}>${mycalHm(tm)}</option>`;
+    return h;
+}
+function mycalOpenBooking(opts) {
+    const date = opts.date, s = opts.s, e = opts.e, room = opts.room;
+    document.getElementById('mycalFDate').value = date;
+    document.getElementById('mycalFStart').innerHTML = mycalTimeOpts(MYCAL_DAY_START, MYCAL_DAY_END - MYCAL_STEP, s);
+    document.getElementById('mycalFEnd').innerHTML = mycalTimeOpts(s + MYCAL_STEP, MYCAL_DAY_END, e);
+    document.getElementById('mycalFTitle').value = '';
+    document.getElementById('mycalFOrganizer').value = mycalState.me;
+    mycalAttendees = [];
+    mycalRenderChips();
+    // 每次開新表單重設週期預約勾選：跟側欄 resetForm() 一樣不記上一次的狀態
+    document.getElementById('mycalFRecurring').checked = false;
+    document.getElementById('mycalRecurRow').hidden = true;
+    document.getElementById('mycalFRecurType').value = 'weekly';
+    // 週檢視點進來沒有指定會議室：挑第一間空的
+    const chosen = room || ((MYCAL_ROOMS.find(r => mycalIsFree(date, r.id, s, e))) || {}).id || '';
+    mycalRenderRooms(chosen);
+    mycalValidate();
+    mycalOpenModal(document.getElementById('mycalBookingModal'), '#mycalFTitle');
+}
+function mycalRenderRooms(selected) {
+    const date = document.getElementById('mycalFDate').value;
+    const s = +document.getElementById('mycalFStart').value, e = +document.getElementById('mycalFEnd').value;
+    document.getElementById('mycalFRoom').innerHTML = `<option value="">${escapeHtml(t('mycal.booking.roomPlaceholder'))}</option>` + MYCAL_ROOMS.map(r => {
+        const free = mycalIsFree(date, r.id, s, e);
+        return `<option value="${escapeHtml(r.id)}"${r.id === selected ? ' selected' : ''}>${escapeHtml(tRoom(r.id))}${free ? '' : escapeHtml(t('mycal.booking.roomTaken'))}</option>`;
+    }).join('');
+}
+function mycalValidate() {
+    const date = document.getElementById('mycalFDate').value;
+    const s = +document.getElementById('mycalFStart').value, e = +document.getElementById('mycalFEnd').value;
+    const room = document.getElementById('mycalFRoom').value;
+    const hint = document.getElementById('mycalFreeHint');
+    const isRecurring = document.getElementById('mycalFRecurring').checked;
+    const recurType = document.getElementById('mycalFRecurType').value;
+    const recurWeeks = parseInt(document.getElementById('mycalFRecurWeeks').value, 10);
+    let ok = false;
+    if (!date || !room) { hint.textContent = t('mycal.booking.hintPickDateRoom'); hint.className = 'mycal-hint'; }
+    // 只限制第一次的日期，跟側欄一致——週期預約後面幾次落在可瀏覽範圍外是允許的
+    else if (!mycalInRange(mycalParseDate(date))) { hint.textContent = t('mycal.booking.hintOutOfRange'); hint.className = 'mycal-hint mycal-bad'; }
+    else if (!mycalIsFree(date, room, s, e)) { hint.textContent = t('mycal.booking.hintTaken', { room: tRoom(room) }); hint.className = 'mycal-hint mycal-bad'; }
+    else if (isRecurring && (!recurType || isNaN(recurWeeks))) { hint.textContent = t('mycal.booking.hintRecurringIncomplete'); hint.className = 'mycal-hint mycal-bad'; }
+    else if (isRecurring) {
+        // 勾選週期時，即時提示仍只檢查第一次的時段（跟 mycalIsFree 一樣讀本地資料），
+        // 文案講清楚「送出時逐一檢查」，避免使用者誤以為所有次數都已經確認空著
+        const times = generateRecurringDates(date, recurType, recurWeeks).length;
+        hint.textContent = t('mycal.booking.hintFreeRecurring', { room: tRoom(room), n: e - s, times: times });
+        hint.className = 'mycal-hint mycal-ok'; ok = true;
+    }
+    else { hint.textContent = t('mycal.booking.hintFree', { room: tRoom(room), n: e - s }); hint.className = 'mycal-hint mycal-ok'; ok = true; }
+    document.getElementById('mycalConfirmBtn').disabled = !(ok && document.getElementById('mycalFTitle').value.trim());
+    return ok;
+}
+function mycalRenderChips() {
+    const box = document.getElementById('mycalAttChips');
+    box.querySelectorAll('.mycal-chip').forEach(c => c.remove());
+    const input = document.getElementById('mycalFAttInput');
+    mycalAttendees.forEach((n, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'mycal-chip';
+        chip.innerHTML = `${escapeHtml(n)}<button type="button" aria-label="${escapeHtml(t('mycal.booking.removeAttendee', { name: n }))}" data-i="${i}">×</button>`;
+        box.insertBefore(chip, input);
+    });
+}
+// 只接受名單內的人（含別名比對），跟側欄「可自由輸入名單外人員」的行為不同，照樣稿刻意如此
+function mycalAddAttendee(raw) {
+    const q = normalizeAttendeeName(raw).toLowerCase();
+    if (!q) return;
+    const resolved = resolveMemberName(raw);
+    const organizerVal = document.getElementById('mycalFOrganizer').value;
+    if (attendeeDirectory.includes(resolved) && !mycalAttendees.includes(resolved) && resolved !== organizerVal) {
+        mycalAttendees.push(resolved);
+        mycalRenderChips();
+    }
+    document.getElementById('mycalFAttInput').value = '';
+}
+function mycalBindBookingForm() {
+    document.getElementById('mycalFStart').addEventListener('change', function() {
+        const s = +this.value;
+        const e = Math.max(+document.getElementById('mycalFEnd').value, s + MYCAL_STEP);
+        document.getElementById('mycalFEnd').innerHTML = mycalTimeOpts(s + MYCAL_STEP, MYCAL_DAY_END, Math.min(e, MYCAL_DAY_END));
+        mycalRenderRooms(document.getElementById('mycalFRoom').value); mycalValidate();
+    });
+    document.getElementById('mycalFEnd').addEventListener('change', () => { mycalRenderRooms(document.getElementById('mycalFRoom').value); mycalValidate(); });
+    document.getElementById('mycalFDate').addEventListener('change', () => { mycalRenderRooms(document.getElementById('mycalFRoom').value); mycalValidate(); });
+    document.getElementById('mycalFRoom').addEventListener('change', mycalValidate);
+    document.getElementById('mycalFTitle').addEventListener('input', mycalValidate);
+    document.getElementById('mycalFAttInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); mycalAddAttendee(e.target.value); }
+        if (e.key === 'Backspace' && !e.target.value && mycalAttendees.length) { mycalAttendees.pop(); mycalRenderChips(); }
+    });
+    document.getElementById('mycalFAttInput').addEventListener('change', e => { if (attendeeDirectory.includes(e.target.value)) mycalAddAttendee(e.target.value); });
+    document.getElementById('mycalAttChips').addEventListener('click', e => {
+        const btn = e.target.closest('button[data-i]');
+        if (btn) { mycalAttendees.splice(+btn.dataset.i, 1); mycalRenderChips(); }
+        else document.getElementById('mycalFAttInput').focus();
+    });
+    // 週期性預約：勾選展開頻率／持續期間，選項表跟側欄共用 updateRecurringPeriodOptions()
+    document.getElementById('mycalFRecurring').addEventListener('change', function() {
+        document.getElementById('mycalRecurRow').hidden = !this.checked;
+        if (this.checked) updateRecurringPeriodOptions('mycalFRecurType', 'mycalFRecurWeeks', null);
+        mycalValidate();
+    });
+    document.getElementById('mycalFRecurType').addEventListener('change', function() {
+        updateRecurringPeriodOptions('mycalFRecurType', 'mycalFRecurWeeks', null);
+        mycalValidate();
+    });
+    document.getElementById('mycalFRecurWeeks').addEventListener('change', mycalValidate);
+    document.getElementById('mycalBookingForm').addEventListener('submit', mycalSubmitBooking);
+}
+
+async function mycalSubmitBooking(e) {
+    e.preventDefault();
+    if (!mycalValidate() || !document.getElementById('mycalFTitle').value.trim()) return;
+    // 跟側欄共用同一顆重入鎖：衝突檢查到寫入之間的空窗雙擊，兩邊都會被擋下
+    if (isSubmitting) { console.log('預約提交中，忽略重複點擊'); return; }
+    isSubmitting = true;
+    showLoading(true);
+    const confirmBtn = document.getElementById('mycalConfirmBtn');
+    confirmBtn.disabled = true;
+    // 日曆彈窗開著時 showModal 的 #bookingModal 會被蓋住看不到，
+    // 失敗一律改寫進彈窗自己的提示行（右上角 #mycalFreeHint），紅字、文案跟側欄一樣；彈窗維持開啟、輸入保留。
+    // 蓋掉 hint 之後就不會再顯示送出前的「空著」字樣；使用者改動任何欄位會重新觸發 mycalValidate() 蓋掉錯誤。
+    let formError = false;
+    const hint = document.getElementById('mycalFreeHint');
+    const mycalReportError = (errTitle, message) => {
+        formError = true;
+        hint.innerHTML = message;
+        hint.className = 'mycal-hint mycal-bad';
+    };
+    try {
+        const date = document.getElementById('mycalFDate').value;
+        const room = document.getElementById('mycalFRoom').value;
+        const startTime = mycalHm(+document.getElementById('mycalFStart').value);
+        const endTime = mycalHm(+document.getElementById('mycalFEnd').value);
+        const title = document.getElementById('mycalFTitle').value.trim();
+        const organizer = document.getElementById('mycalFOrganizer').value;
+        const attendeesStr = mycalAttendees.join(', ');
+        const isRecurring = document.getElementById('mycalFRecurring').checked;
+        const recurType = document.getElementById('mycalFRecurType').value;
+        const recurWeeks = parseInt(document.getElementById('mycalFRecurWeeks').value, 10);
+
+        // 只限制第一次的日期，跟側欄一致——週期預約後面幾次落在可瀏覽範圍外是允許的；
+        // mycalValidate() 已經擋過一次，這裡是送出前的最後防線（例如原生 date input 仍可能被手動打進範圍外的值）
+        if (!mycalInRange(mycalParseDate(date))) {
+            mycalReportError(null, t('mycal.booking.hintOutOfRange'));
+            return;
+        }
+
+        // 頻率／持續期間必填（等同側欄 validateBookingForm 對 isRecurring 的檢查）
+        if (isRecurring && (!recurType || isNaN(recurWeeks))) {
+            mycalReportError(null, t('mycal.booking.hintRecurringIncomplete'));
+            return;
+        }
+
+        // 週期日期產生邏輯跟側欄共用同一個 generateRecurringDates()，monthly 語意完全一致
+        const datesToBook = isRecurring ? generateRecurringDates(date, recurType, recurWeeks) : [date];
+        if (!datesToBook || datesToBook.length === 0) {
+            mycalReportError(null, t('error.noDates'));
+            return;
+        }
+
+        // 共用函式：checkRecurringConflicts → saveBooking（isSlotConflictError 轉 error.slotTaken）都在裡面；
+        // 全部日期一起做衝突檢查，撞到任何一筆就整批不寫，跟側欄現行行為一致
+        const result = await checkAndSaveBookings(datesToBook, room, startTime, endTime, title, organizer, attendeesStr, mycalReportError);
+        if (!result) return; // 已由 mycalReportError 顯示衝突／錯誤原因，彈窗維持開啟
+        if (result.successCount > 0) {
+            const saved = result.savedRecords[0];
+            mycalCloseTop(false);
+            // 週期第一次可能正是失敗的那天，游標要跟著第一筆成功的紀錄走，黃色落格才看得到
+            mycalState.cursor = mycalParseDate(saved && saved.date ? saved.date : date);
+            mycalState.highlightId = saved ? saved.id : null;
+            await loadBookings(); // 內部會呼叫 mycalOnDataChanged() 重繪（沿用上面設好的 cursor/highlight）
+            if (result.failedDates.length > 0) {
+                // 部分失敗（通常是第 1 層檢查通過後，第 3 層 DB 防撞在寫入時擋下其中幾筆）：
+                // 跟側欄一樣用 showModal 列出沒訂到的日期（同一份文案、同一個函式，不另寫一套），
+                // 不再顯示「已新增 N 筆」的 toast，免得跟這個 modal 矛盾
+                const partialFailMessage = appendMessageDetails(
+                    buildBookingDetailMessage({ title, startTime, endTime, room, organizer, attendees: attendeesStr }),
+                    [
+                        `<strong>${escapeHtml(t('detail.created'))}</strong> ${escapeHtml(t('detail.sessions', { n: result.successCount }))}`,
+                        `<strong>${escapeHtml(t('detail.failedDates'))}</strong> ${escapeHtml(result.failedDates.join(', '))}`
+                    ]
+                );
+                showModal(t('modal.meetingDetails'), partialFailMessage, null, { enableActions: true });
+            } else if (isRecurring) {
+                mycalToast(t('mycal.toast.addedRecurring', { n: result.successCount, title: title, room: tRoom(room), start: startTime, end: endTime }));
+            } else {
+                mycalToast(t('mycal.toast.added', { title: title, room: tRoom(room), start: startTime, end: endTime }));
+            }
+            clearTimeout(mycalHlTimer);
+            mycalHlTimer = setTimeout(() => {
+                mycalState.highlightId = null;
+                document.getElementById('mycalView')?.classList.remove('mycal-spotlight');
+                document.querySelectorAll('.mycal-new').forEach(el => el.classList.remove('mycal-new'));
+            }, 2600);
+        }
+        // successCount === 0：saveBooking() 已透過 mycalReportError 顯示原因，彈窗維持開啟即可
+    } finally {
+        isSubmitting = false;
+        showLoading(false);
+        // 剛顯示完錯誤時不要立刻用 mycalValidate() 蓋掉：它讀的是本地（可能過期的）bookings，
+        // 會把使用者看不懂的錯誤又換回「空著」。維持鎖住，等使用者改欄位才自然重算。
+        confirmBtn.disabled = formError ? true : !mycalValidate();
+    }
+}
+
+// ---------- 提示 toast ----------
+function mycalToast(msg) {
+    const el = document.getElementById('mycalToast');
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(mycalToastTimer);
+    mycalToastTimer = setTimeout(() => { el.hidden = true; }, 2800);
+}
+
+// ---------- 資料變更後的重繪掛勾：loadBookings() 全量重載與 Realtime 單筆異動都走這裡，不要兩處各寫一套 ----------
+function mycalOnDataChanged() {
+    if (!mycalState.active) return;
+    // 新增彈窗開著時：不關彈窗、不清輸入，只重算右上角提示與會議室下拉的「已被預約」標記；
+    // 底下的月／週／日畫面仍要照最新資料重繪，不能因為彈窗開著就整個跳過
+    if (mycalModalStack.includes(document.getElementById('mycalBookingModal'))) {
+        mycalRenderRooms(document.getElementById('mycalFRoom').value);
+        mycalValidate();
+        mycalRender();
+        return;
+    }
+    if (mycalDetailOpenId != null) {
+        const b = bookings.find(x => String(x.id) === String(mycalDetailOpenId));
+        if (!b) {
+            // 詳情彈窗開著、而那筆預約已經不在資料裡了（被刪除）：關掉詳情彈窗、toast 提示，
+            // 底下畫面一樣要重繪，不然被刪的方塊還會留在畫面上
+            mycalCloseTop(false);
+            mycalToast(t('mycal.toast.deletedElsewhere'));
+            mycalRender();
+            return;
+        }
+        // 那筆還在，但內容可能被 Realtime UPDATE 改過（時段、會議室、與會者等）：
+        // 重新整份填回詳情彈窗，四顆操作鈕本來就用 id 查最新的 bookings，只差顯示沒跟上
+        mycalRenderDetailContent(b);
+        mycalRender();
+        return;
+    }
+    mycalRender();
+}
+function mycalOnLangChanged() {
+    mycalRenderMeChip();
+    if (mycalState.active) mycalRender();
+    if (mycalModalStack.includes(document.getElementById('mycalPickerModal'))) {
+        mycalRenderPicker(document.getElementById('mycalPickerSearch').value);
+    }
+    if (mycalModalStack.includes(document.getElementById('mycalJumpModal'))) {
+        if (mycalState.scale === 'week') mycalRenderWeekList(); else mycalRenderMiniCal();
+    }
+    // 週期性持續期間選項是 JS 動態產生文字（不是 data-i18n），語言切換要另外重繪；
+    // 側欄的 refreshDynamicUI() 已經處理它自己那份，這裡只補「我的行事曆」新增彈窗這份
+    if (mycalModalStack.includes(document.getElementById('mycalBookingModal'))) {
+        updateRecurringPeriodOptions('mycalFRecurType', 'mycalFRecurWeeks', null);
+        mycalValidate();
+    }
+}
+
+// ---------- 啟動 ----------
+function initMycalCalendar() {
+    mycalState.me = mycalLoadName();
+    mycalState.filter = mycalLoadFilter();
+    mycalInitBookingStatics();
+    mycalRenderMeChip();
+    mycalBindTabs();
+    mycalBindOverlayClose();
+    mycalBindPicker();
+    mycalBindToolbar();
+    mycalBindJumpPop();
+    mycalBindViewClicks();
+    mycalBindBookingForm();
+    mycalBindDetailActions();
+    window.addEventListener('popstate', () => {
+        if (mycalSkipPop > 0) { mycalSkipPop--; return; }
+        if (mycalModalStack.length) mycalCloseTop(true);
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && mycalModalStack.length) { e.preventDefault(); mycalCloseTop(false); }
+    });
+    // 手機斷點的格高不同（--mycal-row），視窗尺寸變了要重排時間網格
+    let mycalResizeTimer = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(mycalResizeTimer);
+        mycalResizeTimer = setTimeout(() => {
+            if (mycalState.active && mycalState.me && mycalState.scale !== 'month') mycalRender();
+        }, 200);
+    });
+}
 </script>
 
 <!-- 編輯模式選擇模態框 -->
