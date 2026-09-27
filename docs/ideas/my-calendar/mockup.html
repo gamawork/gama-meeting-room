@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>我的行事曆樣稿</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --navy: #1f3560;
+    --navy-2: #2b4a80;
+    --ink: #1e293b;
+    --muted: #64748b;
+    --faint: #94a3b8;
+    --line: #e2e8f0;
+    --bg: #eef2f7;
+    --card: #ffffff;
+    --cream: #fbf3e2;
+    --sky: #e2ecfa;
+    --off: #eef1f5;
+    --accent: #f5c542;
+    --hl-bg: #fde68a;
+    --hl-bar: #d69e0b;
+    --danger: #dc2626;
+    --ok: #059669;
+    --row: 34px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    font-size: 14px;
+}
+button { font: inherit; cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* ---------- 頂部列 ---------- */
+.topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 24px;
+    background: linear-gradient(120deg, var(--navy-2), var(--navy));
+    color: #fff;
+}
+.brand { font-weight: 800; font-size: 18px; white-space: nowrap; }
+.tabs { display: flex; gap: 4px; background: rgba(255,255,255,.1); padding: 4px; border-radius: 10px; }
+.tab {
+    border: 0; background: transparent; color: #cbd5e1;
+    padding: 7px 14px; border-radius: 7px; font-weight: 600; white-space: nowrap;
+}
+.tab[aria-selected="true"] { background: #fff; color: var(--navy); }
+.me-chip {
+    margin-left: auto; display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08);
+    color: #fff; padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+}
+.me-chip .avatar {
+    width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--navy);
+    display: grid; place-items: center; font-weight: 800; font-size: 12px;
+}
+.me-chip small { color: #cbd5e1; }
+
+main { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
+.mock-note {
+    font-size: 12px; color: var(--muted); margin-bottom: 12px;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.mock-note b { background: #fff7d6; color: #8a6100; padding: 2px 8px; border-radius: 6px; }
+
+/* ---------- 工具列 ---------- */
+.toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.badge {
+    display: inline-flex; align-items: baseline; gap: 10px;
+    background: var(--navy); color: #fff; padding: 9px 18px; border-radius: 999px;
+    box-shadow: 0 6px 16px rgba(31,53,96,.25);
+}
+.badge .scale { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.badge .title { font-weight: 800; font-size: 17px; }
+.count { color: var(--muted); font-weight: 600; }
+.nav { display: flex; gap: 4px; }
+.nav button, .seg button {
+    border: 1px solid var(--line); background: #fff; color: var(--ink);
+    padding: 7px 12px; border-radius: 8px; font-weight: 600;
+}
+.nav button:hover, .seg button:hover { border-color: var(--faint); }
+.seg { display: flex; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 3px; margin-left: auto; }
+.seg button { border: 0; padding: 6px 16px; border-radius: 7px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+/* ---------- 檢視切換的縮放感 ---------- */
+.view { animation: zoomIn .28s ease-out; }
+.view.zoom-out { animation: zoomOut .28s ease-out; }
+@keyframes zoomIn { from { opacity: 0; transform: scale(.965); } to { opacity: 1; transform: none; } }
+@keyframes zoomOut { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
+
+/* ---------- 月檢視 ---------- */
+.month { background: var(--card); border-radius: 18px; padding: 14px; box-shadow: 0 10px 30px rgba(15,23,42,.08); }
+.month-head, .month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.month-head div { text-align: center; font-weight: 600; color: var(--muted); padding: 4px 0 8px; }
+.month-head div.we { color: var(--faint); }
+.day-cell {
+    min-height: 118px; border-radius: 12px; padding: 8px; cursor: pointer;
+    border: 2px solid transparent; transition: border-color .15s, transform .15s;
+    display: flex; flex-direction: column; gap: 3px; min-width: 0;
+}
+.day-cell:hover { border-color: rgba(31,53,96,.35); }
+.day-cell.w0 { background: var(--cream); }
+.day-cell.w1 { background: var(--sky); }
+.day-cell.out { background: var(--off); opacity: .7; }
+.day-cell .num { font-weight: 800; font-size: 16px; margin-bottom: 2px; }
+.day-cell.we .num, .day-cell.out .num { color: var(--faint); }
+.day-cell.today .num {
+    background: var(--navy); color: #fff; width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 14px;
+}
+.ev {
+    display: block; width: 100%; text-align: left; border: 0;
+    border-left: 3px solid var(--bar); background: var(--soft); color: var(--text);
+    padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ev b { font-weight: 700; margin-right: 4px; }
+.more { font-size: 11px; color: var(--muted); font-weight: 600; padding-left: 4px; }
+.dots { display: none; flex-wrap: wrap; gap: 4px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--bar); }
+
+/* ---------- 時間網格（週、日共用） ---------- */
+.tg-wrap { background: var(--card); border-radius: 18px; box-shadow: 0 10px 30px rgba(15,23,42,.08); overflow: hidden; }
+.tg-scroll { overflow: auto; max-height: calc(100vh - 230px); min-height: 360px; }
+.tg { display: grid; grid-template-columns: 64px repeat(var(--cols), minmax(var(--colmin), 1fr)); position: relative; }
+.tg-corner, .tg-head {
+    position: sticky; top: 0; z-index: 3; background: var(--navy); color: #fff;
+    padding: 10px 6px; text-align: center; font-weight: 700;
+}
+.tg-corner { left: 0; z-index: 4; }
+.tg-head.clickable { cursor: pointer; }
+.tg-head.clickable:hover { background: var(--navy-2); }
+.tg-head small { display: block; font-weight: 500; color: #cbd5e1; font-size: 11px; margin-top: 1px; }
+.tg-head.today { box-shadow: inset 0 -3px 0 var(--accent); }
+.tg-head .rdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--bar); }
+.tg-times { position: sticky; left: 0; z-index: 2; background: #fff; border-right: 1px solid var(--line); }
+.tg-times div { height: var(--row); display: grid; place-items: center; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tg-times div:nth-child(odd), .slot:nth-child(odd) { background: #f8fafc; }
+.tg-col { position: relative; border-right: 1px solid var(--line); }
+.tg-col.we { background: #fafafa; }
+.slot { height: var(--row); position: relative; cursor: pointer; }
+.slot:hover::after {
+    content: attr(data-label); position: absolute; inset: 2px 4px;
+    border: 2px dashed var(--navy); border-radius: 6px; background: rgba(255,255,255,.85);
+    display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 700; color: var(--navy);
+    z-index: 1;
+}
+.blk {
+    position: absolute; z-index: 2; border: 0; text-align: left; overflow: hidden;
+    border-left: 4px solid var(--bar); background: var(--soft); color: var(--text);
+    border-radius: 6px; padding: 4px 8px; font-size: 12px; line-height: 1.35;
+    box-shadow: 0 1px 2px rgba(15,23,42,.06); transition: opacity .3s, transform .3s;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+}
+.blk .t { max-width: 100%; }
+.blk .t { font-weight: 700; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.blk .m { display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: rgba(255,255,255,.7); }
+.blk.short { flex-direction: row; align-items: center; gap: 6px; padding-top: 0; padding-bottom: 0; }
+.blk.short .t { flex: 0 1 auto; min-width: 0; }
+.blk.short .m { margin-top: 0; flex: none; }
+.blk.other { background: #f1f5f9; color: #94a3b8; border-left-color: #cbd5e1; box-shadow: none; }
+.blk.other .m { background: #e2e8f0; color: #64748b; }
+.blk:hover { filter: brightness(.97); }
+.blk.new { background: var(--hl-bg); border-left-color: var(--hl-bar); color: var(--navy); animation: pop .5s ease-out; z-index: 3; }
+.spotlight .blk:not(.new), .spotlight .ev:not(.new) { opacity: .3; }
+.ev.new { background: var(--hl-bg); border-left-color: var(--hl-bar); color: var(--navy); }
+@keyframes pop { 0% { transform: scale(.9); } 60% { transform: scale(1.04); } 100% { transform: none; } }
+.now-line { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger); z-index: 3; pointer-events: none; }
+.now-line::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); }
+
+/* ---------- 空狀態 ---------- */
+.empty {
+    background: var(--card); border-radius: 18px; padding: 60px 24px; text-align: center;
+    box-shadow: 0 10px 30px rgba(15,23,42,.08);
+}
+.empty h2 { margin: 0 0 8px; }
+.empty p { color: var(--muted); margin: 0 0 20px; }
+.btn-primary {
+    border: 0; background: linear-gradient(120deg, var(--navy-2), var(--navy)); color: #fff;
+    padding: 11px 22px; border-radius: 10px; font-weight: 700;
+}
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ghost { border: 1px solid var(--line); background: #fff; padding: 10px 18px; border-radius: 10px; font-weight: 600; }
+
+/* ---------- 彈窗 ---------- */
+.overlay {
+    position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 50;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+    animation: fade .15s ease-out;
+}
+@keyframes fade { from { opacity: 0; } }
+.dialog {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 860px; max-height: calc(100vh - 32px);
+    overflow: auto; padding: 28px 32px; box-shadow: 0 30px 60px rgba(15,23,42,.3); position: relative;
+    animation: rise .2s ease-out;
+}
+@keyframes rise { from { transform: translateY(12px); opacity: 0; } }
+.dialog.sm { max-width: 460px; }
+.dialog-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 18px; padding-right: 32px; }
+.dialog-head h2 { margin: 0; font-size: 26px; }
+.hint { font-weight: 600; color: var(--muted); font-size: 13px; }
+.hint.ok { color: var(--ok); }
+.hint.bad { color: var(--danger); }
+.x {
+    position: absolute; top: 16px; right: 16px; width: 34px; height: 34px; border-radius: 50%;
+    border: 0; background: #f1f5f9; color: var(--muted); font-size: 18px; line-height: 1;
+}
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-weight: 600; color: #334155; }
+.field input, .field select {
+    border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 15px;
+    background: #fff; color: var(--ink);
+}
+.field input:focus, .field select:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31,53,96,.12); }
+.chips {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+    border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 7px 10px; min-height: 46px;
+}
+.chips:focus-within { border-color: var(--navy); box-shadow: 0 0 0 3px rgba(31,53,96,.12); }
+.chips input { border: 0; padding: 4px; flex: 1; min-width: 120px; box-shadow: none !important; }
+.chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+    background: #dbeafe; color: #1e40af; font-weight: 600; font-size: 13px;
+}
+.chip.me { background: #fee2e2; color: #b91c1c; }
+.chip button { border: 0; background: none; color: inherit; padding: 0; font-size: 14px; line-height: 1; opacity: .7; }
+.form-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; gap: 12px; flex-wrap: wrap; }
+.form-foot label { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.form-foot .note { font-size: 12px; color: var(--faint); }
+
+/* 名字選擇 */
+.picker-search { width: 100%; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 15px; margin-bottom: 12px; }
+.picker-search:focus { outline: none; border-color: var(--navy); }
+.picker-list { max-height: 50vh; overflow: auto; }
+.picker-group { margin-bottom: 10px; }
+.picker-group h4 { margin: 0 0 6px; font-size: 12px; color: var(--faint); font-weight: 600; }
+.picker-group div { display: flex; flex-wrap: wrap; gap: 6px; }
+.name-btn { border: 1px solid var(--line); background: #fff; padding: 7px 14px; border-radius: 999px; font-weight: 600; }
+.name-btn:hover { border-color: var(--navy); color: var(--navy); }
+.name-btn.cur { background: var(--navy); color: #fff; border-color: var(--navy); }
+.picker-hint { color: var(--muted); margin: -8px 0 16px; }
+
+/* 詳情 */
+.detail-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+.detail-row dt { width: 72px; color: var(--muted); flex: none; }
+.detail-row dd { margin: 0; font-weight: 600; }
+.role { display: inline-block; margin-top: 14px; padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; background: #ecfdf5; color: var(--ok); }
+.role.no { background: #f1f5f9; color: var(--muted); }
+
+.toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 60;
+    background: var(--navy); color: #fff; padding: 12px 20px; border-radius: 12px; font-weight: 600;
+    box-shadow: 0 10px 30px rgba(15,23,42,.3); animation: rise .2s ease-out;
+}
+
+.placeholder {
+    background: var(--card); border-radius: 18px; padding: 48px 24px; text-align: center; color: var(--muted);
+    border: 2px dashed var(--line);
+}
+
+/* ---------- 窄螢幕 ---------- */
+@media (max-width: 760px) {
+    :root { --row: 40px; }
+    .topbar { padding: 10px 16px; flex-wrap: wrap; gap: 10px; }
+    .brand { font-size: 16px; }
+    .me-chip small { display: none; }
+    main { padding: 14px 16px 32px; }
+    .seg { margin-left: 0; width: 100%; }
+    .seg button { flex: 1; }
+    .badge .title { font-size: 15px; }
+    .month { padding: 8px; }
+    .month-head, .month-grid { gap: 4px; }
+    .day-cell { min-height: 64px; padding: 5px; border-radius: 8px; }
+    .day-cell .num { font-size: 13px; }
+    .day-cell.today .num { width: 22px; height: 22px; font-size: 12px; }
+    .day-cell .ev, .day-cell .more { display: none; }
+    .dots { display: flex; }
+    .dialog { padding: 22px 18px; border-radius: 16px; }
+    .dialog-head { flex-direction: column; gap: 4px; }
+    .dialog-head h2 { font-size: 22px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .tg-scroll { max-height: calc(100vh - 260px); }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand">Gama Meeting Room</div>
+    <nav class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="table" aria-selected="false">週表</button>
+        <button class="tab" role="tab" data-tab="mycal" aria-selected="true">我的行事曆</button>
+    </nav>
+    <button class="me-chip" id="meChip" type="button" title="更換名字">
+        <span class="avatar" id="meAvatar">?</span>
+        <span id="meName">選擇你的名字</span>
+        <small>更換</small>
+    </button>
+</header>
+
+<main>
+    <div class="mock-note"><b>樣稿</b>假資料、存在這台瀏覽器；新增的會議重新整理就消失。正式版送出走 <code>submitBooking()</code>（時段防撞三層）。</div>
+
+    <section id="tab-table" hidden>
+        <div class="placeholder">
+            <h2 style="margin:0 0 8px;color:var(--ink)">現行週表</h2>
+            這個頁籤就是現在的週表畫面，行為完全不變；樣稿不重畫。
+        </div>
+    </section>
+
+    <section id="tab-mycal">
+        <div class="toolbar">
+            <div class="badge"><span class="scale" id="scaleLabel">MONTH</span><span class="title" id="viewTitle"></span></div>
+            <span class="count" id="viewCount"></span>
+            <div class="nav">
+                <button type="button" id="prevBtn" aria-label="上一段">‹</button>
+                <button type="button" id="todayBtn">今天</button>
+                <button type="button" id="nextBtn" aria-label="下一段">›</button>
+            </div>
+            <div class="seg" role="group" aria-label="檢視尺度">
+                <button type="button" data-scale="month" aria-pressed="true">月</button>
+                <button type="button" data-scale="week" aria-pressed="false">週</button>
+                <button type="button" data-scale="day" aria-pressed="false">日</button>
+            </div>
+        </div>
+        <div class="legend" id="legend"></div>
+        <div id="view" class="view"></div>
+    </section>
+</main>
+
+<!-- 選名字 -->
+<div class="overlay" id="pickerModal" hidden>
+    <div class="dialog sm" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+        <button class="x" type="button" data-close aria-label="關閉">×</button>
+        <div class="dialog-head"><h2 id="pickerTitle">你是誰？</h2></div>
+        <p class="picker-hint">選一次就好，這台瀏覽器會記住。</p>
+        <input class="picker-search" id="pickerSearch" type="search" placeholder="搜尋名字或中文姓名" autocomplete="off">
+        <div class="picker-list" id="pickerList"></div>
+    </div>
+</div>
+
+<!-- 新增預約 -->
+<div class="overlay" id="bookingModal" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="bookingTitle">
+        <button class="x" type="button" data-close aria-label="關閉">×</button>
+        <div class="dialog-head">
+            <h2 id="bookingTitle">新增預約</h2>
+            <span class="hint" id="freeHint"></span>
+        </div>
+        <form id="bookingForm" novalidate>
+            <div class="form-grid">
+                <div class="field"><label for="fDate">日期</label><input type="date" id="fDate" required></div>
+                <div class="field"><label for="fStart">開始時間</label><select id="fStart"></select></div>
+                <div class="field"><label for="fTitle">主題</label><input id="fTitle" placeholder="例如：設計審查" autocomplete="off"></div>
+                <div class="field"><label for="fEnd">結束時間</label><select id="fEnd"></select></div>
+                <div class="field"><label for="fRoom">會議室</label><select id="fRoom"></select></div>
+                <div class="field"><label for="fOrganizer">主辦人</label><select id="fOrganizer"></select></div>
+                <div class="field full">
+                    <label for="fAttInput">與會者（選填）</label>
+                    <div class="chips" id="attChips"><input id="fAttInput" list="peopleList" placeholder="輸入名字後按 Enter" autocomplete="off"></div>
+                    <datalist id="peopleList"></datalist>
+                </div>
+            </div>
+            <div class="form-foot">
+                <label><input type="checkbox" disabled> 週期性預約 <span class="note">（沿用現行表單，樣稿不示範）</span></label>
+                <button class="btn-primary" type="submit" id="confirmBtn">確認預約</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 會議詳情 -->
+<div class="overlay" id="detailModal" hidden>
+    <div class="dialog sm" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+        <button class="x" type="button" data-close aria-label="關閉">×</button>
+        <div class="dialog-head"><h2 id="detailTitle"></h2></div>
+        <dl id="detailBody" style="margin:0"></dl>
+        <div id="detailRole"></div>
+    </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+// ---------- 常數（名單照 index.html 的 attendeeGroups） ----------
+const GROUPS = [
+    ['囧尼', 'Vicky', 'Joanne', 'Renee', 'Norah', 'Jessie', 'Travis'],
+    ['Jackal', 'Rex'],
+    ['Mei', 'Faust', 'Yi', 'Louis', 'Jason', 'Dylan'],
+    ['姿驊', 'Moy', 'TY', 'Jackson', 'Ray', 'Angus', 'Alyce', 'Casey', 'Ken', 'Hans', 'Jimmy'],
+    ['Ryan', 'Stan', 'Jill', 'Howard', 'Betty'],
+    ['小威', 'Ren', 'Allen', 'Wei', 'Hunter'],
+    ['Victor', '鵬富', '子萱']
+];
+const PEOPLE = GROUPS.flat();
+const ALIASES = {
+    '囧尼': ['Johnny'], 'Vicky': ['賴蕙娟'], 'Joanne': ['郭景涵'], 'Renee': ['邱宇柔'], 'Norah': ['何沛蓉'],
+    'Jessie': ['潘亮妤'], 'Travis': ['黃郁絢'], 'Jackal': ['陳俊良'], 'Rex': ['黃元邑'], 'Mei': ['黃眉瑜'],
+    'Faust': ['郭慧彬'], 'Yi': ['黃易'], 'Louis': ['李宣槿'], 'Jason': ['王正頡'], 'Dylan': ['林東慶'],
+    '姿驊': ['Ivory'], 'Moy': ['吳莤郁'], 'TY': ['杜亭燁'], 'Jackson': ['林峻賢'], 'Ray': ['張家銘'],
+    'Angus': ['黃奕翔'], 'Alyce': ['黃玟瑜']
+};
+const ROOMS = [
+    { id: '302',        bar: '#3b82f6', soft: '#dbeafe', text: '#1e3a8a' },
+    { id: '301',        bar: '#e11d48', soft: '#ffe4e6', text: '#881337' },
+    { id: '茶水間',     bar: '#10b981', soft: '#d1fae5', text: '#065f46' },
+    { id: '囧尼辦公室', bar: '#8b5cf6', soft: '#ede9fe', text: '#4c1d95' },
+    { id: '街口辦公室', bar: '#f97316', soft: '#ffedd5', text: '#7c2d12' },
+    { id: '會客區',     bar: '#06b6d4', soft: '#cffafe', text: '#155e75' }
+];
+const ROOM_BY_ID = Object.fromEntries(ROOMS.map(r => [r.id, r]));
+const DAY_START = 9 * 60, DAY_END = 18 * 60, STEP = 30;
+const SLOTS = (DAY_END - DAY_START) / STEP;
+const WD = ['日', '一', '二', '三', '四', '五', '六'];
+const STORE_KEY = 'gama_my_name';
+
+// ---------- 日期工具 ----------
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
+const hm = min => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
+const isWeekend = d => d.getDay() === 0 || d.getDay() === 6;
+const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
+
+// ---------- 假資料（固定種子，每次開都一樣） ----------
+function rng(seed) {
+    return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+const TITLES = ['Sprint Planning', '週會', '1:1', 'Demo Prep', 'Vendor Sync', '需求訪談', 'Retro', 'QA Sync', 'Roadmap', 'Onboarding', 'Budget Check', 'Hiring Loop', '客戶簡報', '設計審查', 'Standup'];
+function makeData() {
+    const r = rng(20261014);
+    const pick = arr => arr[Math.floor(r() * arr.length)];
+    const out = [];
+    const from = new Date(TODAY.getFullYear(), TODAY.getMonth() - 1, 1);
+    const to = new Date(TODAY.getFullYear(), TODAY.getMonth() + 3, 0);
+    let id = 1;
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+        if (isWeekend(d)) continue;
+        for (const room of ROOMS) {
+            let t = DAY_START;
+            while (t < DAY_END) {
+                if (r() < 0.2) {
+                    const dur = pick([30, 60, 60, 60, 90, 120]);
+                    if (t + dur > DAY_END) break;
+                    const organizer = pick(PEOPLE);
+                    const att = new Set();
+                    const n = 1 + Math.floor(r() * 4);
+                    while (att.size < n) { const p = pick(PEOPLE); if (p !== organizer) att.add(p); }
+                    out.push({ id: 'b' + id++, date: ymd(d), room: room.id, s: t, e: t + dur, title: pick(TITLES), organizer, attendees: [...att] });
+                    t += dur;
+                } else {
+                    t += STEP;
+                }
+            }
+        }
+    }
+    return out;
+}
+const bookings = makeData();
+
+// ---------- 狀態 ----------
+function loadMe() { try { const v = localStorage.getItem(STORE_KEY); return PEOPLE.includes(v) ? v : null; } catch (e) { return null; } }
+function saveMe(v) { try { localStorage.setItem(STORE_KEY, v); } catch (e) { /* 私密視窗等情況存不了，這次 session 仍可用 */ } }
+const state = { me: loadMe(), scale: 'month', cursor: new Date(TODAY), highlightId: null };
+const SCALE_ORDER = { month: 0, week: 1, day: 2 };
+
+// 「我的會議」＝主辦或與會；名單寫入 DB 的是正規名，別名只在搜尋時用
+const isMine = b => !!state.me && (b.organizer === state.me || b.attendees.includes(state.me));
+const onDate = ds => bookings.filter(b => b.date === ds).sort((a, b) => a.s - b.s || a.room.localeCompare(b.room));
+const roomStyle = id => { const r = ROOM_BY_ID[id]; return `--bar:${r.bar};--soft:${r.soft};--text:${r.text}`; };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const isFree = (date, room, s, e, ignoreId) => !bookings.some(b => b.id !== ignoreId && b.date === date && b.room === room && b.s < e && s < b.e);
+
+const $ = sel => document.querySelector(sel);
+
+// ---------- 彈窗堆疊（Esc／點外面／返回鍵都能關） ----------
+const modalStack = [];
+let skipPop = 0;
+function openModal(el, focusSel) {
+    el.hidden = false;
+    modalStack.push(el);
+    try { history.pushState({ modal: modalStack.length }, ''); } catch (e) { /* file:// 某些情況不給 */ }
+    const f = focusSel ? el.querySelector(focusSel) : null;
+    if (f) setTimeout(() => f.focus(), 30);
+}
+function closeTop(fromPop) {
+    const el = modalStack.pop();
+    if (!el) return;
+    el.hidden = true;
+    if (!fromPop) { skipPop++; try { history.back(); } catch (e) { skipPop--; } }
+}
+window.addEventListener('popstate', () => {
+    if (skipPop > 0) { skipPop--; return; }
+    if (modalStack.length) closeTop(true);
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modalStack.length) { e.preventDefault(); closeTop(false); return; }
+    if (modalStack.length || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) return;
+    if (e.key === 'ArrowLeft') move(-1);
+    if (e.key === 'ArrowRight') move(1);
+});
+document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('mousedown', e => { if (e.target === ov) closeTop(false); });
+    ov.querySelector('[data-close]').addEventListener('click', () => closeTop(false));
+});
+
+// ---------- 頁籤 ----------
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b === btn));
+    $('#tab-table').hidden = btn.dataset.tab !== 'table';
+    $('#tab-mycal').hidden = btn.dataset.tab !== 'mycal';
+}));
+
+// ---------- 選名字 ----------
+function renderPicker(q = '') {
+    const needle = q.trim().toLowerCase();
+    const hit = n => !needle || n.toLowerCase().includes(needle) || (ALIASES[n] || []).some(a => a.toLowerCase().includes(needle));
+    const html = GROUPS.map((g, i) => {
+        const names = g.filter(hit);
+        if (!names.length) return '';
+        return `<div class="picker-group"><h4>第 ${i + 1} 組</h4><div>${names.map(n =>
+            `<button type="button" class="name-btn${n === state.me ? ' cur' : ''}" data-name="${esc(n)}">${esc(n)}</button>`).join('')}</div></div>`;
+    }).join('');
+    $('#pickerList').innerHTML = html || '<p class="picker-hint">找不到這個名字。</p>';
+}
+$('#pickerSearch').addEventListener('input', e => renderPicker(e.target.value));
+$('#pickerSearch').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { const first = $('#pickerList .name-btn'); if (first) first.click(); }
+});
+$('#pickerList').addEventListener('click', e => {
+    const btn = e.target.closest('.name-btn');
+    if (!btn) return;
+    state.me = btn.dataset.name;
+    saveMe(state.me);
+    closeTop(false);
+    renderMe();
+    render();
+});
+function openPicker() { $('#pickerSearch').value = ''; renderPicker(); openModal($('#pickerModal'), '#pickerSearch'); }
+$('#meChip').addEventListener('click', openPicker);
+function renderMe() {
+    $('#meName').textContent = state.me || '選擇你的名字';
+    $('#meAvatar').textContent = state.me ? state.me.slice(0, 1).toUpperCase() : '?';
+}
+
+// ---------- 工具列 ----------
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => setScale(b.dataset.scale)));
+$('#prevBtn').addEventListener('click', () => move(-1));
+$('#nextBtn').addEventListener('click', () => move(1));
+$('#todayBtn').addEventListener('click', () => { state.cursor = new Date(TODAY); render(); });
+$('#legend').innerHTML = ROOMS.map(r => `<span><i style="background:${r.bar}"></i>${esc(r.id)}</span>`).join('');
+
+function setScale(scale, date) {
+    const zoomOut = SCALE_ORDER[scale] < SCALE_ORDER[state.scale];
+    state.scale = scale;
+    if (date) state.cursor = parse(date);
+    render(zoomOut);
+}
+function move(dir) {
+    const c = state.cursor;
+    if (state.scale === 'month') state.cursor = new Date(c.getFullYear(), c.getMonth() + dir, 1);
+    else if (state.scale === 'week') state.cursor = addDays(c, 7 * dir);
+    else state.cursor = addDays(c, dir);
+    render();
+}
+
+// ---------- 主繪製 ----------
+function render(zoomOut) {
+    document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.scale === state.scale));
+    const view = $('#view');
+    view.className = 'view';
+    void view.offsetWidth; // 重播縮放動畫
+    view.className = 'view' + (zoomOut ? ' zoom-out' : '') + (state.highlightId ? ' spotlight' : '');
+    $('#scaleLabel').textContent = { month: 'MONTH', week: 'WEEK', day: 'DAY' }[state.scale];
+    if (!state.me) {
+        $('#viewTitle').textContent = '我的行事曆';
+        $('#viewCount').textContent = '';
+        view.innerHTML = `<div class="empty"><h2>先告訴我們你是誰</h2><p>選好名字後，這裡只會列出你主辦或參加的會議。</p><button class="btn-primary" type="button" id="emptyPick">選擇名字</button></div>`;
+        $('#emptyPick').addEventListener('click', openPicker);
+        return;
+    }
+    ({ month: renderMonth, week: renderWeek, day: renderDay })[state.scale](view);
+}
+
+function renderMonth(view) {
+    const c = state.cursor;
+    const first = new Date(c.getFullYear(), c.getMonth(), 1);
+    const last = new Date(c.getFullYear(), c.getMonth() + 1, 0);
+    const start = mondayOf(first);
+    const end = addDays(mondayOf(last), 6);
+    $('#viewTitle').textContent = `${c.getFullYear()} 年 ${c.getMonth() + 1} 月`;
+    let total = 0, cells = '', week = 0;
+    for (let d = start; d <= end; d = addDays(d, 1)) {
+        const ds = ymd(d);
+        const out = d.getMonth() !== c.getMonth();
+        const mine = onDate(ds).filter(isMine);
+        if (!out) total += mine.length;
+        const shown = mine.slice(0, 4);
+        cells += `<div class="day-cell w${week % 2}${out ? ' out' : ''}${isWeekend(d) ? ' we' : ''}${ds === ymd(TODAY) ? ' today' : ''}" data-date="${ds}" role="button" tabindex="0" aria-label="${d.getMonth() + 1}月${d.getDate()}日，${mine.length} 場">
+            <span class="num">${d.getDate()}</span>
+            ${shown.map(b => `<button type="button" class="ev${b.id === state.highlightId ? ' new' : ''}" data-id="${b.id}" style="${roomStyle(b.room)}"><b>${hm(b.s)}</b>${esc(b.title)}</button>`).join('')}
+            ${mine.length > shown.length ? `<span class="more">+${mine.length - shown.length} 場</span>` : ''}
+            <span class="dots">${mine.map(b => `<i style="${roomStyle(b.room)}"></i>`).join('')}</span>
+        </div>`;
+        if (d.getDay() === 0) week++;
+    }
+    $('#viewCount').textContent = `我的會議 ${total} 場`;
+    view.innerHTML = `<div class="month">
+        <div class="month-head">${['一', '二', '三', '四', '五', '六', '日'].map((w, i) => `<div class="${i > 4 ? 'we' : ''}">週${w}</div>`).join('')}</div>
+        <div class="month-grid">${cells}</div></div>`;
+}
+
+// 同一欄內重疊的會議分成並排的 lane
+function lanes(items) {
+    const out = [];
+    let group = [], groupEnd = -1;
+    const flush = () => {
+        const ends = [];
+        group.forEach(it => {
+            let i = ends.findIndex(end => end <= it.b.s);
+            if (i < 0) { i = ends.length; ends.push(0); }
+            ends[i] = it.b.e; it.lane = i;
+        });
+        group.forEach(it => it.lanes = ends.length);
+        out.push(...group); group = [];
+    };
+    items.forEach(it => {
+        if (group.length && it.b.s >= groupEnd) { flush(); groupEnd = -1; }
+        group.push(it); groupEnd = Math.max(groupEnd, it.b.e);
+    });
+    if (group.length) flush();
+    return out;
+}
+
+let currentCols = [];
+function renderTimeGrid(view, cols, colMin) {
+    currentCols = cols;
+    const rowPx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--row')) || 34;
+    const times = Array.from({ length: SLOTS }, (_, i) => `<div>${hm(DAY_START + i * STEP)}</div>`).join('');
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    const body = cols.map((col, ci) => {
+        const slots = Array.from({ length: SLOTS }, (_, i) => {
+            const s = DAY_START + i * STEP;
+            return `<div class="slot" data-col="${ci}" data-s="${s}" data-label="${hm(s)} – ${hm(s + STEP)}  ${col.room ? '空檔' : '＋ 新增'}"></div>`;
+        }).join('');
+        const blocks = lanes(col.items.map(it => ({ ...it }))).map(it => {
+            const b = it.b;
+            const top = (b.s - DAY_START) / STEP * rowPx + 2;
+            const h = (b.e - b.s) / STEP * rowPx - 4;
+            const w = 100 / it.lanes;
+            const cls = ['blk', it.mine ? '' : 'other', b.id === state.highlightId ? 'new' : '', b.e - b.s <= STEP ? 'short' : ''].join(' ');
+            const meta = col.room ? b.organizer : b.room;
+            return `<button type="button" class="${cls}" data-id="${b.id}" style="${roomStyle(b.room)};top:${top}px;height:${h}px;left:calc(${w * it.lane}% + 4px);width:calc(${w}% - 8px)">
+                <span class="t">${esc(b.title)}</span><span class="m">${esc(meta)}</span></button>`;
+        }).join('');
+        const nowLine = col.date === ymd(TODAY) && nowMin >= DAY_START && nowMin <= DAY_END
+            ? `<div class="now-line" style="top:${(nowMin - DAY_START) / STEP * rowPx}px"></div>` : '';
+        return `<div class="tg-col${col.weekend ? ' we' : ''}" style="grid-row:2">${slots}${blocks}${nowLine}</div>`;
+    }).join('');
+    view.innerHTML = `<div class="tg-wrap"><div class="tg-scroll"><div class="tg" style="--cols:${cols.length};--colmin:${colMin}px">
+        <div class="tg-corner">時間</div>
+        ${cols.map(c => c.head).join('')}
+        <div class="tg-times" style="grid-row:2">${times}</div>
+        ${body}
+    </div></div></div>`;
+    const hl = view.querySelector('.blk.new');
+    const scroller = view.querySelector('.tg-scroll');
+    if (hl) hl.scrollIntoView({ block: 'center', inline: 'center' });
+    else scroller.scrollTop = 0;
+}
+
+function renderWeek(view) {
+    const mon = mondayOf(state.cursor);
+    const sun = addDays(mon, 6);
+    $('#viewTitle').textContent = `${mon.getMonth() + 1}/${mon.getDate()} – ${sun.getMonth() + 1}/${sun.getDate()}`;
+    let total = 0;
+    const cols = Array.from({ length: 7 }, (_, i) => {
+        const d = addDays(mon, i);
+        const ds = ymd(d);
+        const items = onDate(ds).filter(isMine).map(b => ({ b, mine: true }));
+        total += items.length;
+        return {
+            date: ds, weekend: isWeekend(d), items, room: null,
+            head: `<div class="tg-head clickable${ds === ymd(TODAY) ? ' today' : ''}" data-date="${ds}" title="看這天的會議室">週${WD[d.getDay()]}<small>${d.getMonth() + 1}/${d.getDate()} · ${items.length} 場</small></div>`
+        };
+    });
+    $('#viewCount').textContent = `我的會議 ${total} 場`;
+    renderTimeGrid(view, cols, 120);
+}
+
+function renderDay(view) {
+    const d = state.cursor;
+    const ds = ymd(d);
+    $('#viewTitle').textContent = `${d.getMonth() + 1} 月 ${d.getDate()} 日（週${WD[d.getDay()]}）`;
+    const all = onDate(ds);
+    const mineCount = all.filter(isMine).length;
+    $('#viewCount').textContent = `我的 ${mineCount} 場 · 全部 ${all.length} 場`;
+    const cols = ROOMS.map(r => ({
+        date: ds, weekend: false, room: r.id,
+        items: all.filter(b => b.room === r.id).map(b => ({ b, mine: isMine(b) })),
+        head: `<div class="tg-head" style="${roomStyle(r.id)}"><span class="rdot"></span>${esc(r.id)}</div>`
+    }));
+    renderTimeGrid(view, cols, 140);
+}
+
+// ---------- 檢視上的點擊 ----------
+$('#view').addEventListener('click', e => {
+    const item = e.target.closest('.ev, .blk');
+    if (item) { e.stopPropagation(); openDetail(item.dataset.id); return; }
+    const head = e.target.closest('.tg-head.clickable');
+    if (head) { setScale('day', head.dataset.date); return; }
+    const cell = e.target.closest('.day-cell');
+    if (cell) { setScale('day', cell.dataset.date); return; }
+    const slot = e.target.closest('.slot');
+    if (slot) {
+        const col = currentCols[+slot.dataset.col];
+        const s = +slot.dataset.s;
+        openBooking({ date: col.date, s, e: s + STEP, room: col.room });
+    }
+});
+$('#view').addEventListener('keydown', e => {
+    const cell = e.target.closest('.day-cell');
+    if (cell && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setScale('day', cell.dataset.date); }
+});
+
+// ---------- 詳情 ----------
+function openDetail(id) {
+    const b = bookings.find(x => x.id === id);
+    if (!b) return;
+    const d = parse(b.date);
+    $('#detailTitle').textContent = b.title;
+    const row = (k, v) => `<div class="detail-row"><dt>${k}</dt><dd>${v}</dd></div>`;
+    $('#detailBody').innerHTML =
+        row('時間', `${d.getMonth() + 1}/${d.getDate()}（週${WD[d.getDay()]}） ${hm(b.s)} – ${hm(b.e)}`) +
+        row('會議室', `<span class="chip" style="background:${ROOM_BY_ID[b.room].soft};color:${ROOM_BY_ID[b.room].text}">${esc(b.room)}</span>`) +
+        row('主辦人', esc(b.organizer)) +
+        row('與會者', b.attendees.map(esc).join('、') || '—');
+    const role = b.organizer === state.me ? '你是主辦人' : b.attendees.includes(state.me) ? '你是與會者' : null;
+    $('#detailRole').innerHTML = role ? `<span class="role">${role}</span>` : `<span class="role no">你不在這場會議</span>`;
+    openModal($('#detailModal'), '[data-close]');
+}
+
+// ---------- 新增預約（正式版改接現有表單與 submitBooking） ----------
+let attendees = [];
+const timeOpts = (from, to, sel) => {
+    let h = '';
+    for (let t = from; t <= to; t += STEP) h += `<option value="${t}"${t === sel ? ' selected' : ''}>${hm(t)}</option>`;
+    return h;
+};
+$('#fOrganizer').innerHTML = PEOPLE.map(p => `<option>${esc(p)}</option>`).join('');
+$('#peopleList').innerHTML = PEOPLE.map(p => `<option value="${esc(p)}">`).join('');
+
+function openBooking({ date, s, e, room }) {
+    $('#fDate').value = date;
+    $('#fStart').innerHTML = timeOpts(DAY_START, DAY_END - STEP, s);
+    $('#fEnd').innerHTML = timeOpts(s + STEP, DAY_END, e);
+    $('#fTitle').value = '';
+    $('#fOrganizer').value = state.me;
+    attendees = [];
+    renderChips();
+    // 週檢視點進來沒有指定會議室：挑第一間空的
+    const chosen = room || (ROOMS.find(r => isFree(date, r.id, s, e)) || {}).id || '';
+    renderRooms(chosen);
+    validate();
+    openModal($('#bookingModal'), '#fTitle');
+}
+function renderRooms(selected) {
+    const date = $('#fDate').value, s = +$('#fStart').value, e = +$('#fEnd').value;
+    $('#fRoom').innerHTML = `<option value="">選擇會議室</option>` + ROOMS.map(r => {
+        const free = isFree(date, r.id, s, e);
+        return `<option value="${esc(r.id)}"${r.id === selected ? ' selected' : ''}>${esc(r.id)}${free ? '' : '（這段已被預約）'}</option>`;
+    }).join('');
+}
+function validate() {
+    const date = $('#fDate').value, s = +$('#fStart').value, e = +$('#fEnd').value, room = $('#fRoom').value;
+    const hint = $('#freeHint');
+    let ok = false;
+    if (!date || !room) { hint.textContent = '請選日期與會議室'; hint.className = 'hint'; }
+    else if (!isFree(date, room, s, e)) { hint.textContent = `${room} 這段時間已被預約`; hint.className = 'hint bad'; }
+    else { hint.textContent = `${room} 空著 · ${e - s} 分鐘`; hint.className = 'hint ok'; ok = true; }
+    $('#confirmBtn').disabled = !(ok && $('#fTitle').value.trim());
+    return ok;
+}
+$('#fStart').addEventListener('change', () => {
+    const s = +$('#fStart').value;
+    const e = Math.max(+$('#fEnd').value, s + STEP);
+    $('#fEnd').innerHTML = timeOpts(s + STEP, DAY_END, Math.min(e, DAY_END));
+    renderRooms($('#fRoom').value); validate();
+});
+$('#fEnd').addEventListener('change', () => { renderRooms($('#fRoom').value); validate(); });
+$('#fDate').addEventListener('change', () => { renderRooms($('#fRoom').value); validate(); });
+$('#fRoom').addEventListener('change', validate);
+$('#fTitle').addEventListener('input', validate);
+
+function renderChips() {
+    const box = $('#attChips');
+    box.querySelectorAll('.chip').forEach(c => c.remove());
+    const input = $('#fAttInput');
+    attendees.forEach((n, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.innerHTML = `${esc(n)}<button type="button" aria-label="移除 ${esc(n)}" data-i="${i}">×</button>`;
+        box.insertBefore(chip, input);
+    });
+}
+function addAttendee(raw) {
+    const q = raw.trim().toLowerCase();
+    if (!q) return;
+    const name = PEOPLE.find(p => p.toLowerCase() === q) || PEOPLE.find(p => (ALIASES[p] || []).some(a => a.toLowerCase() === q));
+    if (name && !attendees.includes(name) && name !== $('#fOrganizer').value) { attendees.push(name); renderChips(); }
+    $('#fAttInput').value = '';
+}
+$('#fAttInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addAttendee(e.target.value); }
+    if (e.key === 'Backspace' && !e.target.value && attendees.length) { attendees.pop(); renderChips(); }
+});
+$('#fAttInput').addEventListener('change', e => { if (PEOPLE.includes(e.target.value)) addAttendee(e.target.value); });
+$('#attChips').addEventListener('click', e => {
+    const btn = e.target.closest('button[data-i]');
+    if (btn) { attendees.splice(+btn.dataset.i, 1); renderChips(); }
+    else $('#fAttInput').focus();
+});
+
+let hlTimer = null;
+$('#bookingForm').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!validate() || !$('#fTitle').value.trim()) return;
+    const b = {
+        id: 'n' + Date.now(), date: $('#fDate').value, room: $('#fRoom').value,
+        s: +$('#fStart').value, e: +$('#fEnd').value, title: $('#fTitle').value.trim(),
+        organizer: $('#fOrganizer').value, attendees: [...attendees]
+    };
+    bookings.push(b);
+    closeTop(false);
+    state.cursor = parse(b.date);
+    state.highlightId = b.id;
+    render();
+    toast(`已新增：${b.title}（${b.room}，${hm(b.s)}–${hm(b.e)}）`);
+    clearTimeout(hlTimer);
+    hlTimer = setTimeout(() => {
+        state.highlightId = null;
+        document.querySelector('#view')?.classList.remove('spotlight');
+        document.querySelectorAll('.new').forEach(el => el.classList.remove('new'));
+    }, 2600);
+});
+
+let toastTimer = null;
+function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+}
+
+// ---------- 啟動 ----------
+renderMe();
+render();
+if (!state.me) openPicker();
+// 手機斷點的格高不同，視窗尺寸變了要重排時間網格
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { if (state.me && state.scale !== 'month') render(); }, 200);
+});
+</script>
+</body>
+</html>
