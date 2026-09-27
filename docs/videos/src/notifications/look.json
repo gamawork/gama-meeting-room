@@ -1,0 +1,20 @@
+{
+  "name": "gama-notify",
+  "from": "look.py from-shot shots-v2/03,09c,08 (accent #244474, accent2 #f4c444, line, mute measured); ground/deep taken from the product page's own navy backdrop in the same shots; ink darkened for the white cards",
+  "mood": "the product's own navy page at night, white app cards, one gold for the bell that rings",
+  "color": {
+    "ground": "#1c3050",
+    "deep": "#142540",
+    "card": "#ffffff",
+    "line": "#e3e7ee",
+    "mute": "#848c9c",
+    "ink": "#1f2937",
+    "accent": "#244474",
+    "accent2": "#f4c444"
+  },
+  "type": {
+    "display": { "face": "Inter", "weight": 700, "tracking": -0.02 },
+    "text": { "face": "Inter", "weight": 500, "tracking": -0.01 },
+    "mono": { "face": "Geist Mono", "weight": 400, "tracking": 0 }
+  }
+}

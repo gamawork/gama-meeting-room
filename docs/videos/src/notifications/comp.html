@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gama Meeting Room · film C · the bell rings</title>
+<style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#1c3050}
+canvas{position:absolute;left:0;top:0;width:1920px;height:1080px}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<script src="look.js"></script>
+<script src="motion.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════════════════════════════════════════
+// Film C «the bell rings» — desktop notifications in Gama Meeting Room, 20 s.
+// N1: Maya (left) adds Iris to "Urgent Alignment"; the booking folds into a capsule, flies over the
+//     midline and rings Iris's bell; "New meeting" grows out of the bell; Iris clicks it → the detail
+//     modal → it folds into its cell in her week view.
+// N2: the same cell. Maya moves it (the block slides 16:00 → 14:30, "changed" drops from the bell);
+//     the now-line ticks to 10 min before (the block itself sends "Starting soon"); Maya deletes it
+//     (the block snaps into "Meeting cancelled"). The bell carries the film into the end card.
+// Notification copy: index.html:2918–2927 (en strings) assembled as mycalBuildNotification() does
+// (index.html:8054–8105; date format 8044–8050; tRoom → '301' index.html:2683).
+// All people, subjects and times are fictional (plan.md). Pure f(t).
+// ══════════════════════════════════════════════════════════════════════════════════════════════
+const W = 1920, H = 1080, DUR = 20;
+const {clamp, lerp, sstep, ease, seg} = OM;
+const cubicIn = u => { u = clamp(u, 0, 1); return u * u * u; };
+const cv = document.getElementById('cv'), DPR = window.devicePixelRatio || 1;
+cv.width = W * DPR; cv.height = H * DPR;
+const g = cv.getContext('2d');
+
+// ────────────────────────────── timeline ──────────────────────────────
+const T = {
+  IN: -0.12, I_BELL: 0.55, M_ATT: 0.95, TYPE0: 1.02, ENTER: 1.40, CONFIRM: 1.78,
+  FOLD0: 1.86, FOLD1: 2.22, HIT: 2.80, N1_0: 2.95,
+  I_CLICK: 4.75, MOD0: 4.80, CELL0: 6.10, LAND: 6.55,
+  GROW0: 6.70, GROW1: 7.50, MP0: 7.20, M_PENCIL: 8.05, ROLL0: 8.12, ROLL1: 8.42,
+  SLIDE0: 8.55, RING2: 9.55, N2_0: 9.62, N2_OUT: 11.30,
+  TICKS: [12.0, 12.55, 13.1], PULSE: 13.40, N3_0: 13.50, N3_OUT: 14.95,
+  M_TRASH: 15.45, N4_0: 15.50, N4_OUT: 16.80,
+  END0: 17.05, BLAND: 17.60, TITLE: [17.55, 17.67, 17.79], TAG: 18.05,
+};
+const OUTD = 0.26;                         // a card folding back into the bell
+window.__meta = { dur: DUR, fps: 30, w: W, h: H,
+  inFrame: { bell: [0.4, 17.0], notif: [3.3, 4.7, 'whole'], modal: [5.2, 6.05, 'whole'], block: [6.6, 15.45, 'whole'],
+             chg: [10.0, 11.25, 'whole'], rem: [13.9, 14.9, 'whole'], del: [15.8, 16.75, 'whole'], mpane: [7.7, 15.4, 'whole'],
+             title: [18.0, 20, 'whole'] } };
+
+// ────────────────────────────── palette (product tokens) ──────────────────────────────
+const C = { navy: '#2d4874', navy2: '#1a2e4a', band: '#223d66', ink: '#1f2937', ink2: '#374151', mute: '#6b7280', ph: '#9ca3af',
+  border: '#cfd8e3', line: '#e5eaf1', yel: '#f4c444', green: '#059669', red: '#dc2626' };
+const ROOM = {
+  '302': { bar: '#3b82f6', bg: '#dbeafe', fg: '#1e3a8a' }, '301': { bar: '#e11d48', bg: '#ffe4e6', fg: '#9f1239' },
+  'Pantry': { bar: '#10b981', bg: '#d1fae5', fg: '#065f46' }, 'Studio': { bar: '#8b5cf6', bg: '#ede9fe', fg: '#5b21b6' },
+  'Lounge': { bar: '#f97316', bg: '#ffedd5', fg: '#9a3412' }, 'Reception Area': { bar: '#06b6d4', bg: '#cffafe', fg: '#155e75' } };
+const LEGEND = ['302', '301', 'Pantry', 'Studio', 'Lounge', 'Reception Area'];
+
+// ────────────────────────────── the notifications — strings exactly as the product assembles them ──────────────────────────────
+// insert/delete body '{title} · {date} {start}–{end} · {room}' (en dash); change body '{before} → {after}', each side
+// `${date} ${start}-${end} ${room}` (hyphen, index.html:8086–8087); remind body '{title} starts at {start} · {room}'.
+const MEET = { title: 'Urgent Alignment', date: '9/24 (Thu)', room: '301' };
+const NOTE = {
+  new: { title: 'New meeting', body: [`${MEET.title} · ${MEET.date} 16:00–17:00 · ${MEET.room}`] },
+  chg: { title: `${MEET.title} changed`, body: [`${MEET.date} 16:00-17:00 ${MEET.room}`, `→ ${MEET.date} 14:30-15:30 ${MEET.room}`],
+         full: `${MEET.date} 16:00-17:00 ${MEET.room} → ${MEET.date} 14:30-15:30 ${MEET.room}` },
+  rem: { title: 'Starting soon', body: [`${MEET.title} starts at 14:30 · ${MEET.room}`] },
+  del: { title: 'Meeting cancelled', body: [`${MEET.title} · ${MEET.date} 14:30–15:30 · ${MEET.room}`] },
+};
+
+// ────────────────────────────── geometry ──────────────────────────────
+// Iris's app, drawn in its own units (1000 × 760) inside a world rect.
+const APPW = 1000, APPH = 760;
+const APP1 = { x: 1010, y: 212, w: 840, h: 840 * APPH / APPW };
+const APP2 = { x: 575, y: 46, w: 1290, h: 1290 * APPH / APPW };
+const BELL = { cx: 842, cy: 96, r: 17 }, CAPS = { x: 866, y: 80, w: 118, h: 32 };
+const GX = 20, TIMEW = 56, COLW = (960 - TIMEW) / 7, GRID_TOP = 212, HEAD_H = 50, ROW0 = 262, ROWH = 40;
+const colX = d => GX + TIMEW + d * COLW;
+const rowY = min => ROW0 + (min - 720) / 30 * ROWH;
+const DAYS = [['Mon', '9/21'], ['Tue', '9/22'], ['Wed', '9/23'], ['Thu', '9/24'], ['Fri', '9/25'], ['Sat', '9/26'], ['Sun', '9/27']];
+const TODAY = 3;
+const OTHER = [ { d: 2, s: 780, len: 30, title: 'Standup', room: 'Lounge' }, { d: 2, s: 900, len: 30, title: 'Client Call', room: 'Reception Area' },
+  { d: 2, s: 960, len: 30, title: 'Retro', room: 'Studio' }, { d: 3, s: 750, len: 30, title: '1:1 with Leo', room: '302' },
+  { d: 4, s: 810, len: 60, title: 'Budget Check', room: 'Pantry' } ];
+const DAYCOUNT = [0, 0, 5, 2, 2, 0, 0];         // Wed 10:00 ×2 and Thu 09:00 sit above the visible rows
+const blockA = (d, s, len) => ({ x: colX(d) + 4, y: rowY(s) + 3, w: COLW - 8, h: len / 30 * ROWH - 6 });
+
+// Maya's side
+const FORM = { x: 80, y: 272, w: 800, h: 520 };               // New Booking, form units = world units
+const MCAPS1 = { x: 80, y: 206, w: 150, h: 40 }, MCAPS2 = { x: 92, y: 262, w: 150, h: 40 };
+const PANE = { x: 92, y: 318, w: 430, h: 430 * 380 / 460 };      // Maya's detail modal, units 460 × 380
+const PS = PANE.w / 460;
+// notification cards (world)
+const NW = 500, NH = 112, NH2 = 140;
+const NC1 = { x: 1352, y: 334, w: NW, h: NH };
+const NC2 = { x: 1362, y: 212, w: NW, h: NH };
+const NC2C = { x: 1362, y: 212, w: NW, h: NH2 };
+const NC3 = { x: 1352, y: 626, w: NW, h: NH };
+const MOD1 = { x: 1198, y: 330, w: 460, h: 380 };
+const CAPSULE = { x: 80 + 400 - 150, y: 272 + 260 - 26, w: 300, h: 52 };
+
+// ────────────────────────────── helpers ──────────────────────────────
+const mul = (P, Q) => [P[0] * Q[0] + P[2] * Q[1], P[1] * Q[0] + P[3] * Q[1], P[0] * Q[2] + P[2] * Q[3], P[1] * Q[2] + P[3] * Q[3],
+  P[0] * Q[4] + P[2] * Q[5] + P[4], P[1] * Q[4] + P[3] * Q[5] + P[5]];
+const setM = M => g.setTransform(M[0] * DPR, M[1] * DPR, M[2] * DPR, M[3] * DPR, M[4] * DPR, M[5] * DPR);
+const SCREEN = [1, 0, 0, 1, 0, 0];
+const font = (px, w = 500, role = 'text') => LOOK.font(role, px, w);
+function rr(x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, Math.max(0, w), Math.max(0, h), Math.max(0, Math.min(r, w / 2, h / 2))); }
+function text(s, x, y, px, w, col, align = 'left', role = 'text') { g.font = font(px, w, role); g.fillStyle = col; g.textAlign = align; g.textBaseline = 'alphabetic'; g.fillText(s, x, y); }
+function tw(s, px, w = 500, role = 'text') { g.font = font(px, w, role); return g.measureText(s).width; }
+function fit(s, maxW, px, w) { if (tw(s, px, w) <= maxW) return s; let n = s.length; while (n > 1 && tw(s.slice(0, n) + '...', px, w) > maxW) n--; return s.slice(0, n) + '...'; }
+// a spring that is exactly 1 after it has settled, so the holds are dead still
+const spr = (tau, z = 0.7, w = 16, tEnd = 0.9) => tau <= 0 ? 0 : tau >= tEnd ? 1 : OM.spring(tau, z, w);
+const ringOut = (tau, decay, omega, tEnd = 0.9) => tau <= 0 || tau >= tEnd ? 0 : OM.ring(tau, decay, omega) * (1 - sstep(tEnd - 0.15, tEnd, tau));
+const lerpRect = (A, B, k) => ({ x: lerp(A.x, B.x, k), y: lerp(A.y, B.y, k), w: lerp(A.w, B.w, k), h: lerp(A.h, B.h, k) });
+const inW = (R, p) => [R.x + p[0] * R.w / APPW, R.y + p[1] * R.w / APPW];                // app units → world
+const rectW = (R, b) => { const s = R.w / APPW; return { x: R.x + b.x * s, y: R.y + b.y * s, w: b.w * s, h: b.h * s }; };
+function mix(a, b, k) { const pa = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16));
+  return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], k))).join(',')})`; }
+const PARTS = { cursor: new Path2D('M4 3 L30 22 L18 24 L26 40 L20 43 L12 27 L4 36 Z') };
+
+// ────────────────────────────── derived state (pure) ──────────────────────────────
+function appRect(t) { if (t < T.GROW0) return APP1; return lerpRect(APP1, APP2, ease.quintInOut(seg(t, T.GROW0, T.GROW1))); }
+function appAlpha(t) { return OM.popIn(t, T.IN, { rise: 0 }).op * (1 - sstep(T.END0, T.END0 + 0.55, t)); }
+function blockStart(t) { return t < T.SLIDE0 ? 960 : lerp(960, 870, spr(t - T.SLIDE0, 0.6, 8.5, 1.3)); }
+function nowMin(t) { let m = 830; for (const tk of T.TICKS) m += 10 * spr(t - tk, 0.75, 34, 0.35); return m; }
+const blockLive = t => t >= T.LAND && t < T.N4_0;
+function blockWorld(t) { return rectW(appRect(t), blockA(TODAY, blockStart(t), 60)); }
+function bellWorld(t) {                     // the bell: in Iris's header, then it carries the film into the end card
+  const R = appRect(t), c = inW(R, [BELL.cx, BELL.cy]), r = BELL.r * R.w / APPW;
+  if (t < T.END0) return { cx: c[0], cy: c[1], r };
+  const k = spr(t - T.END0, 0.78, 9, 1.1);
+  return { cx: lerp(c[0], LOCK.bx, k), cy: lerp(c[1], LOCK.by, k) - Math.sin(Math.PI * clamp(k, 0, 1)) * 60, r: lerp(r, LOCK.br, k) };
+}
+const bellRect = b => ({ x: b.cx - b.r, y: b.cy - b.r, w: 2 * b.r, h: 2 * b.r });
+const bellOn = t => t >= T.I_BELL;
+function bellRot(t) { return 0.42 * (ringOut(t - T.HIT, 5.5, 30, 0.85) + 0.8 * ringOut(t - T.RING2, 6, 30, 0.8) + 0.5 * ringOut(t - T.BLAND, 6, 30, 0.7)); }
+function bellGulp(t) { let s = 0; for (const t0 of [T.N2_OUT, T.N3_OUT, T.N4_OUT]) s += 0.18 * ringOut(t - t0 - OUTD, 9, 26, 0.6); return 1 + s + 0.1 * ringOut(t - T.I_BELL, 10, 28, 0.6); }
+let LOCK = { bx: 540, by: 520, br: 44, tx: 612, ty: 548, sub: 612, suby: 610 };   // measured in __ready
+
+// The one moving card: what it is (kind), its rect and how far it has become itself (k: content alpha)
+function card(t) {
+  const out = (A, t0) => { const u = cubicIn(seg(t, t0, t0 + OUTD)); const B = bellRect(bellWorld(t)); return { rect: lerpRect(A, B, u), k: 1 - sstep(0, 0.35, u), fill: u }; };
+  if (t >= T.N1_0 && t < T.MOD0) { const k = spr(t - T.N1_0, 0.72, 15, 0.7); return { kind: 'new', rect: lerpRect(bellRect(bellWorld(t)), NC1, k), k: sstep(0.45, 0.95, k) }; }
+  if (t >= T.MOD0 && t < T.CELL0) { const k = spr(t - T.MOD0, 0.74, 14, 0.75); return { kind: 'modal', from: 'new', rect: lerpRect(NC1, MOD1, k), k, mk: k }; }
+  if (t >= T.CELL0 && t < T.LAND) { const u = ease.quintInOut(seg(t, T.CELL0, T.LAND)); return { kind: 'fold', rect: lerpRect(MOD1, blockWorld(t), u), k: u }; }
+  if (t >= T.N2_0 && t < T.N2_OUT + OUTD) { if (t >= T.N2_OUT) return { kind: 'chg', ...out(NC2C, T.N2_OUT) };
+    const k = spr(t - T.N2_0, 0.72, 15, 0.7); return { kind: 'chg', rect: lerpRect(bellRect(bellWorld(t)), NC2C, k), k: sstep(0.45, 0.95, k) }; }
+  if (t >= T.N3_0 && t < T.N3_OUT + OUTD) { if (t >= T.N3_OUT) return { kind: 'rem', ...out(NC3, T.N3_OUT) };
+    const k = spr(t - T.N3_0, 0.7, 14, 0.75); return { kind: 'rem', rect: lerpRect(blockWorld(t), NC3, k), k: sstep(0.4, 0.95, k), grow: 1 - k }; }
+  if (t >= T.N4_0 && t < T.N4_OUT + OUTD) { if (t >= T.N4_OUT) return { kind: 'del', ...out(NC2, T.N4_OUT) };
+    const u = ease.expoOut(seg(t, T.N4_0, T.N4_0 + 0.24)); return { kind: 'del', rect: lerpRect(blockWorld(t), NC2, u), k: sstep(0.5, 0.95, u), grow: 1 - u }; }
+  return null;
+}
+function formRect(t) { if (t < T.FOLD0) return FORM; return lerpRect(FORM, CAPSULE, ease.quintInOut(seg(t, T.FOLD0, T.FOLD1))); }
+function capsule(t) {                         // Maya's booking, folded, flies over the midline into the bell
+  if (t < T.FOLD1 || t >= T.HIT) return null;
+  const b = bellWorld(t), from = { x: CAPSULE.x + CAPSULE.w / 2, y: CAPSULE.y + CAPSULE.h / 2 };
+  const p = OM.hop(t, T.FOLD1, T.HIT, from, { x: b.cx, y: b.cy }, { height: 150, curve: cubicIn });
+  const sh = sstep(0.55, 1, p.k), w = lerp(CAPSULE.w, 2 * b.r, sh), h = lerp(CAPSULE.h, 2 * b.r, sh);
+  return { x: p.x - w / 2, y: p.y - h / 2, w, h, k: p.k, sh };
+}
+function mayaCaps(t) { if (t < T.GROW0) return MCAPS1; return lerpRect(MCAPS1, MCAPS2, ease.quintInOut(seg(t, T.GROW0, T.GROW1))); }
+function paneRect(t) {                         // Maya's detail modal grows out of her name, and folds back into it on delete
+  if (t < T.MP0) return null;
+  const c = mayaCaps(t);
+  if (t < T.M_TRASH + 0.05) return { ...lerpRect(c, PANE, spr(t - T.MP0, 0.74, 13, 0.8)), k: spr(t - T.MP0, 0.74, 13, 0.8) };
+  const u = ease.expoOut(seg(t, T.M_TRASH + 0.05, T.M_TRASH + 0.33)); if (u >= 1) return null;
+  return { ...lerpRect(PANE, c, u), k: 1 - u };
+}
+
+// ────────────────────────────── camera ──────────────────────────────
+const KEYS = [
+  { t: 0, x: 960, y: 540, zoom: 1 },
+  { t: 2.15, x: 960, y: 540, zoom: 1 },
+  { t: 2.85, x: 985, y: 530, zoom: 1.02, curve: ease.sineInOut },
+  { t: 4.55, x: 985, y: 530, zoom: 1.02 },
+  { t: 5.15, x: 992, y: 532, zoom: 1.03, curve: ease.sineInOut },
+  { t: 6.15, x: 992, y: 532, zoom: 1.03 },
+  { t: 7.45, x: 960, y: 540, zoom: 1, curve: ease.cubicInOut },
+  { t: 8.5, x: 960, y: 540, zoom: 1 },
+  { t: 9.5, x: 985, y: 556, zoom: 1.035, curve: ease.sineInOut },
+  { t: 13.35, x: 985, y: 556, zoom: 1.035 },
+  { t: 13.9, x: 992, y: 572, zoom: 1.04, curve: ease.sineInOut },
+  { t: 15.4, x: 992, y: 572, zoom: 1.04 },
+  { t: 15.75, x: 985, y: 540, zoom: 1.035, curve: ease.expoInOut },
+  { t: 16.9, x: 985, y: 540, zoom: 1.035 },
+  { t: 17.65, x: 960, y: 540, zoom: 1, curve: ease.cubicInOut },
+];
+const HITS = [[T.HIT, 4.5, 10], [T.LAND, 3, 11], [T.N4_0, 3, 12], [T.BLAND, 2, 11]];
+const WIN = [[0.1, 3.4], [4.45, 5.35], [6.2, 9.95], [15.35, 15.85], [16.75, 18.1]];
+const handEnv = t => WIN.reduce((a, [a0, b0]) => a + sstep(a0, a0 + 0.25, t) * (1 - sstep(b0 - 0.25, b0, t)), 0);
+function camAt(t) {
+  const c = OM.camera(t, KEYS), e = handEnv(t) * 3.2;
+  let x = c.x + e * (Math.sin(1.7 * t) + 0.6 * Math.sin(2.9 * t + 1)) / c.zoom, y = c.y + e * (Math.sin(1.3 * t + 2) + 0.5 * Math.sin(3.3 * t)) / c.zoom, rot = c.rot;
+  for (const [th, amp, decay] of HITS) { if (t - th > 0.8) continue; const s = OM.shake(t, th, { amp, decay, seed: Math.round(th * 100) }); x += s.x / c.zoom; y += s.y / c.zoom; rot += s.rot; }
+  return { x, y, zoom: c.zoom, rot };
+}
+
+// ────────────────────────────── the hands (world knots, projected) ──────────────────────────────
+let IRIS_HAND = [], MAYA_HAND = [];
+const IRIS_CLICKS = [T.I_BELL, T.I_CLICK], MAYA_CLICKS = [T.M_ATT, T.CONFIRM, T.M_PENCIL, T.M_TRASH];
+function irisHand(t) { const a = sstep(0.15, 0.35, t) * (1 - sstep(6.35, 6.65, t)); if (a < 0.01) return null; return { ...OM.cursor(t, IRIS_HAND, IRIS_CLICKS), a }; }
+function mayaHand(t) { const a = sstep(0.45, 0.65, t) * (1 - sstep(1.95, 2.2, t)) + sstep(7.45, 7.7, t) * (1 - sstep(15.75, 16.05, t));
+  if (a < 0.01) return null; return { ...OM.cursor(t, MAYA_HAND, MAYA_CLICKS), a }; }
+
+// ────────────────────────────── drawing ──────────────────────────────
+let NOISE = null, CAM = null;
+function ground() {
+  setM(SCREEN);
+  const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, '#2a4570'); gr.addColorStop(1, '#152640');
+  g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  const rg = g.createRadialGradient(W * 0.5, H * 0.42, 220, W * 0.5, H * 0.5, 1250); rg.addColorStop(0, 'rgba(255,255,255,0.05)'); rg.addColorStop(1, 'rgba(0,0,0,0.22)');
+  g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = NOISE; g.fillRect(0, 0, cv.width, cv.height);
+}
+function lattice(cam) {
+  const L = OM.lattice(cam, { depth: 1.2, spacing: 48, px: 1.2 }); setM(L.matrix); g.fillStyle = 'rgba(255,255,255,0.07)';
+  g.beginPath(); for (let x = L.x0; x <= L.x1; x += L.spacing) for (let y = L.y0; y <= L.y1; y += L.spacing) { g.moveTo(x + L.r, y); g.arc(x, y, L.r, 0, Math.PI * 2); } g.fill();
+}
+function nameCapsule(x, y, h, letter, name, change = true) {     // the product's "I  Iris  Change" pill
+  const s = h / 32; g.save(); g.translate(x, y); g.scale(s, s);
+  const w = 12 + 22 + 8 + tw(name, 15, 500) + (change ? 8 + tw('Change', 11.5, 500) : 0) + 12;
+  rr(0, 0, w, 32, 16); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill(); g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,0.28)'; g.stroke();
+  g.beginPath(); g.arc(23, 16, 11, 0, Math.PI * 2); g.fillStyle = C.yel; g.fill();
+  text(letter, 23, 20.5, 12, 700, '#3b2f0a', 'center');
+  text(name, 42, 21.5, 15, 500, '#ffffff');
+  if (change) text('Change', 42 + tw(name, 15, 500) + 8, 21, 11.5, 500, 'rgba(255,255,255,0.8)');
+  g.restore(); return w * s;
+}
+function bellGlyph(cx, cy, r, col, rot = 0, slash = false) {
+  const u = r / 17; g.save(); g.translate(cx, cy); g.scale(u, u);
+  g.translate(0, -8); g.rotate(rot); g.translate(0, 8);
+  g.beginPath(); g.moveTo(-6.5, 3.5); g.lineTo(-6.5, -1.5); g.bezierCurveTo(-6.5, -6, -3.6, -8.2, 0, -8.2); g.bezierCurveTo(3.6, -8.2, 6.5, -6, 6.5, -1.5);
+  g.lineTo(6.5, 3.5); g.lineTo(8.2, 5.4); g.lineTo(-8.2, 5.4); g.closePath();
+  g.lineWidth = 1.7; g.lineJoin = 'round'; g.strokeStyle = col; g.stroke();
+  g.beginPath(); g.moveTo(-2, 7.6); g.quadraticCurveTo(0, 10, 2, 7.6); g.stroke();
+  g.restore();
+  if (slash) { g.save(); g.translate(cx, cy); g.scale(u, u); g.beginPath(); g.moveTo(-8.5, -8.5); g.lineTo(8.5, 8.5); g.lineWidth = 1.7; g.strokeStyle = col; g.stroke(); g.restore(); }
+}
+function drawBell(t, a) {                   // world space, above the app
+  const b = bellWorld(t); if (a < 0.01) return;
+  const on = bellOn(t), kOn = spr(t - T.I_BELL, 0.55, 26, 0.5), s = bellGulp(t);
+  g.save(); g.globalAlpha = a;
+  const r = b.r * s * (on ? 1 : 1);
+  g.beginPath(); g.arc(b.cx, b.cy, r, 0, Math.PI * 2);
+  if (on) { g.fillStyle = C.yel; g.globalAlpha = a * clamp(kOn * 1.4, 0, 1); g.fill(); g.globalAlpha = a; }
+  if (!on || kOn < 0.7) { g.beginPath(); g.arc(b.cx, b.cy, r, 0, Math.PI * 2); g.lineWidth = 1.2 * b.r / 17; g.strokeStyle = 'rgba(255,255,255,0.3)'; g.globalAlpha = a * (on ? 1 - kOn / 0.7 : 1); g.stroke(); g.globalAlpha = a; }
+  bellGlyph(b.cx, b.cy, r, on ? '#2a2206' : 'rgba(255,255,255,0.55)', bellRot(t), !on);
+  g.restore();
+}
+function chip(b, x, y, w, h, a = 1, sq = { sx: 1, sy: 1 }) {       // a meeting in the week grid (app units)
+  const R = ROOM[b.room], a0 = g.globalAlpha; g.globalAlpha = a0 * a;
+  const cx = x + w / 2, cy = y + h / 2; w *= sq.sx; h *= sq.sy; x = cx - w / 2; y = cy - h / 2;
+  rr(x, y, w, h, 4); g.fillStyle = R.bg; g.fill(); rr(x, y, 3, h, 1.5); g.fillStyle = R.bar; g.fill();
+  const rw = tw(b.room, 9.5, 600) + 10;
+  if (h > 50) { text(fit(b.title, w - 16, 12.5, 600), x + 9, y + 17, 12.5, 600, R.fg);
+    rr(x + 9, y + 24, rw, 15, 7.5); g.fillStyle = 'rgba(255,255,255,0.75)'; g.fill(); text(b.room, x + 9 + rw / 2, y + 35, 9.5, 600, R.fg, 'center'); }
+  else { const tt = fit(b.title, w - 16 - rw - 6, 12.5, 600); text(tt, x + 9, y + h / 2 + 4.5, 12.5, 600, R.fg);
+    const rx = x + 9 + tw(tt, 12.5, 600) + 6; rr(rx, y + h / 2 - 7.5, rw, 15, 7.5); g.fillStyle = 'rgba(255,255,255,0.75)'; g.fill(); text(b.room, rx + rw / 2, y + h / 2 + 3.5, 9.5, 600, R.fg, 'center'); }
+  g.globalAlpha = a0;
+}
+function drawApp(t, V) {
+  const R = appRect(t), s = R.w / APPW, a = appAlpha(t); if (a < 0.01) return;
+  const pop = OM.popIn(t, T.IN, { rise: 70, s0: 0.86, ds: 0.14, zeta: 0.72, omega: 12 });
+  const cx = R.x + R.w / 2, cy = R.y + R.h / 2;
+  const M = mul(V, mul([pop.s, 0, 0, pop.s, cx * (1 - pop.s), cy * (1 - pop.s) + pop.dy], [s, 0, 0, s, R.x, R.y]));
+  setM(M); g.globalAlpha = a;
+  g.save(); g.shadowColor = 'rgba(6,14,30,0.5)'; g.shadowBlur = 50 * s * DPR; g.shadowOffsetY = 16 * s * DPR;
+  rr(0, 0, APPW, APPH, 18); g.fillStyle = '#ffffff'; g.fill(); g.restore();
+  // title band + tab strip
+  const hg = g.createLinearGradient(0, 0, APPW, 122); hg.addColorStop(0, '#2d4874'); hg.addColorStop(1, '#1a2e4a');
+  g.beginPath(); g.roundRect(0, 0, APPW, 122, [18, 18, 0, 0]); g.fillStyle = hg; g.fill();
+  g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(0, 70, APPW, 52);
+  text('Gama Meeting Room Booking System', APPW / 2, 46, 27, 600, '#ffffff', 'center');
+  rr(20, 80, 232, 34, 8); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill();
+  text('Weekly Table', 32, 102, 13.5, 500, 'rgba(255,255,255,0.78)');
+  rr(128, 83, 120, 28, 6); g.fillStyle = '#ffffff'; g.fill(); text('My Calendar', 188, 102, 13.5, 500, C.navy2, 'center');
+  nameCapsule(CAPS.x, CAPS.y, CAPS.h, 'I', 'Iris');
+  // toolbar
+  const mine = blockLive(t) ? 10 : 9;
+  rr(20, 138, 176, 38, 19); g.fillStyle = C.navy2; g.fill();
+  g.letterSpacing = '1.2px'; text('WEEK', 36, 162, 10, 700, C.yel); g.letterSpacing = '0px';
+  text('9/21 – 9/27', 76, 163, 16, 600, '#ffffff'); text('▾', 176, 162, 11, 600, 'rgba(255,255,255,0.8)', 'center');
+  const flash = t >= T.LAND ? 1 - sstep(T.LAND + 0.1, T.LAND + 1.0, t) : 0;
+  text(`Mine ${mine} · All ${mine + 4}`, 208, 162, 13.5, 500, flash > 0.02 ? mix('#6b7280', '#b8860b', flash) : C.mute);
+  rr(662, 140, 116, 34, 8); g.lineWidth = 1; g.strokeStyle = C.line; g.stroke(); rr(665, 143, 60, 28, 6); g.fillStyle = C.navy2; g.fill();
+  text('Mine', 695, 162, 13.5, 600, '#fff', 'center'); text('All', 752, 162, 13.5, 500, C.mute, 'center');
+  rr(790, 140, 190, 34, 8); g.strokeStyle = C.line; g.stroke(); rr(851, 143, 66, 28, 6); g.fillStyle = C.navy2; g.fill();
+  text('Month', 820, 162, 13.5, 500, C.mute, 'center'); text('Week', 884, 162, 13.5, 600, '#fff', 'center'); text('Day', 950, 162, 13.5, 500, C.mute, 'center');
+  // legend
+  let lx = 20; for (const k of LEGEND) { rr(lx, 190, 8, 8, 2); g.fillStyle = ROOM[k].bar; g.fill(); text(k, lx + 12, 198, 10.5, 500, C.mute); lx += 12 + tw(k, 10.5, 500) + 12; }
+  // grid
+  g.beginPath(); g.roundRect(GX, GRID_TOP, 960, HEAD_H, [10, 10, 0, 0]); g.fillStyle = '#1e3558'; g.fill();
+  text('Time', GX + 10, GRID_TOP + 23, 13, 600, '#fff');
+  DAYS.forEach(([d, dt], i) => { const x = colX(i) + COLW / 2; text(d, x, GRID_TOP + 22, 13.5, 600, '#fff', 'center');
+    const n = DAYCOUNT[i] + (i === TODAY && blockLive(t) ? 1 : 0); text(`${dt} · ${n} mtgs`, x, GRID_TOP + 39, 9.5, 500, 'rgba(255,255,255,0.78)', 'center'); });
+  g.fillStyle = C.yel; g.fillRect(colX(TODAY), GRID_TOP + HEAD_H - 3, COLW, 3);
+  for (let r = 0; r < 12; r++) { g.fillStyle = r % 2 ? '#ffffff' : '#f6f8fb'; g.fillRect(GX, ROW0 + r * ROWH, 960, ROWH);
+    const m = 720 + r * 30; text(`${String(Math.floor(m / 60)).padStart(2, '0')}:${m % 60 ? '30' : '00'}`, GX + 28, ROW0 + r * ROWH + 24, 10.5, 500, C.mute, 'center'); }
+  g.fillStyle = 'rgba(36,68,116,0.035)'; g.fillRect(colX(TODAY), ROW0, COLW, 12 * ROWH);
+  g.fillStyle = '#e8ecf2'; for (let i = 0; i <= 7; i++) g.fillRect(colX(i) - 0.5, ROW0, 1, 12 * ROWH);
+  for (const b of OTHER) { const B = blockA(b.d, b.s, b.len); chip(b, B.x, B.y, B.w, B.h); }
+  // the meeting that moves
+  if (t >= T.SLIDE0 - 0.01 && t < T.SLIDE0 + 1.4) {         // where it was: a dashed ghost that fades
+    const B = blockA(TODAY, 960, 60), ga = 1 - sstep(T.SLIDE0 + 0.2, T.SLIDE0 + 1.3, t);
+    g.save(); g.globalAlpha = a * ga * 0.9; rr(B.x, B.y, B.w, B.h, 4); g.setLineDash([5, 4]); g.lineWidth = 1.4; g.strokeStyle = ROOM['301'].bar; g.stroke(); g.restore(); }
+  if (blockLive(t) && !(t >= T.N3_0 && t < T.N3_0 + 0.001)) {
+    const B = blockA(TODAY, blockStart(t), 60), im = OM.impact(t, T.LAND, { decay: 9, omega: 24, sqx: 0.06, sqy: 0.12 });
+    const sq = t - T.LAND < 0.8 ? { sx: im.sx, sy: im.sy } : { sx: 1, sy: 1 };
+    chip({ title: MEET.title, room: MEET.room }, B.x, B.y, B.w, B.h, 1, sq);
+    for (const tp of [T.PULSE, T.PULSE + 0.22]) { const k = clamp((t - tp) / 0.55, 0, 1); if (k <= 0 || k >= 1) continue;   // the reminder's two pulses
+      const gr = 10 * ease.cubicOut(k); g.save(); g.globalAlpha = a * 0.7 * (1 - k); rr(B.x - gr, B.y - gr, B.w + 2 * gr, B.h + 2 * gr, 6 + gr); g.lineWidth = 2; g.strokeStyle = ROOM['301'].bar; g.stroke(); g.restore(); }
+  }
+  // now-line, today's column only (the product's red line)
+  const ny = rowY(nowMin(t)); g.fillStyle = '#e03131'; g.fillRect(colX(TODAY), ny - 1, COLW, 2); g.beginPath(); g.arc(colX(TODAY), ny, 4, 0, Math.PI * 2); g.fill();
+  // the product dims the page behind a modal
+  const dimA = t >= T.MOD0 && t < T.LAND ? sstep(T.MOD0, T.MOD0 + 0.3, t) * (1 - sstep(T.CELL0, T.CELL0 + 0.35, t)) : 0;
+  if (dimA > 0.01) { g.globalAlpha = a * dimA * 0.42; rr(0, 0, APPW, APPH, 18); g.fillStyle = '#0f1b2e'; g.fill(); }
+  g.globalAlpha = 1;
+}
+// Maya's New Booking (form units = world units at FORM's scale)
+function drawForm(t, V) {
+  const R = formRect(t), fs = R.w / FORM.w; if (t >= T.FOLD1) return;
+  const pop = OM.popIn(t, T.IN, { rise: 70, s0: 0.86, ds: 0.14, zeta: 0.72, omega: 12 });
+  const cx = R.x + R.w / 2, cy = R.y + R.h / 2;
+  const P = mul(V, [pop.s, 0, 0, pop.s, cx * (1 - pop.s), cy * (1 - pop.s) + pop.dy]);
+  setM(P); g.globalAlpha = pop.op;
+  const folding = t >= T.FOLD0, u = folding ? ease.quintInOut(seg(t, T.FOLD0, T.FOLD1)) : 0;
+  const toChip = sstep(0.35, 0.9, u);
+  g.save(); g.shadowColor = 'rgba(6,14,30,0.45)'; g.shadowBlur = 44 * DPR; g.shadowOffsetY = 14 * DPR;
+  rr(R.x, R.y, R.w, R.h, lerp(22, 26, u)); g.fillStyle = toChip > 0 ? mix('#ffffff', ROOM['301'].bg, toChip) : '#ffffff'; g.fill(); g.restore();
+  if (toChip > 0.02) { g.globalAlpha = pop.op * toChip; rr(R.x, R.y, 5, R.h, 2.5); g.fillStyle = ROOM['301'].bar; g.fill();
+    text(MEET.title, R.x + R.w / 2, R.y + R.h / 2 + 7, 20, 700, ROOM['301'].fg, 'center'); g.globalAlpha = pop.op; }
+  const ca = 1 - sstep(0, 0.35, u); if (ca < 0.01) { g.globalAlpha = 1; return; }
+  g.save(); rr(R.x, R.y, R.w, R.h, 22); g.clip();
+  setM(mul(P, [fs, 0, 0, fs * lerp(1, 0.4, u), R.x, R.y])); g.globalAlpha = pop.op * ca;
+  text('New Booking', 32, 54, 28, 500, C.ink);
+  text('301 is free · 60 min', 768, 54, 14, 600, C.green, 'right');
+  const field = (lab, x, y, w, val, ph, focus, sel) => { text(lab, x, y, 15, 500, C.ink2); rr(x, y + 12, w, 44, 8); g.fillStyle = '#fff'; g.fill();
+    g.lineWidth = focus ? 2 : 1.2; g.strokeStyle = focus ? C.navy : C.border; g.stroke(); if (val) text(val, x + 14, y + 40, 16, 500, C.ink); else if (ph) text(ph, x + 14, y + 40, 16, 500, C.ph);
+    if (sel) { g.beginPath(); g.moveTo(x + w - 22, y + 30); g.lineTo(x + w - 17, y + 36); g.lineTo(x + w - 12, y + 30); g.lineWidth = 1.8; g.strokeStyle = C.ink2; g.stroke(); } };
+  field('Date', 32, 96, 360, '2026/09/24'); field('Start Time', 416, 96, 352, '16:00', 0, 0, 1);
+  field('Subject', 32, 180, 360, MEET.title); field('End Time', 416, 180, 352, '17:00', 0, 0, 1);
+  field('Room', 32, 264, 360, '301', 0, 0, 1); field('Organizer', 416, 264, 352, 'Maya', 0, 0, 1);
+  const focusAtt = t >= T.M_ATT && t < T.CONFIRM;
+  const ty = OM.typeOn(t, T.TYPE0, 'Iris', { cps: 16 }), typed = t >= T.TYPE0 && t < T.ENTER;
+  field('Attendees (optional)', 32, 348, 736, '', typed || t >= T.ENTER ? '' : 'Type a name and press Enter', focusAtt);
+  if (typed) { text(ty.str, 46, 388, 16, 500, C.ink); if (focusAtt) { g.fillStyle = C.ink; g.fillRect(47 + tw(ty.str, 16, 500), 372, 1.6, 22); } }
+  if (t >= T.ENTER) { const p = OM.popIn(t, T.ENTER, { rise: 0, s0: 0.55, ds: 0.45, omega: 24 }); g.save(); g.globalAlpha *= p.op; g.translate(46 + 30, 382); g.scale(p.s, p.s);
+    rr(-30, -14, 60, 28, 14); g.fillStyle = '#e0e7ff'; g.fill(); text('Iris', -8, 5.5, 14, 600, '#3730a3', 'center'); text('×', 17, 5, 13, 600, '#6366f1', 'center'); g.restore();
+    if (focusAtt) { g.fillStyle = C.ink; g.fillRect(122, 372, 1.6, 22); } }
+  rr(32, 456, 16, 16, 3); g.lineWidth = 1.4; g.strokeStyle = C.ph; g.stroke(); text('Recurring booking', 58, 469, 15, 500, C.mute);
+  const pr = OM.press(t, T.CONFIRM, { depth: 0.08, flash: 0.3 });
+  g.save(); g.translate(690, 463); g.scale(1 + pr.sq * 0.5, 1 - pr.sq); rr(-78, -22, 156, 44, 10); g.fillStyle = pr.active ? '#2d4f86' : C.navy2; g.fill();
+  text('Confirm Booking', 0, 5.5, 15, 700, '#fff', 'center'); g.restore();
+  g.restore(); g.globalAlpha = 1;
+}
+function drawCapsule(t, V) {
+  const c = capsule(t); if (!c) return; setM(V);
+  g.save(); g.shadowColor = 'rgba(6,14,30,0.4)'; g.shadowBlur = 20 * DPR; g.shadowOffsetY = 8 * DPR;
+  rr(c.x, c.y, c.w, c.h, 26); g.fillStyle = mix(ROOM['301'].bg, '#f4c444', c.sh * 0.8); g.fill(); g.restore();
+  const ta = 1 - sstep(0.1, 0.55, c.sh); if (ta < 0.01) return;
+  g.save(); g.globalAlpha = ta; rr(c.x, c.y, c.w, c.h, 26); g.clip(); g.fillStyle = ROOM['301'].bar; g.fillRect(c.x, c.y, 5, c.h);
+  text(MEET.title, c.x + c.w / 2, c.y + c.h / 2 + 7, 20, 700, ROOM['301'].fg, 'center'); g.restore();
+}
+function notifContent(kind, R, a) {         // the notification card's face, laid out at NW units
+  const N = NOTE[kind], s = R.w / NW, full = kind === 'chg' ? NH2 : NH;
+  g.save(); rr(R.x, R.y, R.w, R.h, 14 * s); g.clip();
+  g.translate(R.x, R.y); g.scale(s, R.h / full); g.globalAlpha *= a;
+  rr(18, 18, 44, 44, 10); g.fillStyle = C.navy; g.fill(); text('g', 40, 48, 28, 700, '#ffffff', 'center');
+  text('Gama Meeting Room', 78, 32, 12.5, 500, C.mute); text('now', NW - 18, 32, 12.5, 500, C.ph, 'right');
+  text(N.title, 78, 58, 18.5, 700, C.ink);
+  N.body.forEach((l, i) => text(l, 78, 84 + i * 24, 15.5, 500, C.ink2));
+  g.restore();
+}
+function drawCard(t, V) {
+  const c = card(t); if (!c) return; setM(V);
+  const R = c.rect;
+  if (c.kind === 'fold') {                  // the modal folding into the cell
+    const u = c.k; g.save(); g.shadowColor = 'rgba(6,14,30,0.4)'; g.shadowBlur = lerp(40, 4, u) * DPR; g.shadowOffsetY = lerp(14, 1, u) * DPR;
+    rr(R.x, R.y, R.w, R.h, lerp(16, 4, u)); g.fillStyle = mix('#ffffff', ROOM['301'].bg, sstep(0.3, 0.9, u)); g.fill(); g.restore();
+    const ma = 1 - sstep(0, 0.3, u); if (ma > 0.01) modalContent('iris', R, ma);
+    const ca = sstep(0.6, 1, u); if (ca > 0.01) { g.save(); g.globalAlpha = ca; rr(R.x, R.y, 3 * R.w / 121, R.h, 2); g.fillStyle = ROOM['301'].bar; g.fill(); g.restore(); }
+    return;
+  }
+  if (c.kind === 'modal') {                 // the notification opens into the detail modal
+    g.save(); g.shadowColor = 'rgba(6,14,30,0.45)'; g.shadowBlur = 40 * DPR; g.shadowOffsetY = 14 * DPR;
+    rr(R.x, R.y, R.w, R.h, lerp(14, 16, c.k)); g.fillStyle = '#ffffff'; g.fill(); g.restore();
+    const na = 1 - sstep(0.0, 0.3, c.k); if (na > 0.01) notifContent('new', { x: R.x, y: R.y, w: R.w, h: Math.min(R.h, NH * R.w / NW) }, na);
+    const ma = sstep(0.45, 0.95, c.k); if (ma > 0.01) modalContent('iris', R, ma);
+    return;
+  }
+  const fromBlock = c.grow !== undefined ? c.grow : 0;
+  g.save(); g.shadowColor = 'rgba(6,14,30,0.45)'; g.shadowBlur = 36 * DPR; g.shadowOffsetY = 12 * DPR;
+  rr(R.x, R.y, R.w, R.h, lerp(14, 5, fromBlock)); g.fillStyle = fromBlock > 0 ? mix('#ffffff', ROOM['301'].bg, fromBlock) : (c.fill ? mix('#ffffff', C.yel, c.fill) : '#ffffff'); g.fill(); g.restore();
+  if (c.k > 0.01) notifContent(c.kind, R, c.k);
+}
+function modalContent(who, R, a) {           // the product's detail modal (shots-v2/08), units 460 × 380
+  const s = R.w / 460; g.save(); rr(R.x, R.y, R.w, R.h, 16 * s); g.clip(); g.translate(R.x, R.y); g.scale(s, R.h / 380); g.globalAlpha *= a;
+  text(MEET.title, 30, 62, 27, 500, C.ink);
+  g.beginPath(); g.arc(424, 38, 15, 0, Math.PI * 2); g.fillStyle = '#f1f5f9'; g.fill(); text('×', 424, 43.5, 15, 500, C.mute, 'center');
+  const time = who === 'maya' ? MAYA_TIME : null;
+  const rows = [['Time', '9/24 ( Thu )  16:00 – 17:00'], ['Room', ''], ['Organizer', 'Maya'], ['Attendees', 'Iris']];
+  rows.forEach(([k, v], i) => { const y = 112 + i * 38; text(k, 30, y, 14.5, 500, C.mute);
+    if (k === 'Room') { rr(114, y - 16, 40, 24, 12); g.fillStyle = ROOM['301'].bg; g.fill(); text('301', 134, y + 1, 13, 600, ROOM['301'].fg, 'center'); }
+    else if (k === 'Time' && time) time(114, y);
+    else text(v, 114, y, 14.5, 500, C.ink);
+    g.fillStyle = '#eef1f5'; g.fillRect(30, y + 14, 400, 1); });
+  const badge = who === 'maya' ? "You're the organizer" : "You're an attendee";
+  const bw = tw(badge, 12.5, 500) + 20; rr(30, 262, bw, 26, 6); g.fillStyle = '#ecfdf5'; g.fill(); text(badge, 40, 279.5, 12.5, 500, '#047857');
+  g.fillStyle = '#eef1f5'; g.fillRect(30, 304, 400, 1);
+  const icons = [['#16a34a', 'cal'], ['#d6a86b', 'copy'], ['#17a2b8', 'pen'], ['#dc3545', 'bin'], ['#ffffff', 'copy2']];
+  icons.forEach(([col, k], i) => { const x = 30 + i * 38, y = 320, pr = who === 'maya' ? OM.press(ACTIVE_T, k === 'pen' ? T.M_PENCIL : k === 'bin' ? T.M_TRASH : -9, { depth: 0.14 }) : { s: 1 };
+    g.save(); g.translate(x + 15, y + 15); g.scale(pr.s, pr.s); rr(-15, -15, 30, 30, 7); g.fillStyle = col; g.fill();
+    if (k === 'copy2') { g.lineWidth = 1; g.strokeStyle = '#cbd5e1'; g.stroke(); }
+    iconGlyph(k, k === 'copy2' ? C.ink2 : '#ffffff'); g.restore(); });
+  g.restore();
+}
+function iconGlyph(k, col) {
+  g.strokeStyle = col; g.lineWidth = 1.5; g.lineJoin = 'round'; g.lineCap = 'round';
+  if (k === 'cal') { rr(-6.5, -5.5, 13, 12, 2); g.stroke(); g.beginPath(); g.moveTo(-6.5, -1.5); g.lineTo(6.5, -1.5); g.moveTo(-3, -8); g.lineTo(-3, -4); g.moveTo(3, -8); g.lineTo(3, -4); g.stroke(); }
+  if (k === 'copy' || k === 'copy2') { rr(-5.5, -3.5, 9, 10, 2); g.stroke(); rr(-2.5, -6.5, 9, 10, 2); g.stroke(); }
+  if (k === 'pen') { g.beginPath(); g.moveTo(-5.5, 5.5); g.lineTo(-4.5, 1.5); g.lineTo(3, -6); g.lineTo(6, -3); g.lineTo(-1.5, 4.5); g.closePath(); g.stroke(); }
+  if (k === 'bin') { g.beginPath(); g.moveTo(-6, -4.5); g.lineTo(6, -4.5); g.moveTo(-2.5, -4.5); g.lineTo(-2, -7); g.lineTo(2, -7); g.lineTo(2.5, -4.5); g.stroke(); rr(-4.5, -3, 9, 10, 1.5); g.stroke(); }
+}
+let ACTIVE_T = 0;
+function MAYA_TIME(x, y) {                   // Maya edits the time: the value rolls 16:00 – 17:00 → 14:30 – 15:30
+  const k = ease.expoOut(seg(ACTIVE_T, T.ROLL0, T.ROLL1));
+  g.save(); g.beginPath(); g.rect(x - 4, y - 19, 300, 26); g.clip();
+  if (k < 1) { g.globalAlpha *= 1 - k; text('9/24 ( Thu )  16:00 – 17:00', x, y - 22 * k, 14.5, 500, C.ink); g.globalAlpha /= Math.max(1e-3, 1 - k); }
+  if (k > 0) { const a0 = g.globalAlpha; g.globalAlpha = a0 * k; text('9/24 ( Thu )  14:30 – 15:30', x, y + 22 * (1 - k), 14.5, 600, k < 1 || ACTIVE_T < T.ROLL1 + 0.9 ? mix('#1f2937', '#0f766e', 1 - sstep(T.ROLL1 + 0.2, T.ROLL1 + 0.9, ACTIVE_T)) : C.ink); g.globalAlpha = a0; }
+  g.restore();
+  if (ACTIVE_T >= T.M_PENCIL && ACTIVE_T < T.ROLL1 + 0.6) { const f = 1 - sstep(T.ROLL1 + 0.1, T.ROLL1 + 0.6, ACTIVE_T); g.save(); g.globalAlpha *= f; rr(x - 8, y - 20, 222, 28, 6); g.lineWidth = 1.6; g.strokeStyle = '#17a2b8'; g.stroke(); g.restore(); }
+}
+function drawMaya(t, V) {
+  const a = OM.popIn(t, T.IN, { rise: 0 }).op * (1 - sstep(T.END0, T.END0 + 0.5, t)); if (a < 0.01) return;
+  setM(V); g.globalAlpha = a;
+  const c = mayaCaps(t); nameCapsule(c.x, c.y, c.h, 'M', 'Maya');
+  const P = paneRect(t);
+  if (P) { g.save(); g.shadowColor = 'rgba(6,14,30,0.45)'; g.shadowBlur = 34 * DPR; g.shadowOffsetY = 12 * DPR;
+    rr(P.x, P.y, P.w, P.h, lerp(16, 16, P.k)); g.fillStyle = t >= T.M_TRASH ? mix('#ffffff', '#fde2e4', 1 - P.k) : '#ffffff'; g.fill(); g.restore();
+    const ca = sstep(0.55, 0.95, P.k); if (ca > 0.01) modalContent('maya', P, ca); }
+  g.globalAlpha = 1;
+}
+function drawMidline(t, V) {
+  const a = OM.popIn(t, T.IN + 0.2, { rise: 0 }).op * (1 - sstep(T.GROW0, T.GROW0 + 0.4, t)); if (a < 0.01) return;
+  setM(V); g.save(); g.globalAlpha = a * 0.35; g.setLineDash([2, 10]); g.lineCap = 'round'; g.lineWidth = 2; g.strokeStyle = '#9fb3d1';
+  g.beginPath(); g.moveTo(945, 150); g.lineTo(945, 930); g.stroke(); g.restore();
+}
+function drawHand(t, V, h) { if (!h) return; const p = OM.project(V, h.x, h.y); setM(SCREEN); g.globalAlpha = h.a;
+  g.save(); g.translate(p[0] - 4, p[1] - 3); g.scale(h.s * 0.9, h.s * 0.9); g.shadowColor = 'rgba(0,0,0,0.35)'; g.shadowBlur = 5 * DPR; g.shadowOffsetY = 2 * DPR;
+  g.fillStyle = '#111'; g.fill(PARTS.cursor); g.shadowColor = 'transparent'; g.lineWidth = 2.5; g.strokeStyle = '#fff'; g.lineJoin = 'round'; g.stroke(PARTS.cursor); g.restore(); g.globalAlpha = 1; }
+function drawTitle(t, V) {
+  if (t < T.TITLE[0]) return; setM(V);
+  const words = ['Gama', 'Meeting', 'Room']; let x = LOCK.tx; const sp = tw(' ', 84, 700, 'display');
+  words.forEach((w, i) => { const r = OM.wordRise(t, T.TITLE[i], { dist: 34 }); const ww = tw(w, 84, 700, 'display');
+    if (t >= T.TITLE[i]) { g.save(); g.globalAlpha = r.op; g.translate(x, LOCK.ty + r.y); g.scale(r.s, r.s); g.letterSpacing = LOOK.track('display', 84); text(w, 0, 0, 84, 700, '#ffffff', 'left', 'display'); g.letterSpacing = '0px'; g.restore(); }
+    x += ww + sp; });
+  const tg = OM.wordRise(t, T.TAG, { dist: 18 });
+  if (t >= T.TAG) { g.globalAlpha = tg.op; text(TAGLINE, LOCK.sub, LOCK.suby + tg.y, 30, 500, '#d6e0ef'); g.globalAlpha = 1; }
+}
+const TAGLINE = 'Know the moment your meeting changes.';
+
+function seek(t) {
+  ACTIVE_T = t;
+  const cam = camAt(t); CAM = cam; const V = OM.view(cam);
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  ground(); lattice(cam);
+  drawMidline(t, V);
+  drawMaya(t, V);
+  drawForm(t, V);
+  drawApp(t, V);
+  setM(V); drawBell(t, t < T.END0 ? appAlpha(t) : 1);
+  drawCapsule(t, V);
+  drawCard(t, V);
+  drawTitle(t, V);
+  drawHand(t, V, irisHand(t)); drawHand(t, V, mayaHand(t));
+  setM(SCREEN);
+  if (HUD_ON) { g.font = '14px monospace'; g.fillStyle = '#f33'; g.textAlign = 'right'; g.fillText(`t=${t.toFixed(3)}`, W - 14, H - 12); }
+}
+function trackAt(t) {
+  const V = OM.view(camAt(t)), out = {}, P = b => OM.projectBox(V, b);
+  const a = appAlpha(t); if (a > 0.01) out.app = { ...P(appRect(t)), op: a };
+  if (t < T.FOLD1) out.form = { ...P(formRect(t)), op: OM.popIn(t, T.IN, { rise: 0 }).op };
+  const cp = capsule(t); if (cp) out.capsule = { ...P(cp), op: 1 };
+  if (t >= 0.3) out.bell = { ...P(bellRect(bellWorld(t))), op: 1 };
+  const c = card(t);
+  if (c) { const k = c.kind === 'fold' || c.kind === 'modal' ? 'modal' : c.kind === 'new' ? 'notif' : c.kind; out[k] = { ...P(c.rect), op: 1 }; }
+  if (blockLive(t)) out.block = { ...P(blockWorld(t)), op: 1 };
+  const pr = paneRect(t); if (pr) out.mpane = { ...P(pr), op: 1 };
+  if (t >= T.TITLE[0]) out.title = { ...P({ x: LOCK.tx, y: LOCK.ty - 70, w: LOCK.tw, h: 150 }), op: OM.wordRise(t, T.TITLE[0]).op };
+  for (const [k, h] of [['irisHand', irisHand(t)], ['mayaHand', mayaHand(t)]]) if (h) out[k] = OM.project(V, h.x, h.y);
+  return out;
+}
+
+// ────────────────────────────── contract ──────────────────────────────
+const q = new URLSearchParams(location.search), HUD_ON = q.has('hud');
+window.__seek = async t => { seek(t); return true; };
+if (!q.has('notrack')) window.__track = t => trackAt(t);
+window.__motion = (t0, t1) => {
+  const c0 = camAt(t0), c1 = camAt(t1), cm = camAt((t0 + t1) / 2); let d = OM.screenTravel(c0, c1, cm);
+  const a = trackAt(t0), b = trackAt(t1);
+  for (const k of Object.keys(a)) { const p = a[k], r = b[k]; if (!r) continue;
+    if (Array.isArray(p)) d = Math.max(d, Math.hypot(p[0] - r[0], p[1] - r[1]));
+    else d = Math.max(d, Math.abs(p.x - r.x), Math.abs(p.y - r.y), Math.abs(p.x + p.w - r.x - r.w), Math.abs(p.y + p.h - r.y - r.h)); }
+  return d;
+};
+window.__events = () => {
+  const ev = [], pan = x => clamp((x - W / 2) / (W / 2), -1, 1);
+  const bx = t => pan(OM.project(OM.view(camAt(t)), bellWorld(t).cx, 0)[0]);
+  ev.push({ t: T.IN, kind: 'in', pan: 0, v: 0.5 });
+  ev.push({ t: T.I_BELL, kind: 'bellon', pan: bx(T.I_BELL), v: 0.7 });
+  [T.M_ATT, T.CONFIRM, T.M_PENCIL, T.M_TRASH].forEach(t => ev.push({ t, kind: 'click', pan: -0.6, v: t === T.CONFIRM || t === T.M_TRASH ? 1 : 0.6 }));
+  ev.push({ t: T.I_CLICK, kind: 'click', pan: 0.55, v: 0.8 });
+  for (let i = 0; i < 4; i++) ev.push({ t: T.TYPE0 + i / 16, kind: 'key', pan: -0.6, v: 0.5 });
+  ev.push({ t: T.ENTER, kind: 'pill', pan: -0.6, v: 0.6 });
+  ev.push({ t: T.FOLD0, kind: 'fold', pan: -0.5, v: 0.7 });
+  ev.push({ t: T.FOLD1, kind: 'fly', pan: -0.4, v: 0.8, dur: T.HIT - T.FOLD1 });
+  ev.push({ t: T.HIT, kind: 'ring', pan: bx(T.HIT), v: 1 });
+  ev.push({ t: T.N1_0, kind: 'note', note: 'new', pan: 0.5, v: 0.9 });
+  ev.push({ t: T.MOD0, kind: 'open', pan: 0.3, v: 0.6 });
+  ev.push({ t: T.LAND, kind: 'land', pan: 0.3, v: 0.8 });
+  ev.push({ t: T.GROW0, kind: 'grow', pan: 0, v: 0.6, dur: T.GROW1 - T.GROW0 });
+  ev.push({ t: T.SLIDE0, kind: 'slide', pan: 0.25, v: 0.8 });
+  ev.push({ t: T.RING2, kind: 'ring', pan: bx(T.RING2), v: 0.7 });
+  ev.push({ t: T.N2_0, kind: 'note', note: 'chg', pan: 0.5, v: 0.8 });
+  T.TICKS.forEach(t => ev.push({ t, kind: 'tick', pan: 0.2, v: 0.5 }));
+  ev.push({ t: T.PULSE, kind: 'note', note: 'rem', pan: 0.25, v: 0.8 });
+  ev.push({ t: T.N4_0, kind: 'note', note: 'del', pan: 0.4, v: 0.9 });
+  ev.push({ t: T.BLAND, kind: 'lock', pan: -0.3, v: 0.8 });
+  return { T, events: ev.sort((a, b) => a.t - b.t) };
+};
+
+window.__ready = LOOK.ready.then(() => document.fonts.ready).then(() => {
+  const n = document.createElement('canvas'); n.width = n.height = 256; const nc = n.getContext('2d'), id = nc.createImageData(256, 256), R = OM.rng(7);
+  for (let i = 0; i < 256 * 256; i++) { const v = R() < 0.5 ? 0 : 255; id.data[i * 4] = id.data[i * 4 + 1] = id.data[i * 4 + 2] = v; id.data[i * 4 + 3] = Math.floor(R() * 7); }
+  nc.putImageData(id, 0, 0); NOISE = g.createPattern(n, 'repeat');
+  // the lockup: bell + name, centred as a group
+  const tW = tw('Gama Meeting Room', 84, 700, 'display') + 0.02 * 84 * -17, br = 46, gap = 30, gw = 2 * br + gap + tW, x0 = (W - gw) / 2;
+  LOCK = { bx: x0 + br, by: 506, br, tx: x0 + 2 * br + gap, ty: 536, tw: tW, sub: x0 + 2 * br + gap + 2, suby: 600 };
+  // the hands, in world coordinates, on what they touch
+  const bw = inW(APP1, [BELL.cx, BELL.cy]);
+  const P = (px, py) => [PANE.x + px * PS, PANE.y + py * PS * (PANE.h / PS / 380)];
+  const pen = P(30 + 2 * 38 + 15, 335), bin = P(30 + 3 * 38 + 15, 335);
+  IRIS_HAND = [ { t: 0.1, x: 1960, y: 760 }, { t: 0.45, x: bw[0] + 12, y: bw[1] + 14 }, { t: 0.55, x: bw[0], y: bw[1] }, { t: 0.78, x: bw[0] + 26, y: bw[1] + 60 },
+    { t: 1.1, x: 1795, y: 575 }, { t: 1.3, x: 1795, y: 575 }, { t: 4.2, x: 1795, y: 575 }, { t: 4.35, x: 1792, y: 570 },
+    { t: 4.64, x: 1616, y: 404 }, { t: 4.75, x: 1604, y: 396 }, { t: 4.95, x: 1612, y: 410 }, { t: 5.3, x: 1735, y: 770 }, { t: 5.5, x: 1735, y: 770 }, { t: 7, x: 1735, y: 770 } ];
+  MAYA_HAND = [ { t: 0.4, x: -80, y: 980 }, { t: 0.85, x: 330, y: 676 }, { t: 0.95, x: 316, y: 664 }, { t: 1.2, x: 320, y: 668 }, { t: 1.4, x: 330, y: 672 },
+    { t: 1.62, x: 745, y: 748 }, { t: 1.78, x: 770, y: 736 }, { t: 1.95, x: 776, y: 742 }, { t: 2.3, x: 790, y: 760 },
+    { t: 7.3, x: 470, y: 920 }, { t: 7.9, x: pen[0] + 16, y: pen[1] + 18 }, { t: 8.05, x: pen[0], y: pen[1] }, { t: 8.3, x: pen[0] + 6, y: pen[1] + 14 },
+    { t: 8.5, x: pen[0] + 6, y: pen[1] + 14 }, { t: 15.0, x: pen[0] + 6, y: pen[1] + 14 }, { t: 15.15, x: pen[0] + 7, y: pen[1] + 13 },
+    { t: 15.36, x: bin[0] + 6, y: bin[1] + 6 }, { t: 15.45, x: bin[0], y: bin[1] }, { t: 15.7, x: bin[0] + 10, y: bin[1] + 22 }, { t: 16.2, x: bin[0] + 14, y: bin[1] + 30 } ];
+  seek(0); return true;
+});
+if (q.has('t')) __ready.then(() => seek(parseFloat(q.get('t'))));
+if (q.has('play')) __ready.then(() => { const t0 = performance.now(); (function loop() { seek(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); })(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "gama-navy",
+  "from": "shots/01,02,04 via look.py from-shot, then set to the product's own tokens (product-brief.md: primary #2d4874, accent #ffd166)",
+  "mood": "the product's navy page, its white app card, one yellow — the new booking",
+  "color": {
+    "ground": "#223a60",
+    "deep": "#16263f",
+    "card": "#ffffff",
+    "line": "#d6deea",
+    "mute": "#a9b7cc",
+    "ink": "#ffffff",
+    "accent": "#ffd166",
+    "accent2": "#14a4bc"
+  },
+  "type": {
+    "display": { "face": "Inter", "weight": 700, "tracking": -0.02 },
+    "text":    { "face": "Inter", "weight": 500, "tracking": -0.01 },
+    "mono":    { "face": "Geist Mono", "weight": 400, "tracking": 0 }
+  }
+}
