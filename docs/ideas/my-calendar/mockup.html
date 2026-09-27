@@ -78,6 +78,50 @@ main { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
 }
 .badge .scale { color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .12em; }
 .badge .title { font-weight: 800; font-size: 17px; }
+button.badge { border: 0; font: inherit; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+button.badge:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(31,53,96,.32); }
+button.badge:disabled { cursor: default; transform: none; }
+.badge .caret { font-size: 11px; opacity: .75; align-self: center; transition: transform .2s; }
+.badge[aria-expanded="true"] .caret { transform: rotate(180deg); }
+.nav button:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ---------- 尺度膠囊的跳轉面板 ---------- */
+.overlay.pop-layer { background: transparent; display: block; padding: 0; animation: none; }
+.pop {
+    position: absolute; background: #fff; border-radius: 16px; width: 320px; max-width: calc(100vw - 32px);
+    box-shadow: 0 20px 50px rgba(15,23,42,.25); padding: 10px; animation: rise .18s ease-out;
+    max-height: min(60vh, 480px); overflow: auto;
+}
+.pop h3 { margin: 4px 8px 8px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.wk-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+    border: 0; background: none; padding: 10px 12px; border-radius: 10px; text-align: left; color: var(--ink);
+}
+.wk-row:hover { background: #f1f5f9; }
+.wk-row .rng { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wk-row .rel { font-size: 11px; color: var(--faint); margin-left: 8px; font-weight: 600; }
+.wk-row .cnt { font-size: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.wk-row.cur { background: var(--navy); color: #fff; }
+.wk-row.cur .rel, .wk-row.cur .cnt { color: #cbd5e1; }
+.mc-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 10px; }
+.mc-head b { font-size: 15px; }
+.mc-head button { border: 1px solid var(--line); background: #fff; width: 32px; height: 32px; border-radius: 8px; font-weight: 700; }
+.mc-head button:disabled { opacity: .3; cursor: not-allowed; }
+.mc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.mc-wd { text-align: center; font-size: 11px; color: var(--faint); font-weight: 600; padding-bottom: 4px; }
+.mc-day {
+    border: 0; background: none; border-radius: 10px; padding: 6px 0 5px; min-height: 42px;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; font-weight: 700; color: var(--ink);
+}
+.mc-day:hover:not(:disabled) { background: #f1f5f9; }
+.mc-day.we { color: var(--faint); }
+.mc-day.out { visibility: hidden; }
+.mc-day:disabled { color: #cbd5e1; cursor: not-allowed; }
+.mc-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.mc-day.sel { background: var(--navy); color: #fff; }
+.mc-day .mdots { display: flex; gap: 2px; height: 5px; }
+.mc-day .mdots i { width: 5px; height: 5px; border-radius: 50%; background: var(--bar); }
+.pop-foot { font-size: 11px; color: var(--faint); padding: 8px 8px 2px; }
 .count { color: var(--muted); font-weight: 600; }
 .nav { display: flex; gap: 4px; }
 .nav button, .seg button {
@@ -109,6 +153,8 @@ main { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
     display: flex; flex-direction: column; gap: 3px; min-width: 0;
 }
 .day-cell:hover { border-color: rgba(31,53,96,.35); }
+.day-cell.locked { cursor: default; opacity: .45; }
+.day-cell.locked:hover { border-color: transparent; }
 .day-cell.w0 { background: var(--cream); }
 .day-cell.w1 { background: var(--sky); }
 .day-cell.out { background: var(--off); opacity: .7; }
@@ -322,7 +368,7 @@ main { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
 
     <section id="tab-mycal">
         <div class="toolbar">
-            <div class="badge"><span class="scale" id="scaleLabel">MONTH</span><span class="title" id="viewTitle"></span></div>
+            <button type="button" class="badge" id="scaleBadge" aria-haspopup="dialog" aria-expanded="false"><span class="scale" id="scaleLabel">MONTH</span><span class="title" id="viewTitle"></span><span class="caret" id="badgeCaret" aria-hidden="true">▼</span></button>
             <span class="count" id="viewCount"></span>
             <div class="nav">
                 <button type="button" id="prevBtn" aria-label="上一段">‹</button>
@@ -391,6 +437,11 @@ main { padding: 20px 24px 40px; max-width: 1400px; margin: 0 auto; }
     </div>
 </div>
 
+<!-- 尺度膠囊跳轉：週檢視列週、日檢視出月曆 -->
+<div class="overlay pop-layer" id="jumpModal" hidden>
+    <div class="pop" id="jumpPop" role="dialog" aria-modal="true" aria-label="跳到其他週或日期"></div>
+</div>
+
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -435,6 +486,11 @@ const mondayOf = d => addDays(d, -((d.getDay() + 6) % 7));
 const hm = min => `${pad(Math.floor(min / 60))}:${pad(min % 60)}`;
 const isWeekend = d => d.getDay() === 0 || d.getDay() === 6;
 const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
+// 可瀏覽範圍照週表 changeWeek 的上限：今天所在週往前 4 週、往後 20 週
+const RANGE_START = addDays(mondayOf(TODAY), -28);
+const RANGE_END = addDays(mondayOf(TODAY), 20 * 7 + 6);
+const inRange = d => d >= RANGE_START && d <= RANGE_END;
+const clampDate = d => d < RANGE_START ? new Date(RANGE_START) : d > RANGE_END ? new Date(RANGE_END) : d;
 
 // ---------- 假資料（固定種子，每次開都一樣） ----------
 function rng(seed) {
@@ -445,10 +501,8 @@ function makeData() {
     const r = rng(20261014);
     const pick = arr => arr[Math.floor(r() * arr.length)];
     const out = [];
-    const from = new Date(TODAY.getFullYear(), TODAY.getMonth() - 1, 1);
-    const to = new Date(TODAY.getFullYear(), TODAY.getMonth() + 3, 0);
     let id = 1;
-    for (let d = from; d <= to; d = addDays(d, 1)) {
+    for (let d = new Date(RANGE_START); d <= RANGE_END; d = addDays(d, 1)) {
         if (isWeekend(d)) continue;
         for (const room of ROOMS) {
             let t = DAY_START;
@@ -501,6 +555,7 @@ function closeTop(fromPop) {
     const el = modalStack.pop();
     if (!el) return;
     el.hidden = true;
+    if (el.id === 'jumpModal') $('#scaleBadge').setAttribute('aria-expanded', 'false');
     if (!fromPop) { skipPop++; try { history.back(); } catch (e) { skipPop--; } }
 }
 window.addEventListener('popstate', () => {
@@ -515,7 +570,7 @@ document.addEventListener('keydown', e => {
 });
 document.querySelectorAll('.overlay').forEach(ov => {
     ov.addEventListener('mousedown', e => { if (e.target === ov) closeTop(false); });
-    ov.querySelector('[data-close]').addEventListener('click', () => closeTop(false));
+    ov.querySelector('[data-close]')?.addEventListener('click', () => closeTop(false));
 });
 
 // ---------- 頁籤 ----------
@@ -568,15 +623,92 @@ function setScale(scale, date) {
     const zoomOut = SCALE_ORDER[scale] < SCALE_ORDER[state.scale];
     state.scale = scale;
     if (date) state.cursor = parse(date);
+    // 月檢視的游標可能停在範圍外的月初，進週／日時拉回範圍內
+    if (scale !== 'month') state.cursor = clampDate(state.cursor);
     render(zoomOut);
 }
-function move(dir) {
+// 回傳上一段／下一段的游標；超出可瀏覽範圍回 null
+function stepped(dir) {
     const c = state.cursor;
-    if (state.scale === 'month') state.cursor = new Date(c.getFullYear(), c.getMonth() + dir, 1);
-    else if (state.scale === 'week') state.cursor = addDays(c, 7 * dir);
-    else state.cursor = addDays(c, dir);
+    if (state.scale === 'month') {
+        const first = new Date(c.getFullYear(), c.getMonth() + dir, 1);
+        const last = new Date(first.getFullYear(), first.getMonth() + 1, 0);
+        return last >= RANGE_START && first <= RANGE_END ? first : null;
+    }
+    if (state.scale === 'week') { const n = addDays(c, 7 * dir); return inRange(mondayOf(n)) ? n : null; }
+    const n = addDays(c, dir);
+    return inRange(n) ? n : null;
+}
+function move(dir) {
+    const next = stepped(dir);
+    if (!next) return;
+    state.cursor = next;
     render();
 }
+
+// ---------- 尺度膠囊跳轉 ----------
+let pickMonth = null;
+$('#scaleBadge').addEventListener('click', () => {
+    if (state.scale === 'month' || !state.me) return;
+    if (state.scale === 'week') renderWeekList();
+    else { pickMonth = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1); renderMiniCal(); }
+    openModal($('#jumpModal'));
+    $('#scaleBadge').setAttribute('aria-expanded', 'true');
+    const r = $('#scaleBadge').getBoundingClientRect();
+    const pop = $('#jumpPop');
+    pop.style.top = (r.bottom + 8) + 'px';
+    pop.style.left = Math.max(16, Math.min(r.left, innerWidth - pop.offsetWidth - 16)) + 'px';
+    const focusEl = pop.querySelector('.wk-row.cur, .mc-day.sel') || pop.querySelector('button:not(:disabled)');
+    if (focusEl) { focusEl.scrollIntoView({ block: 'center' }); focusEl.focus({ preventScroll: true }); }
+});
+function renderWeekList() {
+    const cur = ymd(mondayOf(state.cursor));
+    const thisMon = mondayOf(TODAY);
+    let rows = '';
+    for (let mon = new Date(RANGE_START); mon <= RANGE_END; mon = addDays(mon, 7)) {
+        const off = Math.round((mon - thisMon) / (7 * 864e5));
+        const sun = addDays(mon, 6);
+        let n = 0;
+        for (let i = 0; i < 7; i++) n += onDate(ymd(addDays(mon, i))).filter(isMine).length;
+        const rel = off === 0 ? '本週' : off === 1 ? '下週' : off === -1 ? '上週' : off < 0 ? `${-off} 週前` : `${off} 週後`;
+        rows += `<button type="button" class="wk-row${ymd(mon) === cur ? ' cur' : ''}" data-week="${ymd(mon)}">
+            <span><span class="rng">${mon.getMonth() + 1}/${mon.getDate()} – ${sun.getMonth() + 1}/${sun.getDate()}</span><span class="rel">${rel}</span></span>
+            <span class="cnt">我的 ${n} 場</span></button>`;
+    }
+    $('#jumpPop').innerHTML = `<h3>跳到其他週</h3>${rows}<div class="pop-foot">可看範圍：往前 4 週、往後 20 週（同週表）</div>`;
+}
+function renderMiniCal() {
+    const y = pickMonth.getFullYear(), m = pickMonth.getMonth();
+    const last = new Date(y, m + 1, 0);
+    const prevOk = new Date(y, m, 0) >= RANGE_START;
+    const nextOk = new Date(y, m + 1, 1) <= RANGE_END;
+    const sel = ymd(state.cursor), today = ymd(TODAY);
+    let cells = ['一', '二', '三', '四', '五', '六', '日'].map(w => `<div class="mc-wd">${w}</div>`).join('');
+    for (let d = mondayOf(pickMonth); d <= last || d.getDay() !== 1; d = addDays(d, 1)) {
+        const ds = ymd(d);
+        const out = d.getMonth() !== m;
+        const ok = inRange(d) && !out;
+        const mine = ok ? onDate(ds).filter(isMine) : [];
+        const cls = ['mc-day', out ? 'out' : '', isWeekend(d) ? 'we' : '', ds === today ? 'today' : '', ds === sel ? 'sel' : ''].join(' ');
+        cells += `<button type="button" class="${cls}" data-date="${ds}"${ok ? '' : ' disabled'} aria-label="${m + 1}月${d.getDate()}日，${mine.length} 場">
+            <span>${d.getDate()}</span><span class="mdots">${mine.slice(0, 3).map(b => `<i style="${roomStyle(b.room)}"></i>`).join('')}</span></button>`;
+    }
+    $('#jumpPop').innerHTML = `<div class="mc-head">
+            <button type="button" data-mc="-1"${prevOk ? '' : ' disabled'} aria-label="上個月">‹</button>
+            <b>${y} 年 ${m + 1} 月</b>
+            <button type="button" data-mc="1"${nextOk ? '' : ' disabled'} aria-label="下個月">›</button>
+        </div>
+        <div class="mc-grid">${cells}</div>
+        <div class="pop-foot">可選範圍：往前 4 週、往後 20 週（同週表）</div>`;
+}
+$('#jumpPop').addEventListener('click', e => {
+    const wk = e.target.closest('.wk-row');
+    if (wk) { state.cursor = parse(wk.dataset.week); closeTop(false); render(); return; }
+    const nav = e.target.closest('[data-mc]');
+    if (nav) { if (!nav.disabled) { pickMonth = new Date(pickMonth.getFullYear(), pickMonth.getMonth() + +nav.dataset.mc, 1); renderMiniCal(); } return; }
+    const day = e.target.closest('.mc-day');
+    if (day && !day.disabled) { state.cursor = parse(day.dataset.date); closeTop(false); render(); }
+});
 
 // ---------- 主繪製 ----------
 function render(zoomOut) {
@@ -586,6 +718,12 @@ function render(zoomOut) {
     void view.offsetWidth; // 重播縮放動畫
     view.className = 'view' + (zoomOut ? ' zoom-out' : '') + (state.highlightId ? ' spotlight' : '');
     $('#scaleLabel').textContent = { month: 'MONTH', week: 'WEEK', day: 'DAY' }[state.scale];
+    const noJump = state.scale === 'month' || !state.me;
+    $('#scaleBadge').disabled = noJump;
+    $('#scaleBadge').title = state.scale === 'week' ? '跳到其他週' : state.scale === 'day' ? '跳到其他日期' : '';
+    $('#badgeCaret').hidden = noJump;
+    $('#prevBtn').disabled = !stepped(-1);
+    $('#nextBtn').disabled = !stepped(1);
     if (!state.me) {
         $('#viewTitle').textContent = '我的行事曆';
         $('#viewCount').textContent = '';
@@ -610,7 +748,7 @@ function renderMonth(view) {
         const mine = onDate(ds).filter(isMine);
         if (!out) total += mine.length;
         const shown = mine.slice(0, 4);
-        cells += `<div class="day-cell w${week % 2}${out ? ' out' : ''}${isWeekend(d) ? ' we' : ''}${ds === ymd(TODAY) ? ' today' : ''}" data-date="${ds}" role="button" tabindex="0" aria-label="${d.getMonth() + 1}月${d.getDate()}日，${mine.length} 場">
+        cells += `<div class="day-cell w${week % 2}${out ? ' out' : ''}${inRange(d) ? '' : ' locked'}${isWeekend(d) ? ' we' : ''}${ds === ymd(TODAY) ? ' today' : ''}" data-date="${ds}" role="button" tabindex="0" aria-label="${d.getMonth() + 1}月${d.getDate()}日，${mine.length} 場">
             <span class="num">${d.getDate()}</span>
             ${shown.map(b => `<button type="button" class="ev${b.id === state.highlightId ? ' new' : ''}" data-id="${b.id}" style="${roomStyle(b.room)}"><b>${hm(b.s)}</b>${esc(b.title)}</button>`).join('')}
             ${mine.length > shown.length ? `<span class="more">+${mine.length - shown.length} 場</span>` : ''}
@@ -724,7 +862,7 @@ $('#view').addEventListener('click', e => {
     const head = e.target.closest('.tg-head.clickable');
     if (head) { setScale('day', head.dataset.date); return; }
     const cell = e.target.closest('.day-cell');
-    if (cell) { setScale('day', cell.dataset.date); return; }
+    if (cell) { if (!cell.classList.contains('locked')) setScale('day', cell.dataset.date); return; }
     const slot = e.target.closest('.slot');
     if (slot) {
         const col = currentCols[+slot.dataset.col];
@@ -734,7 +872,7 @@ $('#view').addEventListener('click', e => {
 });
 $('#view').addEventListener('keydown', e => {
     const cell = e.target.closest('.day-cell');
-    if (cell && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setScale('day', cell.dataset.date); }
+    if (cell && !cell.classList.contains('locked') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setScale('day', cell.dataset.date); }
 });
 
 // ---------- 詳情 ----------
