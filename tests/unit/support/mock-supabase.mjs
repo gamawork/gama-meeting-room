@@ -220,8 +220,11 @@ function createRealtimeServer() {
     waitUntilReady() { return ready; },
     /**
      * 模擬一筆 DB 異動廣播進來。type: 'INSERT' | 'UPDATE' | 'DELETE'。
-     * INSERT/UPDATE 帶 record；DELETE 帶 old_record（至少要有 id，因為 index.html 的
+     * INSERT 帶 record；DELETE 帶 old_record（至少要有 id，因為 index.html 的
      * Realtime callback 用 payload.old.id 判斷刪的是哪一筆）。
+     * UPDATE 兩個都要帶：record 是新資料，old_record 至少要有 id——實測發現少了 old_record，
+     * supabase-js（@supabase/realtime-js）根本不會觸發這筆事件（不是丟例外，是靜默不觸發），
+     * 跟真實 Postgres REPLICA IDENTITY 預設一定帶 old_record 的行為一致，寫 UPDATE 測試別漏掉。
      */
     async sendChange({ type, record = null, old_record = null }) {
       if (!ws || !joinTopic) {

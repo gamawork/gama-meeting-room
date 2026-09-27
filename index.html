@@ -1971,8 +1971,9 @@
     padding: 7px 14px; border-radius: 7px; font-weight: 600; white-space: nowrap; font-size: 14px; cursor: pointer; font-family: inherit;
 }
 .mycal-tab[aria-selected="true"] { background: #fff; color: var(--mycal-navy); }
+.mycal-tabbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .mycal-me-chip {
-    margin-left: auto; display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px;
     border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08);
     color: #fff; padding: 6px 12px; border-radius: 999px; white-space: nowrap; font-size: 14px; cursor: pointer; font-family: inherit;
 }
@@ -1981,6 +1982,23 @@
     display: grid; place-items: center; font-weight: 800; font-size: 12px;
 }
 .mycal-me-chip small { color: #cbd5e1; }
+.mycal-notify-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; padding: 0; border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08);
+    color: #fff; cursor: pointer; font-family: inherit; flex: none;
+}
+.mycal-notify-btn.mycal-notify-on { background: var(--mycal-accent); color: var(--mycal-navy); border-color: var(--mycal-accent); }
+.mycal-notify-btn { position: relative; }
+/* 淡化只作用在圖示與框線，不用整顆 opacity，否則浮動提示也會一起變淡 */
+.mycal-notify-btn.mycal-notify-muted { border-color: rgba(255,255,255,.18); }
+.mycal-notify-btn.mycal-notify-muted svg { opacity: .55; }
+.mycal-notify-btn[data-tip]:hover::after,
+.mycal-notify-btn[data-tip]:focus-visible::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
+    white-space: nowrap; background: #1e293b; color: #fff; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 6px; box-shadow: 0 6px 16px rgba(15,23,42,.25); pointer-events: none;
+}
 
 .mycal-tab-panel { padding: 20px 24px 40px; font-family: 'Microsoft JhengHei', Arial, sans-serif; color: var(--mycal-ink); font-size: 14px; }
 .mycal-tab-panel button { font: inherit; cursor: pointer; }
@@ -2283,11 +2301,14 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
                 <button type="button" class="mycal-tab" id="mycalTabTable" role="tab" aria-selected="true" data-i18n="mycal.tab.table">Weekly Table</button>
                 <button type="button" class="mycal-tab" id="mycalTabMycal" role="tab" aria-selected="false" data-i18n="mycal.tab.mycal">My Calendar</button>
             </nav>
-            <button type="button" class="mycal-me-chip" id="mycalMeChip" data-i18n-title="mycal.chip.title" title="Change name">
-                <span class="mycal-avatar" id="mycalMeAvatar">?</span>
-                <span id="mycalMeName" data-i18n="mycal.chip.default">Choose your name</span>
-                <small data-i18n="mycal.chip.change">Change</small>
-            </button>
+            <div class="mycal-tabbar-right">
+                <button type="button" class="mycal-notify-btn" id="mycalNotifyBtn" hidden aria-pressed="false"></button>
+                <button type="button" class="mycal-me-chip" id="mycalMeChip" data-i18n-title="mycal.chip.title" title="Change name">
+                    <span class="mycal-avatar" id="mycalMeAvatar">?</span>
+                    <span id="mycalMeName" data-i18n="mycal.chip.default">Choose your name</span>
+                    <small data-i18n="mycal.chip.change">Change</small>
+                </button>
+            </div>
         </div>
 
 <div class="main-content" id="tabTable">
@@ -2888,7 +2909,22 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
                 'mycal.jump.rangeHintMonth': 'Selectable range: {back} weeks back, {fwd} weeks ahead (same as weekly table)',
                 'mycal.jump.prevMonth': 'Previous month',
                 'mycal.jump.nextMonth': 'Next month',
-                'mycal.wd.0': 'Su', 'mycal.wd.1': 'Mo', 'mycal.wd.2': 'Tu', 'mycal.wd.3': 'We', 'mycal.wd.4': 'Th', 'mycal.wd.5': 'Fr', 'mycal.wd.6': 'Sa'
+                'mycal.wd.0': 'Su', 'mycal.wd.1': 'Mo', 'mycal.wd.2': 'Tu', 'mycal.wd.3': 'We', 'mycal.wd.4': 'Th', 'mycal.wd.5': 'Fr', 'mycal.wd.6': 'Sa',
+                'mycal.notify.btnOff': 'Click to turn on notifications — remember to allow them in the browser',
+                'mycal.notify.testTitle': 'Notifications are on',
+                'mycal.notify.testBody': "You'll be notified here when your meetings change or are about to start.",
+                'mycal.notify.btnOn': 'Desktop notifications on (click to turn off)',
+                'mycal.notify.btnBlocked': 'Notifications blocked — enable them from your browser address bar settings',
+                'mycal.notify.insertTitle': 'New meeting',
+                'mycal.notify.insertBody': '{title} · {date} {start}–{end} · {room}',
+                'mycal.notify.deleteTitle': 'Meeting cancelled',
+                'mycal.notify.deleteBody': '{title} · {date} {start}–{end} · {room}',
+                'mycal.notify.removedTitle': 'Removed from a meeting',
+                'mycal.notify.removedBody': 'You were removed from "{title}"',
+                'mycal.notify.changeTitle': '{title} changed',
+                'mycal.notify.changeBody': '{before} → {after}',
+                'mycal.notify.remindTitle': 'Starting soon',
+                'mycal.notify.remindBody': '{title} starts at {start} · {room}'
             },
             zh: {
                 'app.title': 'Gama 會議室預約系統',
@@ -3175,7 +3211,22 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
                 'mycal.jump.rangeHintMonth': '可選範圍：往前 {back} 週、往後 {fwd} 週（同週表）',
                 'mycal.jump.prevMonth': '上個月',
                 'mycal.jump.nextMonth': '下個月',
-                'mycal.wd.0': '日', 'mycal.wd.1': '一', 'mycal.wd.2': '二', 'mycal.wd.3': '三', 'mycal.wd.4': '四', 'mycal.wd.5': '五', 'mycal.wd.6': '六'
+                'mycal.wd.0': '日', 'mycal.wd.1': '一', 'mycal.wd.2': '二', 'mycal.wd.3': '三', 'mycal.wd.4': '四', 'mycal.wd.5': '五', 'mycal.wd.6': '六',
+                'mycal.notify.btnOff': '點一下開啟通知，記得允許瀏覽器通知',
+                'mycal.notify.testTitle': '通知已開啟',
+                'mycal.notify.testBody': '之後你的會議有新增、異動、取消或快開始時，會在這裡通知你。',
+                'mycal.notify.btnOn': '桌面通知已開啟（點擊關閉）',
+                'mycal.notify.btnBlocked': '通知已被瀏覽器封鎖，請到網址列的網站設定開啟',
+                'mycal.notify.insertTitle': '新會議',
+                'mycal.notify.insertBody': '{title}．{date} {start}–{end}．{room}',
+                'mycal.notify.deleteTitle': '會議已取消',
+                'mycal.notify.deleteBody': '{title}．{date} {start}–{end}．{room}',
+                'mycal.notify.removedTitle': '被移出會議',
+                'mycal.notify.removedBody': '你被移出「{title}」的與會名單',
+                'mycal.notify.changeTitle': '{title} 異動',
+                'mycal.notify.changeBody': '{before} → {after}',
+                'mycal.notify.remindTitle': '即將開始',
+                'mycal.notify.remindBody': '{title} {start} 開始．{room}'
             }
         };
 
@@ -4478,23 +4529,25 @@ function cancelEdit() {
                             bookings.push(newBooking);
                             updateSchedule();
                             if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
-
-                            // 顯示通知
-                            if (payload.new.organizer !== getCurrentUser()) {
-                                showNotification(t('notify.newBooking', { title: payload.new.title, organizer: payload.new.organizer }));
-                            }
+                            // 桌面通知（README 第 17 條）：自己剛新增的不通知自己，見 mycalNotifyEvent/mycalIsLocalEdit
+                            if (typeof mycalNotifyEvent === 'function') mycalNotifyEvent('insert', null, newBooking);
                         } else if (payload.eventType === 'DELETE') {
-                            // 刪除預約
+                            // 刪除預約：先取被刪那筆的完整資料給通知內容用——payload.old 通常只有 id，
+                            // 資料庫層的 old_record 沒有其餘欄位，只能靠本機既有的 bookings 陣列補
+                            const deletedBooking = bookings.find(b => b.id === payload.old.id) || null;
                             bookings = bookings.filter(b => b.id !== payload.old.id);
                             updateSchedule();
                             if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
+                            if (typeof mycalNotifyEvent === 'function') mycalNotifyEvent('delete', deletedBooking, null);
                         } else if (payload.eventType === 'UPDATE') {
-                            // 更新預約
+                            // 更新預約：先留一份舊資料給通知比對「改前→改後」，同樣理由不能靠 payload.old
                             const index = bookings.findIndex(b => b.id === payload.new.id);
                             if (index !== -1) {
+                                const beforeBooking = bookings[index];
                                 bookings[index] = formatBookingFromDB(payload.new);
                                 updateSchedule();
                                 if (typeof mycalOnDataChanged === 'function') mycalOnDataChanged();
+                                if (typeof mycalNotifyEvent === 'function') mycalNotifyEvent('update', beforeBooking, bookings[index]);
                             }
                         }
                     }
@@ -5652,7 +5705,9 @@ function showRecurringDeleteModal(targetBooking, recurringInfo) {
             
             try {
                 showLoading(true);
-                
+                // 自己剛刪除的這幾筆，Realtime 回音回來時不通知自己（README 第 17 條）
+                if (typeof mycalMarkLocalEdit === 'function') bookingIds.forEach(mycalMarkLocalEdit);
+
                 // 批量刪除
                 const { error } = await supabaseClient
                     .from('bookings')
@@ -6707,6 +6762,8 @@ async function checkAndSaveBookings(datesToBook, room, startTime, endTime, title
             if (saved) {
                 successCount++;
                 savedRecords.push(saved);
+                // 自己剛新增的這筆，Realtime 回音回來時不通知自己（README 第 17 條）
+                if (typeof mycalMarkLocalEdit === 'function') mycalMarkLocalEdit(saved.id);
                 console.log(`預約成功: ${bookingDate}`);
             } else {
                 failedDates.push(bookingDate);
@@ -7049,6 +7106,8 @@ async function updateBooking() {
 
         // 單次更新
         async function updateSingleBooking(title, room, date, startTime, endTime, organizer, attendees = '') {
+            // 自己剛編輯的這筆，Realtime 回音回來時不通知自己（README 第 17 條）
+            if (typeof mycalMarkLocalEdit === 'function') mycalMarkLocalEdit(currentEditingBooking.id);
             const { error } = await supabaseClient
                 .from('bookings')
                 .update({
@@ -7110,6 +7169,8 @@ async function updateBooking() {
             
             for (const booking of futureBookingsToEdit) {
                 try {
+                    // 自己剛編輯的這幾筆，Realtime 回音回來時不通知自己（README 第 17 條）
+                    if (typeof mycalMarkLocalEdit === 'function') mycalMarkLocalEdit(booking.id);
                     const { error } = await supabaseClient
                         .from('bookings')
                         .update({
@@ -7772,9 +7833,14 @@ function mycalBookingsOnDate(ds) {
 }
 // 「我的會議」＝主辦人是我，或與會者（逗號分隔字串，先 split、trim）含我
 function mycalIsMine(b) {
-    if (!mycalState.me) return false;
-    if (b.organizer === mycalState.me) return true;
-    return splitAttendeesText(b.attendees).includes(mycalState.me);
+    return mycalIsMineFor(b, mycalState.me);
+}
+// 同一份判斷但可帶入任意 me：桌面通知要對 Realtime 事件的 before/after 兩份資料各判一次，
+// 不能只靠 mycalIsMine() 依賴的全域 mycalState.me（見「桌面通知」一節）。
+function mycalIsMineFor(b, me) {
+    if (!me || !b) return false;
+    if (b.organizer === me) return true;
+    return splitAttendeesText(b.attendees).includes(me);
 }
 function mycalIsFree(ds, room, sMin, eMin, ignoreId) {
     return !mycalBookingsOnDate(ds).some(b => b.room === room && b.id !== ignoreId
@@ -7894,6 +7960,216 @@ function mycalBindPicker() {
         mycalRender();
     });
     document.getElementById('mycalMeChip').addEventListener('click', mycalOpenPicker);
+}
+
+// ---------- 桌面通知（README 第 17 條：網頁開著時才通知，關掉分頁就收不到） ----------
+// 開關存 localStorage gama_notify（'on'/'off'）；Notification.permission 一律現查，不快取，
+// 因為使用者隨時可能自己去瀏覽器的網站設定改掉權限。
+const MYCAL_NOTIFY_KEY = 'gama_notify';
+function mycalLoadNotifyPref() {
+    try { return localStorage.getItem(MYCAL_NOTIFY_KEY) === 'on' ? 'on' : 'off'; } catch (e) { return 'off'; }
+}
+function mycalSaveNotifyPref(v) {
+    try { localStorage.setItem(MYCAL_NOTIFY_KEY, v); } catch (e) { /* 私密視窗等情況存不了，這次 session 仍可用 */ }
+}
+const MYCAL_ICON_BELL = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>';
+const MYCAL_ICON_BELL_OFF = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.7 3A6 6 0 0 1 18 8c0 2.4.5 4.4 1.1 5.8"></path><path d="M17.2 17.2A18 18 0 0 1 18 17H6s2.4-1.8 2.9-6.1"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path><line x1="2" y1="2" x2="22" y2="22"></line></svg>';
+// 三種狀態：unsupported（瀏覽器沒有 Notification，鈕不顯示）／blocked（使用者在瀏覽器設定封鎖）／
+// on（權限 granted 且使用者自己選開）／off（其餘情況，含 permission 還是 default）
+function mycalNotifyState() {
+    if (!('Notification' in window)) return 'unsupported';
+    if (Notification.permission === 'denied') return 'blocked';
+    if (Notification.permission === 'granted' && mycalLoadNotifyPref() === 'on') return 'on';
+    return 'off';
+}
+function mycalRenderNotifyBtn() {
+    const btn = document.getElementById('mycalNotifyBtn');
+    if (!btn) return;
+    const state = mycalNotifyState();
+    if (state === 'unsupported') { btn.hidden = true; return; }
+    btn.hidden = false;
+    btn.classList.toggle('mycal-notify-on', state === 'on');
+    // 未開啟跟被封鎖同一個外觀（淡色、鈴鐺加斜線），差別只在提示文字
+    btn.classList.toggle('mycal-notify-muted', state !== 'on');
+    btn.innerHTML = state === 'on' ? MYCAL_ICON_BELL : MYCAL_ICON_BELL_OFF;
+    const label = t(state === 'on' ? 'mycal.notify.btnOn' : state === 'blocked' ? 'mycal.notify.btnBlocked' : 'mycal.notify.btnOff');
+    // 用自訂浮動提示（data-tip）取代 title：title 要停好一陣子才出現，使用者在點之前就該看到「記得允許」
+    btn.removeAttribute('title');
+    btn.dataset.tip = label;
+    btn.setAttribute('aria-label', label);
+    btn.setAttribute('aria-pressed', String(state === 'on'));
+}
+async function mycalToggleNotify() {
+    const state = mycalNotifyState();
+    if (state === 'unsupported') return;
+    if (state === 'blocked') { mycalToast(t('mycal.notify.btnBlocked')); return; }
+    if (state === 'on') {
+        mycalSaveNotifyPref('off');
+        mycalRenderNotifyBtn();
+        return;
+    }
+    // 'off'：權限可能是 default，或使用者先前自己關掉；一定要在點擊事件裡直接呼叫才會跳出瀏覽器權限框
+    try {
+        const perm = await Notification.requestPermission();
+        mycalSaveNotifyPref(perm === 'granted' ? 'on' : 'off');
+        // 開啟當下先跳一則，讓使用者立刻確認系統層（Windows 通知設定、勿擾模式）真的有放行
+        if (perm === 'granted') mycalFireNotification({ title: t('mycal.notify.testTitle'), body: t('mycal.notify.testBody'), tag: 'mycal-notify-test' }, null);
+    } catch (e) { /* 極舊瀏覽器可能不支援 Promise 形式，略過 */ }
+    mycalRenderNotifyBtn();
+}
+function mycalBindNotifyBtn() {
+    const btn = document.getElementById('mycalNotifyBtn');
+    if (!btn) return;
+    // 直接綁在按鈕本身，不是委派監聽，SVG 圖示切換不會影響這裡（跟 CLAUDE.md「操作按鈕改 SVG icon」那條的
+    // 疑慮不同：那條是指委派監聽時要用 closest('button') 抓，這裡從一開始就綁在 button 元素上）
+    btn.addEventListener('click', mycalToggleNotify);
+}
+
+// 自己在這台瀏覽器剛做的新增／編輯／刪除，60 秒內不通知自己——Realtime 會把自己的改動也廣播回來
+const mycalLocalEdits = new Map();
+const MYCAL_LOCAL_EDIT_TTL_MS = 60000;
+function mycalMarkLocalEdit(id) {
+    if (id != null) mycalLocalEdits.set(String(id), Date.now());
+}
+function mycalIsLocalEdit(id) {
+    if (id == null) return false;
+    const key = String(id);
+    const ts = mycalLocalEdits.get(key);
+    if (ts == null) return false;
+    if (Date.now() - ts > MYCAL_LOCAL_EDIT_TTL_MS) { mycalLocalEdits.delete(key); return false; }
+    return true;
+}
+
+// 資料庫的時間是 HH:MM:SS，通知裡只顯示到分
+function mycalHHMM(v) { return String(v || '').slice(0, 5); }
+// 通知裡的日期：中文 10/1（四）、英文 10/1 (Thu)，星期沿用全站的 day.* 文案
+function mycalNotifyDate(ds) {
+    const d = mycalParseDate(ds);
+    const w = getDayName(d);
+    return w.startsWith('週') ? `${d.getMonth() + 1}/${d.getDate()}（${w.slice(1)}）` : `${d.getMonth() + 1}/${d.getDate()} (${w})`;
+}
+
+// 純函式：一次事件要不要通知、通知內容是什麼。不碰 DOM、不讀 mycalState，方便寫表格測試。
+// kind: 'insert' | 'update' | 'delete' | 'remind'；before/after 是 formatBookingFromDB() 那種形狀的預約物件（或 null）。
+function mycalBuildNotification(kind, before, after, me) {
+    if (!me) return null;
+    if (kind === 'insert') {
+        if (!after || !mycalIsMineFor(after, me)) return null;
+        return {
+            title: t('mycal.notify.insertTitle'),
+            body: t('mycal.notify.insertBody', { title: after.title || t('table.untitled'), date: mycalNotifyDate(after.date), start: mycalHHMM(after.startTime), end: mycalHHMM(after.endTime), room: tRoom(after.room) }),
+            tag: `mycal-notify-insert-${after.id}`
+        };
+    }
+    if (kind === 'delete') {
+        if (!before || !mycalIsMineFor(before, me)) return null;
+        return {
+            title: t('mycal.notify.deleteTitle'),
+            body: t('mycal.notify.deleteBody', { title: before.title || t('table.untitled'), date: mycalNotifyDate(before.date), start: mycalHHMM(before.startTime), end: mycalHHMM(before.endTime), room: tRoom(before.room) }),
+            tag: `mycal-notify-delete-${before.id}`
+        };
+    }
+    if (kind === 'update') {
+        if (!before || !after) return null;
+        const wasMine = mycalIsMineFor(before, me);
+        const isMine = mycalIsMineFor(after, me);
+        if (wasMine && !isMine) {
+            // 涵蓋「被移出與會者」，也涵蓋主辦人轉給別人、我又不在與會者名單裡這種較少見的情況
+            return {
+                title: t('mycal.notify.removedTitle'),
+                body: t('mycal.notify.removedBody', { title: after.title || before.title || t('table.untitled') }),
+                tag: `mycal-notify-removed-${after.id}`
+            };
+        }
+        if (!wasMine || !isMine) return null; // 改動前後都不是我的會議，不通知
+        if (before.date !== after.date || before.startTime !== after.startTime || before.endTime !== after.endTime || before.room !== after.room) {
+            const beforeDesc = `${mycalNotifyDate(before.date)} ${mycalHHMM(before.startTime)}-${mycalHHMM(before.endTime)} ${tRoom(before.room)}`;
+            const afterDesc = `${mycalNotifyDate(after.date)} ${mycalHHMM(after.startTime)}-${mycalHHMM(after.endTime)} ${tRoom(after.room)}`;
+            return {
+                title: t('mycal.notify.changeTitle', { title: after.title || t('table.untitled') }),
+                body: t('mycal.notify.changeBody', { before: beforeDesc, after: afterDesc }),
+                tag: `mycal-notify-update-${after.id}`
+            };
+        }
+        return null; // 只改主題等跟時間／地點無關的欄位，不通知
+    }
+    if (kind === 'remind') {
+        if (!after || !mycalIsMineFor(after, me)) return null;
+        return {
+            title: t('mycal.notify.remindTitle'),
+            body: t('mycal.notify.remindBody', { title: after.title || t('table.untitled'), start: mycalHHMM(after.startTime), room: tRoom(after.room) }),
+            tag: `mycal-notify-remind-${after.id}-${after.date}-${after.startTime}`
+        };
+    }
+    return null;
+}
+
+// 實際跳出瀏覽器通知；點擊後 focus 分頁、切到「我的行事曆」，還存在的那筆就開詳情
+// （已被刪除的那筆 mycalOpenDetail 會被下面的存在檢查擋掉，只切頁籤，符合 README 第 17 條）
+function mycalFireNotification(built, id) {
+    if (!built) return;
+    let n;
+    try { n = new Notification(built.title, { body: built.body, tag: built.tag }); }
+    catch (e) { console.warn('顯示桌面通知失敗:', e); return; }
+    n.onclick = () => {
+        window.focus();
+        const tab = document.getElementById('mycalTabMycal');
+        if (tab) tab.click();
+        if (id != null && bookings.some(b => String(b.id) === String(id))) mycalOpenDetail(id);
+        n.close();
+    };
+}
+// Realtime 新增／更改／刪除共用的守門：權限、開關、是否是自己剛做的動作都在這裡擋，
+// setupRealtimeSubscription() 只管把 before/after 資料整理好，不重複寫這些判斷。
+function mycalNotifyEvent(kind, before, after) {
+    if (mycalNotifyState() !== 'on') return;
+    const id = (after && after.id != null) ? after.id : (before ? before.id : null);
+    if (mycalIsLocalEdit(id)) return; // 自己剛做的改動，Realtime 回音不通知自己
+    const built = mycalBuildNotification(kind, before, after, mycalState.me);
+    mycalFireNotification(built, id);
+}
+
+// ---------- 提醒：會議開始前 10 分鐘內、還沒提醒過就跳 ----------
+const MYCAL_REMIND_KEY = 'gama_mycal_reminded';
+const MYCAL_REMIND_WINDOW_MS = 10 * 60 * 1000;
+const MYCAL_REMIND_TTL_MS = 24 * 60 * 60 * 1000;
+function mycalRemindKey(b) { return `${b.id}|${b.date}|${b.startTime}`; }
+function mycalLoadRemindedMap() {
+    try {
+        const raw = localStorage.getItem(MYCAL_REMIND_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+}
+function mycalSaveRemindedMap(map) {
+    try { localStorage.setItem(MYCAL_REMIND_KEY, JSON.stringify(map)); } catch (e) { /* 私密視窗等情況存不了，這次 session 仍可用 */ }
+}
+function mycalMeetingStartMs(b) {
+    const d = mycalParseDate(b.date);
+    const parts = String(b.startTime || '').split(':');
+    d.setHours(Number(parts[0]) || 0, Number(parts[1]) || 0, 0, 0);
+    return d.getTime();
+}
+// 每 30 秒的計時器、頁面載入、資料重繪都呼叫這個（見 initMycalCalendar／mycalOnDataChanged）
+function mycalCheckReminders() {
+    if (!mycalState.me) return;
+    if (mycalNotifyState() !== 'on') return;
+    const now = Date.now();
+    const cutoff = now - MYCAL_REMIND_TTL_MS;
+    const map = mycalLoadRemindedMap();
+    const pruned = {};
+    Object.keys(map).forEach(k => { if (map[k] >= cutoff) pruned[k] = map[k]; });
+    bookings.filter(mycalIsMine).forEach(b => {
+        if (!b.startTime) return;
+        const diff = mycalMeetingStartMs(b) - now;
+        if (diff <= 0 || diff > MYCAL_REMIND_WINDOW_MS) return;
+        const key = mycalRemindKey(b);
+        if (pruned[key]) return;
+        const built = mycalBuildNotification('remind', null, b, mycalState.me);
+        if (!built) return;
+        mycalFireNotification(built, b.id);
+        pruned[key] = now;
+    });
+    mycalSaveRemindedMap(pruned);
 }
 
 // ---------- 工具列：圖例、上一段/下一段/今天、尺度切換 ----------
@@ -8537,6 +8813,8 @@ function mycalToast(msg) {
 
 // ---------- 資料變更後的重繪掛勾：loadBookings() 全量重載與 Realtime 單筆異動都走這裡，不要兩處各寫一套 ----------
 function mycalOnDataChanged() {
+    // 提醒要在任何分頁（不限「我的行事曆」是不是目前分頁）都持續檢查，所以放在 active 判斷之前
+    mycalCheckReminders();
     if (!mycalState.active) return;
     // 新增彈窗開著時：不關彈窗、不清輸入，只重算右上角提示與會議室下拉的「已被預約」標記；
     // 底下的月／週／日畫面仍要照最新資料重繪，不能因為彈窗開著就整個跳過
@@ -8566,6 +8844,7 @@ function mycalOnDataChanged() {
 }
 function mycalOnLangChanged() {
     mycalRenderMeChip();
+    mycalRenderNotifyBtn();
     if (mycalState.active) mycalRender();
     if (mycalModalStack.includes(document.getElementById('mycalPickerModal'))) {
         mycalRenderPicker(document.getElementById('mycalPickerSearch').value);
@@ -8587,14 +8866,20 @@ function initMycalCalendar() {
     mycalState.filter = mycalLoadFilter();
     mycalInitBookingStatics();
     mycalRenderMeChip();
+    mycalRenderNotifyBtn();
     mycalBindTabs();
     mycalBindOverlayClose();
     mycalBindPicker();
+    mycalBindNotifyBtn();
     mycalBindToolbar();
     mycalBindJumpPop();
     mycalBindViewClicks();
     mycalBindBookingForm();
     mycalBindDetailActions();
+    // 頁面載入先檢查一次（此時 bookings 通常還是空的，之後 loadBookings() 完成會經
+    // mycalOnDataChanged() 再檢查一次），另外每 30 秒背景檢查一次（背景分頁會被瀏覽器降頻，可接受）
+    mycalCheckReminders();
+    setInterval(mycalCheckReminders, 30000);
     window.addEventListener('popstate', () => {
         if (mycalSkipPop > 0) { mycalSkipPop--; return; }
         if (mycalModalStack.length) mycalCloseTop(true);

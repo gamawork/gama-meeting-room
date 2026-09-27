@@ -32,6 +32,19 @@ alter table public.bookings
 add column if not exists attendees text;
 ```
 
+### Realtime（即時同步與桌面通知的前提）
+
+`bookings` 必須在 `supabase_realtime` publication 裡，否則前端訂閱會顯示 joined 卻收不到任何事件：
+週表不會自動更新、「我的行事曆」桌面通知的新增／更改／取消都不會觸發（只有開會前 10 分鐘提醒不受影響）。
+2026-09-27 前一直沒開，使用者於當天在 SQL Editor 套用：
+
+```sql
+alter publication supabase_realtime add table public.bookings;
+```
+
+- UPDATE／DELETE 的 payload.old 預設只有 id（沒設 REPLICA IDENTITY FULL），前端改前資料一律從本機 `bookings` 陣列取。
+- 這個專案的 Supabase 不在本機 CLI 登入的個人帳號底下，Claude 無法直接下 DDL；資料庫設定一律由使用者在後台執行。
+
 ### 時段防撞（三層，缺一層就會再出現重複預約）
 
 1. 前端送出前的 `checkRecurringConflicts(...)` 衝突檢查。
