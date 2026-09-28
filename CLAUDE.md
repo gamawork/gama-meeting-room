@@ -98,6 +98,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 - **系統依賴介紹頁**：`index.html` 右上角 i 鈕的「看 20 秒示範」（中英各兩顆 `help-video-btn`）的 `data-video`
   直接連到 Cloudflare 上的 `launch/media/*-1080.mp4`（2026-09-28 起，為了避開 GitHub Pages 下載慢）。
   刪掉或改名 `launch/media` 的影片、改 Worker 名稱或網址前，先改這四個 `data-video`，不然系統裡的示範會壞掉。
+  同一個彈窗標題旁的「連結／Link」（`.help-launch-link`）也寫死介紹頁網址，改網址時一併改。
 
 ## 發生亂碼時的處理
 

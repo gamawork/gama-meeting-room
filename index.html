@@ -2307,7 +2307,14 @@ html:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
 /* 新功能介紹彈窗：中英兩份內容都寫在 HTML 裡，依 <html lang> 顯示其中一份 */
 html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
 .help-dialog { max-width: 773px; padding: 20px 32px; }
-.help-dialog .mycal-dialog-head { margin-bottom: 10px; }
+.help-dialog .mycal-dialog-head { margin-bottom: 10px; justify-content: flex-start; }
+/* 標題旁連到 Cloudflare 上的新功能介紹頁（launch/），樣式跟示範影片鈕一致 */
+.help-launch-link {
+    flex: none; border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3; border-radius: 999px;
+    padding: 2px 10px; font-size: 12px; font-weight: 700; line-height: 1.4; text-decoration: none;
+}
+.help-launch-link::after { content: " ↗"; }
+.help-launch-link:hover { background: #e0e7ff; }
 .help-section + .help-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
 .help-section h3 { margin: 0 0 8px; font-size: 17px; color: var(--mycal-navy); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .help-video-btn {
@@ -2356,6 +2363,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
     .mycal-dots { display: flex; }
     .mycal-dialog { padding: 22px 18px; border-radius: 16px; }
     .mycal-dialog-head { flex-direction: column; gap: 4px; }
+    .help-dialog .mycal-dialog-head { flex-direction: row; align-items: baseline; gap: 10px; }
     .mycal-dialog-head h2 { font-size: 22px; }
     .mycal-form-grid { grid-template-columns: 1fr; }
     .mycal-tg-scroll { max-height: calc(100vh - 260px); }
@@ -2632,7 +2640,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
     <div class="mycal-overlay" id="helpModal" hidden>
         <div class="mycal-dialog help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
             <button class="mycal-x" type="button" data-close data-i18n-title="mycal.common.close" aria-label="Close">×</button>
-            <div class="mycal-dialog-head"><h2 id="helpTitle" data-i18n="help.title">What's New</h2></div>
+            <div class="mycal-dialog-head"><h2 id="helpTitle" data-i18n="help.title">What's New</h2><a class="help-launch-link" href="https://gama-meeting-room-launch.gamawork2025.workers.dev/" target="_blank" rel="noopener" data-i18n="help.link">Link</a></div>
             <div class="help-zh">
                 <section class="help-section">
                     <h3>📅 我的行事曆：只看跟你有關的會議<button type="button" class="help-video-btn" data-video="https://gama-meeting-room-launch.gamawork2025.workers.dev/media/my-calendar-1080.mp4">▶ 看 20 秒示範</button></h3>
@@ -3095,6 +3103,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                 // ===== 新功能介紹（i 鈕）；內文中英兩份直接寫在 #helpModal 的 HTML 裡 =====
                 'help.btn': "What's new",
                 'help.title': "What's New",
+                'help.link': 'Link',
                 'help.video': 'Demo video'
             },
             zh: {
@@ -3402,6 +3411,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                 // ===== 新功能介紹（i 鈕）=====
                 'help.btn': '新功能介紹',
                 'help.title': '新功能介紹',
+                'help.link': '連結',
                 'help.video': '示範影片'
             }
         };
