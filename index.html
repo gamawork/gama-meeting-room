@@ -2306,13 +2306,13 @@ html:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
 
 /* 新功能介紹彈窗：中英兩份內容都寫在 HTML 裡，依 <html lang> 顯示其中一份 */
 html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
-.help-dialog { max-width: 672px; padding: 24px 32px; }
-.help-dialog .mycal-dialog-head { margin-bottom: 14px; }
-.help-section + .help-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
-.help-section h3 { margin: 0 0 8px; font-size: 17px; color: var(--mycal-navy); display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.help-dialog { max-width: 773px; padding: 20px 32px; }
+.help-dialog .mycal-dialog-head { margin-bottom: 10px; }
+.help-section + .help-section { margin-top: 14px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+.help-section h3 { margin: 0 0 8px; font-size: 17px; color: var(--mycal-navy); display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .help-video-btn {
     flex: none; border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3; border-radius: 999px;
-    padding: 4px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    padding: 2px 10px; font: inherit; font-size: 12px; font-weight: 700; line-height: 1.4; cursor: pointer;
 }
 .help-video-btn:hover { background: #e0e7ff; }
 /* 示範影片：疊在說明視窗上面，Esc／點外面／返回鍵關閉時由 mycalCloseTop 停止播放 */
