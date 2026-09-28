@@ -214,6 +214,27 @@ p, h3 { text-wrap: pretty; }
 .film-btn .i-play { display: none; }
 .film-btn.paused .i-play { display: block; }
 .film-btn.paused .i-pause { display: none; }
+.film-btn .i-replay { display: none; }
+.film-btn.ended .i-replay { display: block; }
+.film-btn.ended .i-play, .film-btn.ended .i-pause { display: none; }
+/* 細進度條：貼在影片底部，點一下跳到該時間點 */
+.film-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.28);
+  cursor: pointer;
+}
+.film-progress::before { content: ""; position: absolute; inset: -12px 0 0; }
+.film-progress span {
+  display: block;
+  height: 100%;
+  background: #ffffff;
+  transform-origin: left center;
+  transform: scaleX(0);
+}
 .film-snd { right: 72px; }
 .film-snd .i-muted { display: none; }
 .film-snd.muted .i-muted { display: block; }
@@ -537,7 +558,7 @@ sup a { color: inherit; }
       <p>你主辦的、你被邀請的，<b class="nw">全部集中在這裡</b>。不用再從一整面週表裡找自己的名字。</p>
     </div>
     <figure class="film">
-      <video data-film data-src="media/my-calendar-1080.mp4" poster="media/poster-cal.jpg" muted loop playsinline preload="auto" aria-label="我的行事曆 20 秒示範"></video>
+      <video data-film data-src="media/my-calendar-1080.mp4" poster="media/poster-cal.jpg" muted playsinline preload="auto" aria-label="我的行事曆 20 秒示範"></video>
       <button class="film-btn film-snd muted" type="button" aria-label="開啟聲音">
         <svg class="i-muted" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 5.5h2.8L8 2.4v11.2L4.3 10.5H1.5z"/><path d="M10.5 5.8l4 4.4M14.5 5.8l-4 4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <svg class="i-sound" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 5.5h2.8L8 2.4v11.2L4.3 10.5H1.5z"/><path d="M10.3 5.6a3.4 3.4 0 010 4.8M12.4 3.6a6.3 6.3 0 010 8.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -545,7 +566,9 @@ sup a { color: inherit; }
       <button class="film-btn" type="button" aria-label="暫停影片">
         <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
         <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.2v11.6c0 .6.7 1 1.2.6l8.4-5.8c.4-.3.4-1 0-1.3L5.2 1.6C4.7 1.2 4 1.6 4 2.2z"/></svg>
+        <svg class="i-replay" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M2.4 1.8v3.6H6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
+      <div class="film-progress" aria-hidden="true"><span></span></div>
     </figure>
     <p class="film-cap">20 秒示範：月、週、日切換，只看我的與全部，點空檔直接預約。</p>
 
@@ -635,7 +658,7 @@ sup a { color: inherit; }
     </div>
 
     <figure class="film">
-      <video data-film data-src="media/notifications-1080.mp4" poster="media/poster-ntf.jpg" muted loop playsinline preload="auto" aria-label="桌面通知 20 秒示範"></video>
+      <video data-film data-src="media/notifications-1080.mp4" poster="media/poster-ntf.jpg" muted playsinline preload="auto" aria-label="桌面通知 20 秒示範"></video>
       <button class="film-btn film-snd muted" type="button" aria-label="開啟聲音">
         <svg class="i-muted" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 5.5h2.8L8 2.4v11.2L4.3 10.5H1.5z"/><path d="M10.5 5.8l4 4.4M14.5 5.8l-4 4.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <svg class="i-sound" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 5.5h2.8L8 2.4v11.2L4.3 10.5H1.5z"/><path d="M10.3 5.6a3.4 3.4 0 010 4.8M12.4 3.6a6.3 6.3 0 010 8.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -643,7 +666,9 @@ sup a { color: inherit; }
       <button class="film-btn" type="button" aria-label="暫停影片">
         <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="2" width="3.5" height="12" rx="1"/><rect x="9.5" y="2" width="3.5" height="12" rx="1"/></svg>
         <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.2v11.6c0 .6.7 1 1.2.6l8.4-5.8c.4-.3.4-1 0-1.3L5.2 1.6C4.7 1.2 4 1.6 4 2.2z"/></svg>
+        <svg class="i-replay" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 8a4.8 4.8 0 1 0 1.5-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M2.4 1.8v3.6H6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
+      <div class="film-progress" aria-hidden="true"><span></span></div>
     </figure>
     <p class="film-cap">新增、改時間、取消，一則都不漏。</p>
 
@@ -786,12 +811,15 @@ sup a { color: inherit; }
     }, { threshold: 0.5 }).observe(tile);
   });
 
-  // 影片：進畫面自動播（靜音），離開就停；按鈕可手動暫停
+  // 影片：露出 90% 才從頭播一次（靜音），播完停在最後一格、按鈕變重播；幾乎離開畫面就暫停，下次進來再從頭播
   document.querySelectorAll('.film').forEach(function (fig) {
     var v = fig.querySelector('video');
     var btn = fig.querySelector('.film-btn:not(.film-snd)');
     var snd = fig.querySelector('.film-snd');
+    var bar = fig.querySelector('.film-progress');
+    var fill = bar.querySelector('span');
     var userPaused = reduce;
+    var inView = false;
     // 影片不在一開頁就下載（會跟首圖搶頻寬），捲到離畫面約一個螢幕高時才掛上 src
     function load() { if (!v.getAttribute('src')) v.src = v.dataset.src; }
     function play() { load(); v.play().catch(function () {}); }
@@ -815,22 +843,46 @@ sup a { color: inherit; }
       }
     });
     function sync() {
-      btn.classList.toggle('paused', v.paused);
-      btn.setAttribute('aria-label', v.paused ? '播放影片' : '暫停影片');
+      btn.classList.toggle('ended', v.ended);
+      btn.classList.toggle('paused', v.paused && !v.ended);
+      btn.setAttribute('aria-label', v.ended ? '重播影片' : v.paused ? '播放影片' : '暫停影片');
     }
-    v.addEventListener('play', sync);
-    v.addEventListener('pause', sync);
+    ['play', 'pause', 'ended', 'seeked'].forEach(function (ev) { v.addEventListener(ev, sync); });
     sync();
     btn.addEventListener('click', function () {
-      if (v.paused) { userPaused = false; play(); }
+      userPaused = false;
+      if (v.ended) { v.currentTime = 0; play(); }
+      else if (v.paused) play();
       else { userPaused = true; v.pause(); }
     });
+
+    // 進度條：播放中用 rAF 畫，timeupdate 一秒只觸發幾次會一格一格跳
+    var raf = 0;
+    function paint() { if (v.duration) fill.style.transform = 'scaleX(' + (v.currentTime / v.duration) + ')'; }
+    function tick() { paint(); raf = v.paused ? 0 : requestAnimationFrame(tick); }
+    v.addEventListener('play', function () { cancelAnimationFrame(raf); tick(); });
+    ['pause', 'ended', 'seeked'].forEach(function (ev) { v.addEventListener(ev, paint); });
+    bar.addEventListener('click', function (e) {
+      load();
+      if (!v.duration) return;
+      var r = bar.getBoundingClientRect();
+      v.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * v.duration;
+      paint();
+    });
+
+    // 視窗比影片矮時永遠露不到 90%，就改成「佔滿視窗高度的 90%」也算
+    function need(e) { return Math.min(0.9, 0.9 * window.innerHeight / e.boundingClientRect.height); }
     new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
-        if (e.isIntersecting && !userPaused) play();
-        else if (!e.isIntersecting) v.pause();
+        if (!inView && e.intersectionRatio >= need(e) - 0.001) {
+          inView = true;
+          if (!userPaused) { load(); v.currentTime = 0; play(); }
+        } else if (inView && e.intersectionRatio < 0.2) {
+          inView = false;
+          v.pause();
+        }
       });
-    }, { threshold: 0.35 }).observe(fig);
+    }, { threshold: [0, 0.2, 0.5, 0.75, 0.85, 0.9, 0.95, 1] }).observe(fig);
   });
 })();
 </script>
