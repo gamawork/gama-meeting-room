@@ -7,6 +7,16 @@
 <script>
   // 同一份 launch/ 也會被 GitHub Pages 發布，但那邊影片下載很慢；從 github.io 進來的一律轉到 Cloudflare 那份
   if (location.hostname.endsWith('github.io')) location.replace('https://gama-meeting-room-launch.gamawork2025.workers.dev/' + location.hash);
+  // 手機瀏覽器會沿用上次的捲動位置（使用者回報每次打開都在最下面）：沒有 #段落 時一律從頂端開始，
+  // 但使用者在載入完成前就自己捲動或點過，就不把他拉回去
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  if (!location.hash) {
+    var __touched = false;
+    ['touchstart', 'wheel', 'keydown', 'mousedown'].forEach(function (ev) { addEventListener(ev, function () { __touched = true; }, { once: true, passive: true }); });
+    var __toTop = function () { if (!__touched && window.scrollY > 0) window.scrollTo({ top: 0, behavior: 'instant' }); };
+    addEventListener('DOMContentLoaded', __toTop);
+    addEventListener('load', __toTop);
+  }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
