@@ -86,10 +86,36 @@
             color: white;
         }
 
-        .lang-switch {
+        /* 右上角：新功能介紹 i 鈕＋中英切換 */
+        .header-actions {
             position: absolute;
             top: 18px;
             right: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            color: white;
+            font: italic 700 15px Georgia, 'Times New Roman', serif;
+            line-height: 1;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .help-btn:hover {
+            background: rgba(255, 255, 255, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .lang-switch {
             padding: 6px 14px;
             border-radius: 999px;
             background: rgba(255, 255, 255, 0.12);
@@ -111,6 +137,24 @@
         .lang-switch .lang-active {
             color: #ffd166;
             text-shadow: 0 0 4px rgba(255, 209, 102, 0.4);
+        }
+
+        /* 標題左右對稱留出右上角按鈕的寬度，換行時才不會壓到按鈕 */
+        .header h1 {
+            padding: 0 110px;
+        }
+
+        /* 窄螢幕留白太浪費，改成按鈕自成一行靠右 */
+        @media (max-width: 768px) {
+            .header-actions {
+                position: static;
+                justify-content: flex-end;
+                margin: -8px -8px 8px 0;
+            }
+
+            .header h1 {
+                padding: 0;
+            }
         }
 
         .main-content {
@@ -2252,6 +2296,24 @@
 body:has(.mycal-overlay:not([hidden])) #floatingAddBtn,
 body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-conflict-modal[style*="block"], .edit-mode-modal[style*="block"]) #floatingAddBtn { display: none !important; }
 .mycal-detail-actions .mycal-detail-copytext { width: 32px; height: 32px; }
+
+/* 日曆系列彈窗開著時鎖住後面頁面的捲動，滾輪只作用在彈窗上；
+   scrollbar-gutter 保留捲軸的位置，鎖捲動時頁面才不會往右跳 */
+html { scrollbar-gutter: stable; }
+html:has(.mycal-overlay:not([hidden])) { overflow: hidden; }
+
+/* 新功能介紹彈窗：中英兩份內容都寫在 HTML 裡，依 <html lang> 顯示其中一份 */
+html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
+.help-dialog { max-width: 672px; padding: 24px 32px; }
+.help-dialog .mycal-dialog-head { margin-bottom: 14px; }
+.help-section + .help-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
+.help-section h3 { margin: 0 0 8px; font-size: 17px; color: var(--mycal-navy); }
+.help-section ol, .help-section ul { margin: 0; padding-left: 22px; line-height: 1.55; }
+.help-section ol > li + li { margin-top: 3px; }
+.help-section ul { margin-top: 2px; }
+.help-tip { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: #f8fafc; color: #475569; font-size: 13px; line-height: 1.55; }
+.help-tip p { margin: 0; font-weight: 700; color: #334155; }
+.help-tip p + ul, .help-tip ul + p { margin-top: 6px; }
 .mycal-detail-actions .mycal-detail-copytext svg { width: 14px; height: 14px; }
 /* 詳情彈窗是 mycal-sm（矮），下拉選單往下開容易被 .mycal-dialog 的 overflow:auto 裁掉，改往上開 */
 .mycal-detail-actions .calendar-menu { top: auto; bottom: 100%; }
@@ -2292,8 +2354,11 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
 <body>
     <div class="container">
         <div class="header">
+            <div class="header-actions">
+                <button type="button" id="helpBtn" class="help-btn" data-i18n-title="help.btn" title="What's new" aria-label="What's new">i</button>
+                <button type="button" id="langSwitch" class="lang-switch" onclick="toggleLang()" aria-label="Switch language"><span class="lang-active">EN</span> | <span>中</span></button>
+            </div>
             <h1 data-i18n="app.title">Gama Meeting Room Booking System</h1>
-            <button type="button" id="langSwitch" class="lang-switch" onclick="toggleLang()" aria-label="Switch language"><span class="lang-active">EN</span> | <span>中</span></button>
         </div>
 
         <div class="mycal-tabbar">
@@ -2553,6 +2618,89 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
     </div>
 
     <!-- 尺度膠囊跳轉（我的行事曆）：週檢視列週、日檢視出月曆 -->
+    <div class="mycal-overlay" id="helpModal" hidden>
+        <div class="mycal-dialog help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <button class="mycal-x" type="button" data-close data-i18n-title="mycal.common.close" aria-label="Close">×</button>
+            <div class="mycal-dialog-head"><h2 id="helpTitle" data-i18n="help.title">What's New</h2></div>
+            <div class="help-zh">
+                <section class="help-section">
+                    <h3>📅 我的行事曆：只看跟你有關的會議</h3>
+                    <ol>
+                        <li>點上方的「<b>我的行事曆</b>」頁籤。</li>
+                        <li>第一次使用時選你的名字就好，這台瀏覽器會記住，之後不用再選。</li>
+                        <li>你主辦或受邀參加的會議都會集中在這裡。可以切換<b>月／週／日</b>，也可以用「<b>只看我的／全部</b>」切換要不要看其他人的會議。</li>
+                        <li>想臨時訂會議室，直接點空白時段的「<b>＋ 新增</b>」就能預約。</li>
+                    </ol>
+                </section>
+                <section class="help-section">
+                    <h3>🔔 桌面通知：會議有變動，馬上知道</h3>
+                    <ol>
+                        <li>點名字旁邊的<b>鈴鐺</b>，瀏覽器問你要不要允許通知時，選「<b>允許</b>」。</li>
+                        <li>開啟後會馬上跳一則測試通知，看到就代表設定成功。</li>
+                        <li>之後遇到這些情況會通知你：
+                            <ul>
+                                <li>有新會議把你加進去</li>
+                                <li>你的會議改了時間或會議室</li>
+                                <li>你的會議被取消，或你被移出與會名單</li>
+                                <li>會議開始前 <b>10 分鐘</b></li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <div class="help-tip">
+                        <p>小提醒</p>
+                        <ul>
+                            <li>通知只在<b>這個網頁開著</b>的時候才收得到。可以放在背景分頁，但不要關掉。</li>
+                            <li>你自己做的新增、修改或取消，不會再通知你自己。</li>
+                        </ul>
+                        <p>按了允許卻沒看到測試通知？</p>
+                        <ul>
+                            <li><b>Windows</b>：到「設定 → 系統 → 通知」，確認通知有開、你用的瀏覽器也有允許，並關掉「勿擾」。</li>
+                            <li><b>Mac</b>：第一次通知時，系統可能會另外問一次，請選「允許」。如果之前按過拒絕，到「系統設定 → 通知」找到你用的瀏覽器（例如 Google Chrome、Safari），把「允許通知」打開，並關掉「專注模式」。</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+            <div class="help-en">
+                <section class="help-section">
+                    <h3>📅 My Calendar: just the meetings that involve you</h3>
+                    <ol>
+                        <li>Click the <b>My Calendar</b> tab at the top.</li>
+                        <li>The first time, just pick your name. This browser will remember it, so you only do this once.</li>
+                        <li>Every meeting you organize or attend shows up here. Switch between <b>Month / Week / Day</b>, and use <b>Mine / All</b> to show or hide other people's meetings.</li>
+                        <li>Need a room quickly? Click <b>+ Add</b> on any empty time slot to book it.</li>
+                    </ol>
+                </section>
+                <section class="help-section">
+                    <h3>🔔 Desktop notifications: know right away when a meeting changes</h3>
+                    <ol>
+                        <li>Click the <b>bell</b> next to your name, then choose <b>Allow</b> when your browser asks.</li>
+                        <li>A test notification pops up right away. If you see it, you're all set.</li>
+                        <li>From then on, you'll be notified when:
+                            <ul>
+                                <li>You're added to a new meeting</li>
+                                <li>One of your meetings changes time or room</li>
+                                <li>One of your meetings is cancelled, or you're removed from it</li>
+                                <li>A meeting starts in <b>10 minutes</b></li>
+                            </ul>
+                        </li>
+                    </ol>
+                    <div class="help-tip">
+                        <p>Tips</p>
+                        <ul>
+                            <li>Notifications only arrive while <b>this page is open</b>. A background tab is fine, just don't close it.</li>
+                            <li>You won't be notified about bookings you add, change, or cancel yourself.</li>
+                        </ul>
+                        <p>Allowed it but didn't see the test notification?</p>
+                        <ul>
+                            <li><b>Windows</b>: Go to Settings → System → Notifications. Make sure notifications are on, your browser is allowed, and Do not disturb is off.</li>
+                            <li><b>Mac</b>: macOS may ask again the first time a notification appears. Choose Allow. If you declined before, go to System Settings → Notifications, find your browser (e.g. Google Chrome or Safari), turn on Allow notifications, and turn off Focus.</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <div class="mycal-overlay mycal-pop-layer" id="mycalJumpModal" hidden>
         <div class="mycal-pop" id="mycalJumpPop" role="dialog" aria-modal="true" data-i18n-title="mycal.jump.ariaLabel" aria-label="Jump to another week or date"></div>
     </div>
@@ -2924,7 +3072,11 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
                 'mycal.notify.changeTitle': '{title} changed',
                 'mycal.notify.changeBody': '{before} → {after}',
                 'mycal.notify.remindTitle': 'Starting soon',
-                'mycal.notify.remindBody': '{title} starts at {start} · {room}'
+                'mycal.notify.remindBody': '{title} starts at {start} · {room}',
+
+                // ===== 新功能介紹（i 鈕）；內文中英兩份直接寫在 #helpModal 的 HTML 裡 =====
+                'help.btn': "What's new",
+                'help.title': "What's New"
             },
             zh: {
                 'app.title': 'Gama 會議室預約系統',
@@ -3226,7 +3378,11 @@ body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-
                 'mycal.notify.changeTitle': '{title} 異動',
                 'mycal.notify.changeBody': '{before} → {after}',
                 'mycal.notify.remindTitle': '即將開始',
-                'mycal.notify.remindBody': '{title} {start} 開始．{room}'
+                'mycal.notify.remindBody': '{title} {start} 開始．{room}',
+
+                // ===== 新功能介紹（i 鈕）=====
+                'help.btn': '新功能介紹',
+                'help.title': '新功能介紹'
             }
         };
 
@@ -8876,6 +9032,9 @@ function initMycalCalendar() {
     mycalBindViewClicks();
     mycalBindBookingForm();
     mycalBindDetailActions();
+    // 右上角 i 鈕：新功能介紹，沿用上面的彈窗堆疊，Esc／點外面／返回鍵都能關
+    const helpBtn = document.getElementById('helpBtn');
+    if (helpBtn) helpBtn.addEventListener('click', () => mycalOpenModal(document.getElementById('helpModal'), '.mycal-x'));
     // 頁面載入先檢查一次（此時 bookings 通常還是空的，之後 loadBookings() 完成會經
     // mycalOnDataChanged() 再檢查一次），另外每 30 秒背景檢查一次（背景分頁會被瀏覽器降頻，可接受）
     mycalCheckReminders();
