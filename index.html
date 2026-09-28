@@ -2297,17 +2297,28 @@ body:has(.mycal-overlay:not([hidden])) #floatingAddBtn,
 body:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-conflict-modal[style*="block"], .edit-mode-modal[style*="block"]) #floatingAddBtn { display: none !important; }
 .mycal-detail-actions .mycal-detail-copytext { width: 32px; height: 32px; }
 
-/* 日曆系列彈窗開著時鎖住後面頁面的捲動，滾輪只作用在彈窗上；
-   scrollbar-gutter 保留捲軸的位置，鎖捲動時頁面才不會往右跳 */
+/* 彈窗開著時鎖住後面頁面的捲動，滾輪只作用在彈窗上；
+   scrollbar-gutter 保留捲軸的位置，鎖捲動時頁面才不會往右跳。
+   日曆的彈窗用 hidden 屬性開關，週表的舊彈窗用 style.display='block'（同上面浮動新增鈕那條的清單） */
 html { scrollbar-gutter: stable; }
-html:has(.mycal-overlay:not([hidden])) { overflow: hidden; }
+html:has(.mycal-overlay:not([hidden])),
+html:has(#bookingModal[style*="block"], .recurring-modal[style*="block"], .edit-conflict-modal[style*="block"], .edit-mode-modal[style*="block"]) { overflow: hidden; }
 
 /* 新功能介紹彈窗：中英兩份內容都寫在 HTML 裡，依 <html lang> 顯示其中一份 */
 html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
 .help-dialog { max-width: 672px; padding: 24px 32px; }
 .help-dialog .mycal-dialog-head { margin-bottom: 14px; }
 .help-section + .help-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
-.help-section h3 { margin: 0 0 8px; font-size: 17px; color: var(--mycal-navy); }
+.help-section h3 { margin: 0 0 8px; font-size: 17px; color: var(--mycal-navy); display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.help-video-btn {
+    flex: none; border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3; border-radius: 999px;
+    padding: 4px 12px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.help-video-btn:hover { background: #e0e7ff; }
+/* 示範影片：疊在說明視窗上面，Esc／點外面／返回鍵關閉時由 mycalCloseTop 停止播放 */
+.help-video-box { position: relative; width: min(1100px, 100%, calc((100vh - 32px) * 16 / 9)); }
+.help-video-box video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; background: #000; box-shadow: 0 30px 60px rgba(15,23,42,.4); }
+.help-video-box .mycal-x { top: 10px; right: 10px; z-index: 1; background: rgba(15,23,42,.6); color: #fff; }
 .help-section ol, .help-section ul { margin: 0; padding-left: 22px; line-height: 1.55; }
 .help-section ol > li + li { margin-top: 3px; }
 .help-section ul { margin-top: 2px; }
@@ -2624,7 +2635,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
             <div class="mycal-dialog-head"><h2 id="helpTitle" data-i18n="help.title">What's New</h2></div>
             <div class="help-zh">
                 <section class="help-section">
-                    <h3>📅 我的行事曆：只看跟你有關的會議</h3>
+                    <h3>📅 我的行事曆：只看跟你有關的會議<button type="button" class="help-video-btn" data-video="docs/videos/my-calendar-20s.mp4">▶ 看 20 秒示範</button></h3>
                     <ol>
                         <li>點上方的「<b>我的行事曆</b>」頁籤。</li>
                         <li>第一次使用時選你的名字就好，這台瀏覽器會記住，之後不用再選。</li>
@@ -2633,7 +2644,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                     </ol>
                 </section>
                 <section class="help-section">
-                    <h3>🔔 桌面通知：會議有變動，馬上知道</h3>
+                    <h3>🔔 桌面通知：會議有變動，馬上知道<button type="button" class="help-video-btn" data-video="docs/videos/notifications-20s.mp4">▶ 看 20 秒示範</button></h3>
                     <ol>
                         <li>點名字旁邊的<b>鈴鐺</b>，瀏覽器問你要不要允許通知時，選「<b>允許</b>」。</li>
                         <li>開啟後會馬上跳一則測試通知，看到就代表設定成功。</li>
@@ -2662,7 +2673,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
             </div>
             <div class="help-en">
                 <section class="help-section">
-                    <h3>📅 My Calendar: just the meetings that involve you</h3>
+                    <h3>📅 My Calendar: just the meetings that involve you<button type="button" class="help-video-btn" data-video="docs/videos/my-calendar-20s.mp4">▶ Watch 20s demo</button></h3>
                     <ol>
                         <li>Click the <b>My Calendar</b> tab at the top.</li>
                         <li>The first time, just pick your name. This browser will remember it, so you only do this once.</li>
@@ -2671,7 +2682,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                     </ol>
                 </section>
                 <section class="help-section">
-                    <h3>🔔 Desktop notifications: know right away when a meeting changes</h3>
+                    <h3>🔔 Desktop notifications: know right away when a meeting changes<button type="button" class="help-video-btn" data-video="docs/videos/notifications-20s.mp4">▶ Watch 20s demo</button></h3>
                     <ol>
                         <li>Click the <b>bell</b> next to your name, then choose <b>Allow</b> when your browser asks.</li>
                         <li>A test notification pops up right away. If you see it, you're all set.</li>
@@ -2698,6 +2709,13 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                     </div>
                 </section>
             </div>
+        </div>
+    </div>
+
+    <div class="mycal-overlay" id="helpVideoModal" hidden>
+        <div class="help-video-box" role="dialog" aria-modal="true" aria-label="Demo video">
+            <button class="mycal-x" type="button" data-close data-i18n-title="mycal.common.close" aria-label="Close">×</button>
+            <video id="helpVideo" controls playsinline preload="none"></video>
         </div>
     </div>
 
@@ -3076,7 +3094,8 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
 
                 // ===== 新功能介紹（i 鈕）；內文中英兩份直接寫在 #helpModal 的 HTML 裡 =====
                 'help.btn': "What's new",
-                'help.title': "What's New"
+                'help.title': "What's New",
+                'help.video': 'Demo video'
             },
             zh: {
                 'app.title': 'Gama 會議室預約系統',
@@ -3382,7 +3401,8 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
 
                 // ===== 新功能介紹（i 鈕）=====
                 'help.btn': '新功能介紹',
-                'help.title': '新功能介紹'
+                'help.title': '新功能介紹',
+                'help.video': '示範影片'
             }
         };
 
@@ -8027,6 +8047,13 @@ function mycalCloseTop(fromPop) {
         const badge = document.getElementById('mycalScaleBadge');
         if (badge) badge.setAttribute('aria-expanded', 'false');
     }
+    if (el.id === 'helpVideoModal') {
+        // 關掉就停止播放並卸下影片，不然聲音會在背景繼續跑
+        const video = document.getElementById('helpVideo');
+        video.pause();
+        video.removeAttribute('src');
+        video.load();
+    }
     if (el.id === 'mycalDetailModal') {
         mycalDetailOpenId = null; // 關掉詳情彈窗後不再追蹤，Realtime 重繪才不會誤判它還開著
         const detailCalMenu = document.getElementById('mycalDetailCalMenu');
@@ -9035,6 +9062,16 @@ function initMycalCalendar() {
     // 右上角 i 鈕：新功能介紹，沿用上面的彈窗堆疊，Esc／點外面／返回鍵都能關
     const helpBtn = document.getElementById('helpBtn');
     if (helpBtn) helpBtn.addEventListener('click', () => mycalOpenModal(document.getElementById('helpModal'), '.mycal-x'));
+    // 說明裡的「看示範」：影片疊在說明視窗上面，點了才載入（preload="none"），不拖慢開頁
+    document.getElementById('helpModal').addEventListener('click', e => {
+        const btn = e.target?.closest?.('.help-video-btn');
+        if (!btn) return;
+        const video = document.getElementById('helpVideo');
+        video.src = btn.dataset.video;
+        document.querySelector('#helpVideoModal .help-video-box').setAttribute('aria-label', t('help.video'));
+        mycalOpenModal(document.getElementById('helpVideoModal'), null);
+        video.play().catch(() => { /* 瀏覽器擋自動播放時，使用者按播放鍵即可 */ });
+    });
     // 頁面載入先檢查一次（此時 bookings 通常還是空的，之後 loadBookings() 完成會經
     // mycalOnDataChanged() 再檢查一次），另外每 30 秒背景檢查一次（背景分頁會被瀏覽器降頻，可接受）
     mycalCheckReminders();
