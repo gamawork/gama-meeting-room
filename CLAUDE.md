@@ -189,5 +189,5 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 - 追蹤檔與「延後的 M」清單：`TODO.md` 的「延後的 M」段；接手先讀 `TODO.md` 的「下一步入口」。
 - 收工輪第 1 級的「階段」定義在：無（照上面第 1 級的預設）。
 - 風險類在本專案具體指：`bookings` 預約資料（時段防撞三層失效造成重複預約）、Supabase 資料遺失或毀損。
-- 瀏覽器重複檢查登記簿：`tests/checks.md`（還沒建時照 browser-verify 守則由主對話建）；腳本目錄：`tests/scripts/`。
+- 瀏覽器重複檢查登記簿：`tests/checks.md`（還沒建時照 browser-verify 守則由主對話建）；腳本目錄：`tests/scripts/`；驗證 harness：未建。
 - 量測關鍵字：`scan_verify_cost.py gama-meeting-room`。
