@@ -33,14 +33,14 @@ at = lambda kind: [e for e in E if e["kind"] == kind]
 s = Score(dur=DUR, T60=1.0); place = s.place
 rng = np.random.default_rng(24)
 
-# Iris turns the bell on: a small bright glass
+# Ryan turns the bell on: a small bright glass
 e = at("bellon")[0]; place(glass(1568, 0.6, 0.6), e["t"], 0.10, e["pan"] * 0.7, 0.5)
 # clicks: wood down/up, Confirm and Delete a little firmer
 for e in at("click"):
-    if e["pan"] > 0 or abs(e["t"] - ev["T"]["M_ATT"]) < 1e-6: continue      # Iris's click on the card and Maya's field click stay silent
+    if e["pan"] > 0 or abs(e["t"] - ev["T"]["M_ATT"]) < 1e-6: continue      # Ryan's click on the card and Ivory's field click stay silent
     g0 = 0.30 if e["v"] >= 1 else 0.18
     place(wood(240, 0.08), e["t"], g0, e["pan"] * 0.6, 0.2); place(wood(190, 0.07), e["t"] + 0.06, g0 * 0.7, e["pan"] * 0.6, 0.2)
-# typing "Iris" and the pill: silent (the picture carries them)
+# typing "Ryan" and the pill: silent (the picture carries them)
 # the booking folds and flies over the midline: one rising air, left to right
 f = at("fly")[0]; place(air(f["dur"] + 0.25, 320, 2600, 1.3, 0.3), at("fold")[0]["t"] + 0.1, 0.26, -0.5, 0.45, pan_to=0.6)
 # the bell is hit / rings again: felt sub + a struck glass
@@ -52,7 +52,7 @@ for e in at("note"):
     a, b = CHIME[e["note"]]
     place(glass(a, 1.0, 0.7), e["t"] + 0.04, 0.13 * e["v"], e["pan"] * 0.6, 0.55)
     place(glass(b, 1.2, 0.7), e["t"] + 0.16, 0.12 * e["v"], e["pan"] * 0.6, 0.6)
-# Iris opens it, it folds into the cell and lands
+# Ryan opens it, it folds into the cell and lands
 e = at("land")[0]; place(sub(62, 0.6), e["t"], 0.26, e["pan"] * 0.6, 0.3); place(bubble(480, 0.22), e["t"], 0.16, e["pan"] * 0.6, 0.3)
 # the block slides to its new time
 e = at("slide")[0]; place(air(0.8, 1600, 500, 1.3, 0.4), e["t"], 0.16, e["pan"] * 0.6, 0.4)

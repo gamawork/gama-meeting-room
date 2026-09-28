@@ -15,15 +15,15 @@ canvas{position:absolute;left:0;top:0;width:1920px;height:1080px}
 <script>
 // ══════════════════════════════════════════════════════════════════════════════════════════════
 // Film C «the bell rings» — desktop notifications in Gama Meeting Room, 20 s.
-// N1: Maya (left) adds Iris to "Urgent Alignment"; the booking folds into a capsule, flies over the
-//     midline and rings Iris's bell; "New meeting" grows out of the bell; Iris clicks it → the detail
-//     modal → it folds into its cell in her week view.
-// N2: the same cell. Maya moves it (the block slides 16:00 → 14:30, "changed" drops from the bell);
-//     the now-line ticks to 10 min before (the block itself sends "Starting soon"); Maya deletes it
+// N1: Ivory (left) adds Ryan to "Admin Survey"; the booking folds into a capsule, flies over the
+//     midline and rings Ryan's bell; "New meeting" grows out of the bell; Ryan clicks it → the detail
+//     modal → it folds into its cell in his week view.
+// N2: the same cell. Ivory moves it (the block slides 16:00 → 14:30, "changed" drops from the bell);
+//     the now-line ticks to 10 min before (the block itself sends "Starting soon"); Ivory deletes it
 //     (the block snaps into "Meeting cancelled"). The bell carries the film into the end card.
 // Notification copy: index.html:2918–2927 (en strings) assembled as mycalBuildNotification() does
 // (index.html:8054–8105; date format 8044–8050; tRoom → '301' index.html:2683).
-// All people, subjects and times are fictional (plan.md). Pure f(t).
+// People and subjects are real (bookings table; me = Ryan); times are staged. Pure f(t).
 // ══════════════════════════════════════════════════════════════════════════════════════════════
 const W = 1920, H = 1080, DUR = 20;
 const {clamp, lerp, sstep, ease, seg} = OM;
@@ -61,7 +61,7 @@ const LEGEND = ['302', '301', 'Pantry', 'Studio', 'Lounge', 'Reception Area'];
 // ────────────────────────────── the notifications — strings exactly as the product assembles them ──────────────────────────────
 // insert/delete body '{title} · {date} {start}–{end} · {room}' (en dash); change body '{before} → {after}', each side
 // `${date} ${start}-${end} ${room}` (hyphen, index.html:8086–8087); remind body '{title} starts at {start} · {room}'.
-const MEET = { title: 'Urgent Alignment', date: '9/24 (Thu)', room: '301' };
+const MEET = { title: 'Admin Survey', date: '9/24 (Thu)', room: '301' };
 const NOTE = {
   new: { title: 'New meeting', body: [`${MEET.title} · ${MEET.date} 16:00–17:00 · ${MEET.room}`] },
   chg: { title: `${MEET.title} changed`, body: [`${MEET.date} 16:00-17:00 ${MEET.room}`, `→ ${MEET.date} 14:30-15:30 ${MEET.room}`],
@@ -71,7 +71,7 @@ const NOTE = {
 };
 
 // ────────────────────────────── geometry ──────────────────────────────
-// Iris's app, drawn in its own units (1000 × 760) inside a world rect.
+// Ryan's app, drawn in its own units (1000 × 760) inside a world rect.
 const APPW = 1000, APPH = 760;
 const APP1 = { x: 1010, y: 212, w: 840, h: 840 * APPH / APPW };
 const APP2 = { x: 575, y: 46, w: 1290, h: 1290 * APPH / APPW };
@@ -81,16 +81,16 @@ const colX = d => GX + TIMEW + d * COLW;
 const rowY = min => ROW0 + (min - 720) / 30 * ROWH;
 const DAYS = [['Mon', '9/21'], ['Tue', '9/22'], ['Wed', '9/23'], ['Thu', '9/24'], ['Fri', '9/25'], ['Sat', '9/26'], ['Sun', '9/27']];
 const TODAY = 3;
-const OTHER = [ { d: 2, s: 780, len: 30, title: 'Standup', room: 'Lounge' }, { d: 2, s: 900, len: 30, title: 'Client Call', room: 'Reception Area' },
-  { d: 2, s: 960, len: 30, title: 'Retro', room: 'Studio' }, { d: 3, s: 750, len: 30, title: '1:1 with Leo', room: '302' },
-  { d: 4, s: 810, len: 60, title: 'Budget Check', room: 'Pantry' } ];
+const OTHER = [ { d: 2, s: 780, len: 30, title: 'Roadmap Meeting', room: 'Lounge' }, { d: 2, s: 900, len: 30, title: 'Training', room: 'Reception Area' },
+  { d: 2, s: 960, len: 30, title: 'Study Group', room: 'Studio' }, { d: 3, s: 750, len: 30, title: 'Project Meeting', room: '302' },
+  { d: 4, s: 810, len: 60, title: 'Web Admin Discussion', room: 'Pantry' } ];
 const DAYCOUNT = [0, 0, 5, 2, 2, 0, 0];         // Wed 10:00 ×2 and Thu 09:00 sit above the visible rows
 const blockA = (d, s, len) => ({ x: colX(d) + 4, y: rowY(s) + 3, w: COLW - 8, h: len / 30 * ROWH - 6 });
 
-// Maya's side
+// Ivory's side
 const FORM = { x: 80, y: 272, w: 800, h: 520 };               // New Booking, form units = world units
 const MCAPS1 = { x: 80, y: 206, w: 150, h: 40 }, MCAPS2 = { x: 92, y: 262, w: 150, h: 40 };
-const PANE = { x: 92, y: 318, w: 430, h: 430 * 380 / 460 };      // Maya's detail modal, units 460 × 380
+const PANE = { x: 92, y: 318, w: 430, h: 430 * 380 / 460 };      // Ivory's detail modal, units 460 × 380
 const PS = PANE.w / 460;
 // notification cards (world)
 const NW = 500, NH = 112, NH2 = 140;
@@ -128,7 +128,7 @@ function blockStart(t) { return t < T.SLIDE0 ? 960 : lerp(960, 870, spr(t - T.SL
 function nowMin(t) { let m = 830; for (const tk of T.TICKS) m += 10 * spr(t - tk, 0.75, 34, 0.35); return m; }
 const blockLive = t => t >= T.LAND && t < T.N4_0;
 function blockWorld(t) { return rectW(appRect(t), blockA(TODAY, blockStart(t), 60)); }
-function bellWorld(t) {                     // the bell: in Iris's header, then it carries the film into the end card
+function bellWorld(t) {                     // the bell: in Ryan's header, then it carries the film into the end card
   const R = appRect(t), c = inW(R, [BELL.cx, BELL.cy]), r = BELL.r * R.w / APPW;
   if (t < T.END0) return { cx: c[0], cy: c[1], r };
   const k = spr(t - T.END0, 0.78, 9, 1.1);
@@ -155,7 +155,7 @@ function card(t) {
   return null;
 }
 function formRect(t) { if (t < T.FOLD0) return FORM; return lerpRect(FORM, CAPSULE, ease.quintInOut(seg(t, T.FOLD0, T.FOLD1))); }
-function capsule(t) {                         // Maya's booking, folded, flies over the midline into the bell
+function capsule(t) {                         // Ivory's booking, folded, flies over the midline into the bell
   if (t < T.FOLD1 || t >= T.HIT) return null;
   const b = bellWorld(t), from = { x: CAPSULE.x + CAPSULE.w / 2, y: CAPSULE.y + CAPSULE.h / 2 };
   const p = OM.hop(t, T.FOLD1, T.HIT, from, { x: b.cx, y: b.cy }, { height: 150, curve: cubicIn });
@@ -163,7 +163,7 @@ function capsule(t) {                         // Maya's booking, folded, flies o
   return { x: p.x - w / 2, y: p.y - h / 2, w, h, k: p.k, sh };
 }
 function mayaCaps(t) { if (t < T.GROW0) return MCAPS1; return lerpRect(MCAPS1, MCAPS2, ease.quintInOut(seg(t, T.GROW0, T.GROW1))); }
-function paneRect(t) {                         // Maya's detail modal grows out of her name, and folds back into it on delete
+function paneRect(t) {                         // Ivory's detail modal grows out of the name, and folds back into it on delete
   if (t < T.MP0) return null;
   const c = mayaCaps(t);
   if (t < T.M_TRASH + 0.05) return { ...lerpRect(c, PANE, spr(t - T.MP0, 0.74, 13, 0.8)), k: spr(t - T.MP0, 0.74, 13, 0.8) };
@@ -220,7 +220,7 @@ function lattice(cam) {
   const L = OM.lattice(cam, { depth: 1.2, spacing: 48, px: 1.2 }); setM(L.matrix); g.fillStyle = 'rgba(255,255,255,0.07)';
   g.beginPath(); for (let x = L.x0; x <= L.x1; x += L.spacing) for (let y = L.y0; y <= L.y1; y += L.spacing) { g.moveTo(x + L.r, y); g.arc(x, y, L.r, 0, Math.PI * 2); } g.fill();
 }
-function nameCapsule(x, y, h, letter, name, change = true) {     // the product's "I  Iris  Change" pill
+function nameCapsule(x, y, h, letter, name, change = true) {     // the product's "R  Ryan  Change" pill
   const s = h / 32; g.save(); g.translate(x, y); g.scale(s, s);
   const w = 12 + 22 + 8 + tw(name, 15, 500) + (change ? 8 + tw('Change', 11.5, 500) : 0) + 12;
   rr(0, 0, w, 32, 16); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill(); g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,0.28)'; g.stroke();
@@ -278,7 +278,7 @@ function drawApp(t, V) {
   rr(20, 80, 232, 34, 8); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill();
   text('Weekly Table', 32, 102, 13.5, 500, 'rgba(255,255,255,0.78)');
   rr(128, 83, 120, 28, 6); g.fillStyle = '#ffffff'; g.fill(); text('My Calendar', 188, 102, 13.5, 500, C.navy2, 'center');
-  nameCapsule(CAPS.x, CAPS.y, CAPS.h, 'I', 'Iris');
+  nameCapsule(CAPS.x, CAPS.y, CAPS.h, 'R', 'Ryan');
   // toolbar
   const mine = blockLive(t) ? 10 : 9;
   rr(20, 138, 176, 38, 19); g.fillStyle = C.navy2; g.fill();
@@ -321,7 +321,7 @@ function drawApp(t, V) {
   if (dimA > 0.01) { g.globalAlpha = a * dimA * 0.42; rr(0, 0, APPW, APPH, 18); g.fillStyle = '#0f1b2e'; g.fill(); }
   g.globalAlpha = 1;
 }
-// Maya's New Booking (form units = world units at FORM's scale)
+// Ivory's New Booking (form units = world units at FORM's scale)
 function drawForm(t, V) {
   const R = formRect(t), fs = R.w / FORM.w; if (t >= T.FOLD1) return;
   const pop = OM.popIn(t, T.IN, { rise: 70, s0: 0.86, ds: 0.14, zeta: 0.72, omega: 12 });
@@ -344,13 +344,13 @@ function drawForm(t, V) {
     if (sel) { g.beginPath(); g.moveTo(x + w - 22, y + 30); g.lineTo(x + w - 17, y + 36); g.lineTo(x + w - 12, y + 30); g.lineWidth = 1.8; g.strokeStyle = C.ink2; g.stroke(); } };
   field('Date', 32, 96, 360, '2026/09/24'); field('Start Time', 416, 96, 352, '16:00', 0, 0, 1);
   field('Subject', 32, 180, 360, MEET.title); field('End Time', 416, 180, 352, '17:00', 0, 0, 1);
-  field('Room', 32, 264, 360, '301', 0, 0, 1); field('Organizer', 416, 264, 352, 'Maya', 0, 0, 1);
+  field('Room', 32, 264, 360, '301', 0, 0, 1); field('Organizer', 416, 264, 352, 'Ivory', 0, 0, 1);
   const focusAtt = t >= T.M_ATT && t < T.CONFIRM;
-  const ty = OM.typeOn(t, T.TYPE0, 'Iris', { cps: 16 }), typed = t >= T.TYPE0 && t < T.ENTER;
+  const ty = OM.typeOn(t, T.TYPE0, 'Ryan', { cps: 16 }), typed = t >= T.TYPE0 && t < T.ENTER;
   field('Attendees (optional)', 32, 348, 736, '', typed || t >= T.ENTER ? '' : 'Type a name and press Enter', focusAtt);
   if (typed) { text(ty.str, 46, 388, 16, 500, C.ink); if (focusAtt) { g.fillStyle = C.ink; g.fillRect(47 + tw(ty.str, 16, 500), 372, 1.6, 22); } }
   if (t >= T.ENTER) { const p = OM.popIn(t, T.ENTER, { rise: 0, s0: 0.55, ds: 0.45, omega: 24 }); g.save(); g.globalAlpha *= p.op; g.translate(46 + 30, 382); g.scale(p.s, p.s);
-    rr(-30, -14, 60, 28, 14); g.fillStyle = '#e0e7ff'; g.fill(); text('Iris', -8, 5.5, 14, 600, '#3730a3', 'center'); text('×', 17, 5, 13, 600, '#6366f1', 'center'); g.restore();
+    rr(-30, -14, 60, 28, 14); g.fillStyle = '#e0e7ff'; g.fill(); text('Ryan', -8, 5.5, 14, 600, '#3730a3', 'center'); text('×', 17, 5, 13, 600, '#6366f1', 'center'); g.restore();
     if (focusAtt) { g.fillStyle = C.ink; g.fillRect(122, 372, 1.6, 22); } }
   rr(32, 456, 16, 16, 3); g.lineWidth = 1.4; g.strokeStyle = C.ph; g.stroke(); text('Recurring booking', 58, 469, 15, 500, C.mute);
   const pr = OM.press(t, T.CONFIRM, { depth: 0.08, flash: 0.3 });
@@ -403,7 +403,7 @@ function modalContent(who, R, a) {           // the product's detail modal (shot
   text(MEET.title, 30, 62, 27, 500, C.ink);
   g.beginPath(); g.arc(424, 38, 15, 0, Math.PI * 2); g.fillStyle = '#f1f5f9'; g.fill(); text('×', 424, 43.5, 15, 500, C.mute, 'center');
   const time = who === 'maya' ? MAYA_TIME : null;
-  const rows = [['Time', '9/24 ( Thu )  16:00 – 17:00'], ['Room', ''], ['Organizer', 'Maya'], ['Attendees', 'Iris']];
+  const rows = [['Time', '9/24 ( Thu )  16:00 – 17:00'], ['Room', ''], ['Organizer', 'Ivory'], ['Attendees', 'Ryan']];
   rows.forEach(([k, v], i) => { const y = 112 + i * 38; text(k, 30, y, 14.5, 500, C.mute);
     if (k === 'Room') { rr(114, y - 16, 40, 24, 12); g.fillStyle = ROOM['301'].bg; g.fill(); text('301', 134, y + 1, 13, 600, ROOM['301'].fg, 'center'); }
     else if (k === 'Time' && time) time(114, y);
@@ -427,7 +427,7 @@ function iconGlyph(k, col) {
   if (k === 'bin') { g.beginPath(); g.moveTo(-6, -4.5); g.lineTo(6, -4.5); g.moveTo(-2.5, -4.5); g.lineTo(-2, -7); g.lineTo(2, -7); g.lineTo(2.5, -4.5); g.stroke(); rr(-4.5, -3, 9, 10, 1.5); g.stroke(); }
 }
 let ACTIVE_T = 0;
-function MAYA_TIME(x, y) {                   // Maya edits the time: the value rolls 16:00 – 17:00 → 14:30 – 15:30
+function MAYA_TIME(x, y) {                   // Ivory edits the time: the value rolls 16:00 – 17:00 → 14:30 – 15:30
   const k = ease.expoOut(seg(ACTIVE_T, T.ROLL0, T.ROLL1));
   g.save(); g.beginPath(); g.rect(x - 4, y - 19, 300, 26); g.clip();
   if (k < 1) { g.globalAlpha *= 1 - k; text('9/24 ( Thu )  16:00 – 17:00', x, y - 22 * k, 14.5, 500, C.ink); g.globalAlpha /= Math.max(1e-3, 1 - k); }
@@ -438,7 +438,7 @@ function MAYA_TIME(x, y) {                   // Maya edits the time: the value r
 function drawMaya(t, V) {
   const a = OM.popIn(t, T.IN, { rise: 0 }).op * (1 - sstep(T.END0, T.END0 + 0.5, t)); if (a < 0.01) return;
   setM(V); g.globalAlpha = a;
-  const c = mayaCaps(t); nameCapsule(c.x, c.y, c.h, 'M', 'Maya');
+  const c = mayaCaps(t); nameCapsule(c.x, c.y, c.h, 'I', 'Ivory');
   const P = paneRect(t);
   if (P) { g.save(); g.shadowColor = 'rgba(6,14,30,0.45)'; g.shadowBlur = 34 * DPR; g.shadowOffsetY = 12 * DPR;
     rr(P.x, P.y, P.w, P.h, lerp(16, 16, P.k)); g.fillStyle = t >= T.M_TRASH ? mix('#ffffff', '#fde2e4', 1 - P.k) : '#ffffff'; g.fill(); g.restore();

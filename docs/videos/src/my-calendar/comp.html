@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Gama Meeting Room · film B v2 · My Calendar, month to half hour</title>
+<title>Gama Meeting Room · film B v3 · My Calendar, month week day, mine and all</title>
 <style>
 html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#223a60}
 canvas{position:absolute;left:0;top:0;width:1920px;height:1080px}
@@ -14,16 +14,18 @@ canvas{position:absolute;left:0;top:0;width:1920px;height:1080px}
 <script src="motion.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════════════════════════════════════
-// Film B v2 — the product's own "My Calendar" tab, one take from the month to a free half hour and back.
+// Film B v3 — the product's own "My Calendar" tab as a whole page: Month / Week / Day and Mine ⇄ All, one take.
 // World units = the product screenshot's pixel frame (shots-v2/*.png, 1920×1080), so at zoom 1 the film IS the
 // screenshot. The product's views are not nested, so the take carries them into each other:
 //   month → week : the 9/21–27 row unfolds vertically into the week time grid; its entries fly to their times;
+//   Mine ⇄ All   : everyone else's meetings pop into the same grid (grey, the product's .mycal-other), lanes re-split;
 //   week  → day  : the Thu column widens into the six room columns (the time axis never moves);
-//   day   → 30 min: the camera pushes 3× into 302 · 14:00, the hover box becomes the New Booking dialog.
+//   day   → 30 min: a short push into 302 · 14:00, the hover box becomes the New Booking dialog, Confirm folds it back.
 // One level parameter L(t) ∈ [0, 2] drives every layout; the way back is the same function run backwards.
-// Data: the product's mock (fictional) plus the new booking. Rooms named after people are renamed Studio / Lounge.
+// One filter parameter per item, allK(t), drives Mine ⇄ All (with a per-item delay, so the others arrive one by one).
+// Data: real titles and people from the bookings table (me = Ryan) plus the new booking. Rooms named after people are renamed Studio / Lounge.
 // ══════════════════════════════════════════════════════════════════════════════════════════════
-const W = 1920, H = 1080, DUR = 15;
+const W = 1920, H = 1080, DUR = 20;
 const {clamp, lerp, sstep, ssstep, ease} = OM;
 const cv = document.getElementById('cv'), DPR = window.devicePixelRatio || 1;
 cv.width = W * DPR; cv.height = H * DPR;
@@ -31,56 +33,115 @@ const g = cv.getContext('2d');
 
 // ────────────────────────────── timeline ──────────────────────────────
 const T = {
-  FILL0: 0.25, CLICK_WEEK: 1.72, M2W: [1.80, 2.90], PILL_WEEK: 2.20, CLICK_THU: 3.70, W2D: [3.75, 4.75], PILL_DAY: 4.15,
-  HOVER: 5.30, CLICK_SLOT: 5.70, PUSH: [5.75, 6.45], OPEN0: 6.30, PREFILL: 6.55, CLICK_SUBJ: 6.90, TYPE0: 7.00,
-  CLICK_OK: 7.95, FOLD0: 8.05, LAND: 8.50, PULL: 8.75, TOAST: 8.70, CLICK_MONTH: 9.95, D2M: [10.00, 10.90], PILL_MONTH: 10.40,
-  OVER: 10.85, SETTLE: 11.30, TITLE: [11.30, 11.44], TAG: 11.90,
+  FILL0: 0.25, CLICK_WEEK: 1.55, M2W: [1.62, 2.72], PILL_WEEK: 2.00,
+  CLICK_ALL: 3.10, ALL_IN: 3.16, CLICK_MINE: 5.50, MINE_OUT: 5.54,
+  CLICK_THU: 6.55, W2D: [6.60, 7.60], PILL_DAY: 7.00,
+  HOVER: 8.05, CLICK_SLOT: 8.35, PUSH: [8.40, 9.05], OPEN0: 8.90, PREFILL: 9.12, CLICK_SUBJ: 9.40, TYPE0: 9.48,
+  CLICK_OK: 10.30, FOLD0: 10.38, LAND: 10.82, TOAST: 11.00, PULL: 11.08,
+  CLICK_MONTH: 12.05, D2M: [12.10, 13.25], PILL_MONTH: 12.55, HL_OFF: 13.60,
+  CLICK_ALL2: 14.05, ALL2_IN: 14.10, HAND_OUT: 14.95,
+  CAM_END: [15.30, 16.20], TITLE: [15.62, 15.76], TAG: 16.20,
 };
-const CLICKS = [T.CLICK_WEEK, T.CLICK_THU, T.CLICK_SLOT, T.CLICK_SUBJ, T.CLICK_OK, T.CLICK_MONTH];
+const CLICKS = [T.CLICK_WEEK, T.CLICK_ALL, T.CLICK_MINE, T.CLICK_THU, T.CLICK_SLOT, T.CLICK_SUBJ, T.CLICK_OK, T.CLICK_MONTH, T.CLICK_ALL2];
 window.__meta = { dur: DUR, fps: 30, w: W, h: H,
-  inFrame: { grid: [0.2, 5.7, 'whole'], slot: [5.35, 6.25, 'whole'], dialog: [6.85, 8.0, 'whole'], booked: [8.55, 9.9, 'whole'],
-             app: [11.35, 15, 'whole'], title: [11.9, 15, 'whole'], pill: [0.3, 15, 'whole'] } };
+  inFrame: { grid: [0.2, 8.3, 'whole'], slot: [8.10, 8.85, 'whole'], dialog: [9.35, 10.35, 'whole'], booked: [10.9, 12.0, 'whole'],
+             app: [13.3, DUR, 'whole'], title: [16.3, DUR, 'whole'], pill: [0.3, DUR, 'whole'] } };
 
-// ────────────────────────────── product tokens (index.html:1943-1959, 7770-7775) ──────────────────────────────
+// ────────────────────────────── product tokens (index.html:1943-1959, 2111-2112, 2156-2157, 7770-7775) ──────────────────────────────
 const P = { navy: '#1f3560', navy2: '#2b4a80', ink: '#1e293b', muted: '#64748b', faint: '#94a3b8', line: '#e2e8f0',
   cream: '#fbf3e2', sky: '#e2ecfa', off: '#eef1f5', accent: '#f5c542', hlBg: '#fde68a', hlBar: '#d69e0b', danger: '#dc2626', ok: '#059669',
   otherBg: '#f1f5f9', otherText: '#94a3b8', otherBar: '#cbd5e1', otherPill: '#e2e8f0' };
 const ROOMS = { '302': { bar: '#3b82f6', soft: '#dbeafe', text: '#1e3a8a' }, '301': { bar: '#e11d48', soft: '#ffe4e6', text: '#881337' },
   'Pantry': { bar: '#10b981', soft: '#d1fae5', text: '#065f46' }, 'Studio': { bar: '#8b5cf6', soft: '#ede9fe', text: '#4c1d95' },
   'Lounge': { bar: '#f97316', soft: '#ffedd5', text: '#7c2d12' }, 'Reception Area': { bar: '#06b6d4', soft: '#cffafe', text: '#155e75' } };
+const OTHER = { bar: P.otherBar, soft: P.otherBg, text: P.otherText };
 const ROOM_ORDER = ['302', '301', 'Pantry', 'Studio', 'Lounge', 'Reception Area'];
 
-// ────────────────────────────── data (week of 9/21: mine; 9/24: everyone) ──────────────────────────────
-// d = day index in the week (0 Mon … 6 Sun); s = half-hour index from 09:00; len in half hours; mine = Iris is in it
+// ────────────────────────────── data (week of 9/21: mine + everyone; the month: mine + everyone's weekly meetings) ──────────────────────────────
+// d = day index in the week (0 Mon … 6 Sun); s = half-hour index from 09:00; len in half hours; mine = Ryan is in it
+const hm = s => { const [h, m] = s.split(':').map(Number); return (h - 9) * 2 + m / 30; };
 const BK = [
-  { d: 2, s: 2, len: 1, t: 'Vendor Sync', room: '301', who: 'Leo', mine: 1, lane: 0, nl: 2 },
-  { d: 2, s: 2, len: 2, t: 'Design Review', room: '302', who: 'Iris', mine: 1, lane: 1, nl: 2 },
-  { d: 2, s: 8, len: 1, t: 'Standup', room: 'Lounge', who: 'Iris', mine: 1 },
-  { d: 2, s: 12, len: 1, t: 'Client Call', room: 'Reception Area', who: 'Priya', mine: 1 },
-  { d: 2, s: 14, len: 1, t: 'Retro', room: 'Studio', who: 'Iris', mine: 1, hiddenInMonth: 1 },
-  { d: 3, s: 0, len: 1, t: 'Morning Check-in', room: '302', who: 'Iris', mine: 1 },
-  { d: 4, s: 1, len: 2, t: '1:1 with Sam', room: '302', who: 'Sam', mine: 1 },
-  { d: 3, s: 2, len: 2, t: 'Roadmap Discussion', room: '301', who: 'Sam', mine: 0 },
-  { d: 3, s: 4, len: 1, t: 'Partner Intro', room: 'Reception Area', who: 'Noah', mine: 0 },
-  { d: 3, s: 10, len: 2, t: 'Team Lunch Planning', room: 'Pantry', who: 'Leo', mine: 0 },
+  { d: 2, s: 2, len: 1, t: 'Admin Survey', room: '301', who: 'Ivory', mine: 1 },
+  { d: 2, s: 2, len: 2, t: 'Project Meeting', room: '302', who: 'Ryan', mine: 1 },
+  { d: 2, s: 8, len: 1, t: 'Roadmap Meeting', room: 'Lounge', who: 'Ryan', mine: 1 },
+  { d: 2, s: 12, len: 1, t: 'Training', room: 'Reception Area', who: 'Joanne', mine: 1 },
+  { d: 2, s: 14, len: 1, t: 'Promotion Progress', room: 'Studio', who: 'Ryan', mine: 1 },
+  { d: 3, s: 0, len: 1, t: 'Meeting', room: '302', who: 'Ryan', mine: 1 },
+  { d: 4, s: 1, len: 2, t: 'Web Admin Discussion', room: '302', who: 'Ivory', mine: 1 },
+  { d: 3, s: 2, len: 2, t: 'TSE Weekly', room: '301', who: 'Allen', mine: 0 },
+  { d: 3, s: 4, len: 1, t: 'SDLC Progress', room: 'Reception Area', who: 'TY', mine: 0 },
+  { d: 3, s: 10, len: 2, t: 'AI Workshop', room: 'Pantry', who: 'Hans', mine: 0 },
+  // everyone else's week (the All view) — real bookings, catalog in plan-film1-v3; none collides with Ryan's
+  ...[[0, '10:00', '12:00', 'GCAS', '302', 'TY'], [0, '13:30', '14:30', 'Weekly', '301', 'Mei'], [0, '15:00', '17:00', 'Meeting', 'Lounge', 'TY'],
+      [1, '14:00', '15:30', 'Meeting', '301', 'Jessie'], [1, '14:30', '16:00', 'Online Meeting', '302', 'Rex'],
+      [2, '11:00', '12:00', 'Process Review', '301', 'Rex'], [2, '13:30', '14:30', 'AI Collab Weekly', '302', 'Rex'],
+      [3, '10:00', '11:00', 'DBA Weekly', '302', 'Victor'], [3, '13:30', '14:30', 'Web Weekly', '301', 'Ivory'], [3, '14:30', '18:00', 'Admin Demo', '301', 'Ivory'],
+      [4, '10:00', '11:00', 'Web Weekly', '301', 'Ivory'], [4, '11:00', '12:00', 'Web Admin Progress', '301', 'Ivory'], [4, '15:00', '16:00', 'Bi-weekly', '302', 'Joanne'],
+     ].map(([d, a, b, t, room, who]) => ({ d, s: hm(a), len: hm(b) - hm(a), t, room, who, mine: 0 })),
 ];
-const NEW = { d: 3, s: 10, len: 1, t: 'New Feature Kickoff', room: '302', who: 'Iris', mine: 1, isNew: 1 };
+const NEW = { d: 3, s: 10, len: 1, t: 'Project Meeting', room: '302', who: 'Ryan', mine: 1, isNew: 1 };
 const TIMES = Array.from({ length: 18 }, (_, s) => `${String(9 + Math.floor(s / 2)).padStart(2, '0')}:${s % 2 ? '30' : '00'}`);
-// the month (Mine): other weeks' entries — 9/29 Sprint Planning, 9/30 Design Sync (index.html mock, fictional)
-const MONTH_OTHER = { '4-1': [['11:00', 'Sprint Planning', '302']], '4-2': [['15:00', 'Design Sync', '301']] };
+// the month (Mine): other weeks' entries — 9/29 Admin Survey, 9/30 Design Sync (9/29 real, 9/30 kept from the mock)
+const MONTH_OTHER = { '4-1': [['11:00', 'Admin Survey', '302']], '4-2': [['15:00', 'Design Sync', '301']] };
+// the month (All): everyone's weekly meetings, every week (by weekday)
+const RECUR = { 0: [['13:30', 'Weekly', '301'], ['15:00', 'Meeting', 'Lounge']], 2: [['13:30', 'AI Collab Weekly', '302']],
+  3: [['10:00', 'DBA Weekly', '302'], ['10:00', 'TSE Weekly', '301']], 4: [['10:00', 'Web Weekly', '301'], ['11:00', 'Web Admin Progress', '301']] };
+// the product's order in a day (mycalBookingsOnDate: start time, then room) and its lanes (mycalLanes, index.html:8357)
+const cmpB = (p, q) => p.s - q.s || p.room.localeCompare(q.room);
+const cmpMine = (p, q) => (q.mine - p.mine) || cmpB(p, q);          // month All: own meetings first (film choice; the product sorts by time only — TODO.md)
+function lanesOf(items, key) {
+  let group = [], end = -1;
+  const flush = () => { const ends = [];
+    group.forEach(it => { let i = ends.findIndex(e => e <= it.s); if (i < 0) { i = ends.length; ends.push(0); } ends[i] = it.s + it.len; it['l' + key] = i; });
+    group.forEach(it => { it['n' + key] = ends.length; }); group = []; };
+  items.slice().sort(cmpB).forEach(it => { if (group.length && it.s >= end) { flush(); end = -1; } group.push(it); end = Math.max(end, it.s + it.len); });
+  if (group.length) flush();
+}
+for (let d = 0; d < 7; d++) { lanesOf(BK.filter(b => b.d === d && b.mine), 'm'); lanesOf(BK.filter(b => b.d === d), 'a'); }
+NEW.lm = NEW.la = 0; NEW.nm = NEW.na = 1;                                  // Thu, Mine: Meeting 09:00 and the new 14:00 never overlap
+const TROW = 3;                                                           // the 9/21 – 9/27 row
+const isOut = (r, i) => (r === 0 && i === 0) || (r === 4 && i >= 3);
+const MCELL = {};                                                         // the other weeks' cells: [{s, t, room, mine, iM, iA}]
+for (let r = 0; r < 5; r++) for (let i = 0; i < 7; i++) { if (r === TROW) continue;
+  const list = (MONTH_OTHER[`${r}-${i}`] || []).map(([tm, t, room]) => ({ s: hm(tm), t, room, mine: 1 }))
+    .concat((RECUR[i] || []).map(([tm, t, room]) => ({ s: hm(tm), t, room, mine: 0 })));
+  const mineL = list.filter(e => e.mine).sort(cmpB), allL = list.slice().sort(cmpMine);
+  list.forEach(e => { e.iM = mineL.indexOf(e); e.iA = allL.indexOf(e); });
+  MCELL[`${r}-${i}`] = list; }
+const tgtList = (d, withNew, all) => BK.filter(x => x.d === d && (all || x.mine)).concat(withNew && NEW.d === d ? [NEW] : []).sort(all ? cmpMine : cmpB);
+function counts(level, withNew) {                                         // the product's "Mine x · All y" (mycal.count.dayMix)
+  if (level === 'week') return [BK.filter(b => b.mine).length, BK.length];
+  if (level === 'day') { const l = BK.filter(b => b.d === 3).concat(withNew ? [NEW] : []); return [l.filter(b => b.mine).length, l.length]; }
+  let m = 0, a = 0;
+  for (const k in MCELL) { const [r, i] = k.split('-').map(Number); if (isOut(r, i)) continue; m += MCELL[k].filter(e => e.mine).length; a += MCELL[k].length; }
+  const tg = BK.concat(withNew ? [NEW] : []); return [m + tg.filter(b => b.mine).length, a + tg.length];
+}
 
 // ────────────────────────────── geometry (measured on shots-v2/02, 03, 04, 05b, 06) ──────────────────────────────
 const APP = { x: 160, y: 20, w: 1600 };
 const GRID = { x: 185, y: 307, w: 1550 };
 const MCOL = i => 199 + i * 218.67, MCW = 210.5;
 const MROWS = [[352, 117], [478, 117], [604, 117], [730, 164], [903, 117]];
-const TROW = 3;                                                          // the 9/21 – 9/27 row
 const MNUM = [[31, 1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12, 13], [14, 15, 16, 17, 18, 19, 20], [21, 22, 23, 24, 25, 26, 27], [28, 29, 30, 1, 2, 3, 4]];
 const WCOL0 = 249, WCW = (1735 - 249) / 7, RH = 34, DCW = (1735 - 249) / 6;
 const SLOT = { x: 253, y: 346 + 10 * RH + 2, w: DCW - 8, h: RH - 4 };  // the hover box on 302 · 14:00 (index.html:2138-2143)
 const A = [SLOT.x + SLOT.w / 2, SLOT.y + SLOT.h / 2];                    // camera anchor
 const DLG = { w: 860, h: 494 }, DZ = 3, DS = 1.5;                        // dialog 1.5× product size on screen at zoom 3
 const DLGW = { x: A[0] - DLG.w * DS / DZ / 2, y: A[1] - DLG.h * DS / DZ / 2, w: DLG.w * DS / DZ, h: DLG.h * DS / DZ };
+
+// ────────────────────────────── the filter: 0 Mine · 1 All, per item, with a delay so they arrive one by one ──────────────────────────────
+// dW: delay in the week's All, dO: delay leaving it, dM: delay in the month's All (end)
+function allK(t, dW = 0, dO = 0, dM = 0) {
+  if (t < T.MINE_OUT + dO) return OM.spring(t - T.ALL_IN - dW, 0.72, 17);
+  if (t < T.ALL2_IN) return 1 - ssstep(T.MINE_OUT + dO, T.MINE_OUT + dO + 0.3, t);
+  return OM.spring(t - T.ALL2_IN - dM, 0.72, 17);
+}
+const cellDelay = (r, i) => 0.018 * (r * 7 + i);
+function filterSel(t) {                                                   // the Mine / All toggle's navy thumb
+  if (t < T.CLICK_MINE + 0.03) return OM.spring(t - T.CLICK_ALL - 0.03, 0.78, 22);
+  if (t < T.CLICK_ALL2 + 0.03) return 1 - OM.spring(t - T.CLICK_MINE - 0.03, 0.78, 22);
+  return OM.spring(t - T.CLICK_ALL2 - 0.03, 0.78, 22);
+}
 
 // ────────────────────────────── the level: 0 month · 1 week · 2 day ──────────────────────────────
 function levelAt(t) {
@@ -100,37 +161,44 @@ function colRect(i, L) {                                                  // day
   return { x: lerp(wk.x, 1735, k), y, w: lerp(wk.w, 0, k), h: 18 * RH, r: 0 };
 }
 function monthEvRect(b, idx) { return { x: MCOL(b.d) + 9, y: MROWS[TROW][0] + 37 + idx * 26, w: MCW - 18, h: 22 }; }
-function monthIndex(b, withNew) {                                         // position in its month cell (sorted by time)
-  const list = BK.filter(x => x.mine && x.d === b.d && !x.hiddenInMonth).concat(withNew && NEW.d === b.d ? [NEW] : []).sort((p, q) => p.s - q.s || (p.lane || 0) - (q.lane || 0));
-  return list.indexOf(b);
+function laneX(b, c, all) {                                               // left/width in a time-grid column, product lanes
+  const lane = all ? b.la : b.lm, nl = all ? b.na : b.nm, iw = (c.w - 8) / nl;
+  return { x: c.x + 4 + lane * iw, w: Math.max(0, iw - (nl > 1 ? 3 : 0)) };
 }
-function blockRect(b, L, withNew) {
-  const lane = b.lane || 0, nl = b.nl || 1;
-  const weekAt = LL => { const c = colRect(b.d, LL), y = rowY0(LL); const iw = (c.w - 8) / nl;
-    return { x: c.x + 4 + lane * iw, y: y + b.s * RH + 1, w: Math.max(0, iw - (nl > 1 ? 3 : 0)), h: b.len * RH - 2 }; };
+function blockRect(b, L, withNew, t) {
+  const iA = tgtList(b.d, withNew, 1).indexOf(b), iM = b.mine ? tgtList(b.d, withNew, 0).indexOf(b) : -1;
+  const dM = cellDelay(TROW, b.d) + (b.mine ? 0 : 0.03 * iA);
+  const fk = allK(t, 0.055 * b.d + (b.mine ? 0.03 : 0.012 * b.s), 0.02 * b.d, dM);
+  const ak = b.mine ? clamp(fk) : 1, pres = b.mine ? 1 : clamp(fk * 1.8), sc = b.mine ? 1 : 0.86 + 0.14 * fk;
+  const weekAt = LL => { const c = colRect(b.d, LL), y = rowY0(LL), a = laneX(b, c, 1), m = b.mine ? laneX(b, c, 0) : a;
+    return { x: lerp(m.x, a.x, ak), y: y + b.s * RH + 1, w: lerp(m.w, a.w, ak), h: b.len * RH - 2 }; };
   if (L <= 1) {
-    const wk = weekAt(1), idx = b.hiddenInMonth ? -1 : monthIndex(b, withNew);
-    if (idx < 0 || idx > 3) return { ...wk, a: sstep(0.5, 1, L), k: 1 };
-    const m = monthEvRect(b, idx), k = ease.smoother(sstep(0.05, 0.95, L));
-    return { x: lerp(m.x, wk.x, k), y: lerp(m.y, wk.y, k), w: lerp(m.w, wk.w, k), h: lerp(m.h, wk.h, k), a: 1, k };
+    const wk = weekAt(1), pM = iM < 0 || iM > 3 ? 4 : iM, pA = iA > 3 ? 4 : iA;
+    const vis = b.mine ? lerp(iM >= 0 && iM <= 3 ? 1 : 0, iA <= 3 ? 1 : 0, ak) : (iA <= 3 ? 1 : 0);
+    const m = monthEvRect(b, lerp(pM, pA, ak)), k = ease.smoother(sstep(0.05, 0.95, L));
+    return { x: lerp(m.x, wk.x, k), y: lerp(m.y, wk.y, k), w: lerp(m.w, wk.w, k), h: lerp(m.h, wk.h, k), a: pres * lerp(vis, 1, sstep(0.5, 1, L)), k, s: sc };
   }
   const k = L - 1, wk = weekAt(L);
-  if (b.d !== 3) return { ...wk, a: 1 - k, k: 1 };
+  if (b.d !== 3) return { ...wk, a: (1 - k) * pres, k: 1, s: sc };
   const c = colRect(3, L), ri = ROOM_ORDER.indexOf(b.room), sub = { x: c.x + ri * c.w / 6 + 4, w: c.w / 6 - 8 };
-  const full = { x: c.x + 4 + lane * (c.w - 8) / nl, w: (c.w - 8) / nl };
-  if (!b.mine) return { x: sub.x, y: wk.y, w: sub.w, h: wk.h, a: sstep(0.35, 1, k), k: 1 };
-  return { x: lerp(full.x, sub.x, k), y: wk.y, w: lerp(full.w, sub.w, k), h: wk.h, a: 1, k: 1 };
+  if (!b.mine) return { x: sub.x, y: wk.y, w: sub.w, h: wk.h, a: Math.max(sstep(0.35, 1, k), pres), k: 1, s: 1 };
+  return { x: lerp(wk.x, sub.x, k), y: wk.y, w: lerp(wk.w, sub.w, k), h: wk.h, a: 1, k: 1, s: 1 };
 }
 
 // ────────────────────────────── camera: keyed on A's screen position + log zoom ──────────────────────────────
 const KEYS = [];
 const key = (t, c, z, curve) => KEYS.push({ t, x: W / 2 + (A[0] - c[0]) * z, y: H / 2 + (A[1] - c[1]) * z, zoom: z, curve });
 const C_MONTH = [960, 540], C_WORK = [960, 600], C_END = [960 - (1380 - 960) / 0.6, 548];
-key(0, C_MONTH, 0.955); key(1.40, C_MONTH, 1, ease.sineInOut); key(T.M2W[0], C_MONTH, 1);
-key(T.M2W[1], C_WORK, 1.06, ease.cubicInOut); key(T.PUSH[0], C_WORK, 1.06);
+// the All push keeps the Mine / All toggle where it was on screen, so the hand stays on it
+const TOG = [1443, 246], ZALL = 1.11, C_ALL = [TOG[0] - (TOG[0] - C_WORK[0]) * 1.06 / ZALL, TOG[1] - (TOG[1] - C_WORK[1]) * 1.06 / ZALL];
+key(0, C_MONTH, 0.955); key(1.30, C_MONTH, 1, ease.sineInOut); key(T.M2W[0], C_MONTH, 1);
+key(T.M2W[1], C_WORK, 1.06, ease.cubicInOut); key(T.ALL_IN, C_WORK, 1.06);
+key(T.ALL_IN + 0.95, C_ALL, ZALL, ease.sineInOut); key(T.CLICK_MINE, C_ALL, ZALL);
+key(T.CLICK_MINE + 0.7, C_WORK, 1.06, ease.sineInOut); key(T.PUSH[0], C_WORK, 1.06);
 key(T.PUSH[1], A, DZ, ease.cubicInOut); key(T.FOLD0, A, DZ);
 key(T.PULL, C_WORK, 1.06, ease.cubicInOut); key(T.D2M[0], C_WORK, 1.06);
-key(T.OVER, C_END, 0.585, ease.expoInOut); key(T.SETTLE, C_END, 0.6, ease.sineInOut); key(DUR, C_END, 0.6);
+key(T.D2M[1], C_MONTH, 0.985, ease.expoInOut); key(T.D2M[1] + 0.45, C_MONTH, 1, ease.sineInOut); key(T.CAM_END[0], C_MONTH, 1);
+key(T.CAM_END[1], C_END, 0.6, ease.cubicInOut); key(DUR, C_END, 0.6);
 function camAt(t) { const s = OM.camera(t, KEYS); return { x: A[0] + (W / 2 - s.x) / s.zoom, y: A[1] + (H / 2 - s.y) / s.zoom, zoom: s.zoom, rot: 0 }; }
 
 // ────────────────────────────── helpers ──────────────────────────────
@@ -146,18 +214,20 @@ function fit(s, px, w, maxW) { if (tw(s, px, w) <= maxW) return s; let n = s.len
 function mix(a, b, k) { const pa = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16));
   return `rgb(${pa.map((v, i) => Math.round(lerp(v, pb[i], clamp(k)))).join(',')})`; }
 const withA = (a, fn) => { if (a <= 0.003) return; g.save(); g.globalAlpha *= a; fn(); g.restore(); };
+const scaled = (cx, cy, s, fn) => { if (Math.abs(s - 1) < 1e-4) return fn(); g.save(); g.translate(cx, cy); g.scale(s, s); g.translate(-cx, -cy); fn(); g.restore(); };
 const CURSOR = new Path2D('M4 3 L30 22 L18 24 L26 40 L20 43 L12 27 L4 36 Z');
 
 // ────────────────────────────── the toolbar state per level ──────────────────────────────
 const PILLS = [ { t: 0, lab: 'MONTH', val: '9/2026', caret: 0 }, { t: T.PILL_WEEK, lab: 'WEEK', val: '9/21 – 9/27', caret: 1 },
                 { t: T.PILL_DAY, lab: 'DAY', val: 'Thu, 9/24', caret: 1 }, { t: T.PILL_MONTH, lab: 'MONTH', val: '9/2026', caret: 0 } ];
-const COUNTS = [ [0, 'Mine 9 · All 13'], [T.PILL_WEEK, 'Mine 7 · All 11'], [T.PILL_DAY, 'Mine 1 · All 4'], [T.LAND + 0.1, 'Mine 2 · All 5'], [T.PILL_MONTH, 'Mine 10 · All 14'] ];
+const COUNTS = [ [0, ...counts('month', 0)], [T.PILL_WEEK, ...counts('week')], [T.PILL_DAY, ...counts('day', 0)], [T.LAND + 0.1, ...counts('day', 1)], [T.PILL_MONTH, ...counts('month', 1)] ];
 const SEG_AT = [ [0, 0], [T.CLICK_WEEK + 0.03, 1], [T.CLICK_THU + 0.03, 2], [T.CLICK_MONTH + 0.03, 0] ];
 let PILLW = [];
 const idxAt = (list, t) => { let i = 0; for (let j = 0; j < list.length; j++) if (t >= list[j][0] ?? list[j].t) i = j; return i; };
 function pillIdx(t) { let i = 0; for (let j = 0; j < PILLS.length; j++) if (t >= PILLS[j].t) i = j; return i; }
 function pillW(t) { const i = pillIdx(t); if (!i) return PILLW[0]; return lerp(PILLW[i - 1], PILLW[i], OM.spring(t - PILLS[i].t, 0.8, 16)); }
 const dayTB = t => sstep(T.PILL_DAY, T.PILL_DAY + 0.3, t) * (1 - sstep(T.PILL_MONTH - 0.1, T.PILL_MONTH + 0.2, t));
+const pulse = (t, t0) => sstep(t0, t0 + 0.12, t) * (1 - sstep(t0 + 0.6, t0 + 1.0, t));   // done before the hold at 4.1
 
 // ────────────────────────────── drawing: the app shell (world units) ──────────────────────────────
 let NOISE = null;
@@ -186,24 +256,31 @@ function appShell(t, L) {
   g.beginPath(); g.arc(1583, 175, 16, 0, Math.PI * 2); g.lineWidth = 1.2; g.strokeStyle = 'rgba(255,255,255,0.18)'; g.stroke();
   withA(0.55, () => { g.lineWidth = 1.6; g.strokeStyle = '#ffffff'; g.beginPath(); g.moveTo(1577, 180); g.quadraticCurveTo(1577, 168, 1583, 167); g.quadraticCurveTo(1589, 168, 1589, 180); g.lineTo(1591, 182); g.lineTo(1575, 182); g.closePath(); g.stroke();
     g.beginPath(); g.moveTo(1576, 167); g.lineTo(1591, 184); g.stroke(); });
-  rr(1607, 156, 128, 38, 19); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill(); g.lineWidth = 1.2; g.strokeStyle = 'rgba(255,255,255,0.25)'; g.stroke();
-  g.beginPath(); g.arc(1632, 175, 12, 0, Math.PI * 2); g.fillStyle = P.accent; g.fill(); text('I', 1632, 180, 13, 800, P.navy, 'center');
-  text('Iris', 1652, 181, 16, 500, '#ffffff'); text('Change', 1680, 181, 12, 500, '#cbd5e1');
+  const meW = tw('Ryan', 16, 500), chX = 1652 + meW + 7, capW = Math.max(128, chX + tw('Change', 12, 500) + 14 - 1607);
+  rr(1607, 156, capW, 38, 19); g.fillStyle = 'rgba(255,255,255,0.08)'; g.fill(); g.lineWidth = 1.2; g.strokeStyle = 'rgba(255,255,255,0.25)'; g.stroke();
+  g.beginPath(); g.arc(1632, 175, 12, 0, Math.PI * 2); g.fillStyle = P.accent; g.fill(); text('R', 1632, 180, 13, 800, P.navy, 'center');
+  text('Ryan', 1652, 181, 16, 500, '#ffffff'); text('Change', chX, 181, 12, 500, '#cbd5e1');
   g.restore();
   return bottom;
 }
 function toolbar(t) {
   const pw = pillW(t), dl = dayTB(t);
-  const ci = idxAt(COUNTS, t), cs = COUNTS[ci][1], ca = ci ? clamp((t - COUNTS[ci][0]) / 0.18) : 1;
-  const cw = tw(cs, 15, 600), cx = 185 + pw + 12;
-  const flash = ci === 4 ? 1 - sstep(T.PILL_MONTH + 0.6, T.PILL_MONTH + 1.6, t) : ci === 3 ? 1 - sstep(T.LAND + 0.6, T.LAND + 1.4, t) : 0;
-  withA(ca, () => text(cs, cx, 250, 15, 600, flash > 0.02 ? mix(P.muted, '#b7791f', flash) : P.muted));
+  // "Mine x · All y" (the product shows both numbers in every filter); the part the hand just chose flashes
+  const ci = idxAt(COUNTS, t), [, cm, cA] = COUNTS[ci], ca = ci ? clamp((t - COUNTS[ci][0]) / 0.18) : 1;
+  const sM = `Mine ${cm}`, sD = ' · ', sA = `All ${cA}`, cx = 185 + pw + 12;
+  const whole = ci === 4 ? 1 - sstep(T.PILL_MONTH + 0.6, T.PILL_MONTH + 1.6, t) : ci === 3 ? 1 - sstep(T.LAND + 0.6, T.LAND + 1.4, t) : 0;
+  const fM = Math.max(whole, pulse(t, T.CLICK_MINE)), fA = Math.max(whole, pulse(t, T.CLICK_ALL), pulse(t, T.CLICK_ALL2));
+  const col = f => f > 0.02 ? mix(P.muted, '#b7791f', f) : P.muted;
+  const wM = tw(sM, 15, 600), wD = tw(sD, 15, 600), cw = wM + wD + tw(sA, 15, 600);
+  withA(ca, () => { text(sM, cx, 250, 15, 600, col(fM)); text(sD, cx + wM, 250, 15, 600, P.muted); text(sA, cx + wM + wD, 250, 15, 600, col(fA)); });
   let nx = cx + cw + 12;
   const btn = (x, w, s) => { rr(x, 229, w, 32, 8); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1; g.strokeStyle = P.line; g.stroke(); text(s, x + w / 2, 251, s.length > 1 ? 15 : 13, 500, P.ink, 'center'); return x + w + 4; };
   nx = btn(nx, 30, '‹'); nx = btn(nx, 66, 'Today'); btn(nx, 30, '›');
-  // Mine / All (month & week) — hidden in the day view
+  // Mine / All (month & week) — hidden in the day view; the navy thumb slides to what the hand picked
+  const fs = filterSel(t), fk = clamp(fs);
   withA(1 - dl, () => { rr(1379, 227, 122, 38, 10); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1; g.strokeStyle = P.line; g.stroke();
-    rr(1382, 230, 64, 32, 7); g.fillStyle = P.navy; g.fill(); text('Mine', 1414, 251, 15, 700, '#fff', 'center'); text('All', 1472, 251, 15, 500, P.muted, 'center'); });
+    rr(lerp(1382, 1446, fs), 230, lerp(64, 52, fs), 32, 7); g.fillStyle = P.navy; g.fill();
+    text('Mine', 1414, 251, 15, fk < 0.5 ? 700 : 500, mix('#ffffff', P.muted, fk), 'center'); text('All', 1472, 251, 15, fk >= 0.5 ? 700 : 500, mix(P.muted, '#ffffff', fk), 'center'); });
   // Month / Week / Day: right-aligned in month & week, beside the nav in the day view (shots-v2/04)
   const sx = lerp(1522, 622, ease.smoother(dl)), si = SEG_AT[idxAt(SEG_AT, t)][1];
   rr(sx, 227, 213, 38, 10); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1; g.strokeStyle = P.line; g.stroke();
@@ -216,19 +293,21 @@ function toolbar(t) {
 }
 
 // ────────────────────────────── the calendar: month ⇄ week ⇄ day ──────────────────────────────
+const hlOn = t => 1 - sstep(T.HL_OFF, T.HL_OFF + 0.35, t);               // the product drops the yellow 2.6 s after saving
+function newCol(t) { const k = hlOn(t), r = ROOMS[NEW.room]; return { bar: mix(r.bar, P.hlBar, k), soft: mix(r.soft, P.hlBg, k), text: mix(r.text, P.navy, k) }; }
 function block(b, R, a, L, t) {                                           // one meeting, product style (.mycal-ev / .mycal-blk)
   if (a <= 0.003 || R.w < 2) return;
   const spot = b.isNew ? 1 : 1 - 0.7 * spotlight(t);
-  const other = !b.mine, col = b.isNew ? { bar: P.hlBar, soft: P.hlBg, text: P.navy } : other ? { bar: P.otherBar, soft: P.otherBg, text: P.otherText } : ROOMS[b.room];
+  const other = !b.mine, col = b.isNew ? newCol(t) : other ? OTHER : ROOMS[b.room];
   const im = b.isNew ? OM.impact(t, T.LAND, { decay: 8, omega: 24, sqx: 0.05, sqy: 0.14 }) : { sx: 1, sy: 1 };
   const im2 = b.isNew ? OM.impact(t, T.D2M[1], { decay: 7, omega: 22, sqx: 0.08, sqy: 0.2 }) : { sx: 1, sy: 1 };
-  const sx = im.sx * im2.sx, sy = im.sy * im2.sy, cx = R.x + R.w / 2, cy = R.y + R.h / 2, w = R.w * sx, h = R.h * sy, x = cx - w / 2, y = cy - h / 2;
+  const ps = R.s ?? 1, sx = im.sx * im2.sx * ps, sy = im.sy * im2.sy * ps, cx = R.x + R.w / 2, cy = R.y + R.h / 2, w = R.w * sx, h = R.h * sy, x = cx - w / 2, y = cy - h / 2;
   withA(a * spot, () => {
     const mk = R.k ?? 1;                                                  // 0 = a month entry, 1 = a time-grid block
     rr(x, y, w, h, lerp(4, 6, mk)); g.fillStyle = col.soft; g.fill();
     g.save(); rr(x, y, w, h, lerp(4, 6, mk)); g.clip();
     g.fillStyle = col.bar; g.fillRect(x, y, lerp(3, 4, mk), h);
-    // month entry text: "10:00 Vendor Sync"
+    // month entry text: "10:00 Admin Survey"
     withA(1 - sstep(0.15, 0.5, mk), () => { const tm = TIMES[b.s]; text(tm, x + 9, y + 16, 14, 500, col.text); text(fit(b.t, 14, 500, w - 14 - tw(tm + ' ', 14)), x + 9 + tw(tm + ' ', 14), y + 16, 14, 500, col.text); });
     // block text: title + pill (room in the week, organizer in the day)
     withA(sstep(0.45, 0.85, mk), () => {
@@ -238,15 +317,21 @@ function block(b, R, a, L, t) {                                           // one
       const tx = x + 11, title = fit(b.t, 15, 500, short ? w - 22 - pw - 6 : w - 18);
       text(title, tx, short ? y + h / 2 + 5 : y + 19, 15, 500, col.text);
       const px = short ? tx + tw(title, 15) + 7 : tx, py = short ? y + h / 2 - 8 : y + 27;
-      const drawPill = (s, a2) => withA(a2, () => { const ww = tw(s, 11, 600) + 14; if (short && px + ww > x + w - 4) return; rr(px, py, ww, 16, 8); g.fillStyle = other ? P.otherPill : 'rgba(255,255,255,0.7)'; g.fill(); text(s, px + ww / 2, py + 12, 11, 600, other ? P.muted : col.text, 'center'); });
+      const drawPill = (s, a2) => withA(a2, () => { const ww = tw(s, 11, 600) + 14; if (px + ww > x + w - 4) return; rr(px, py, ww, 16, 8); g.fillStyle = other ? P.otherPill : 'rgba(255,255,255,0.7)'; g.fill(); text(s, px + ww / 2, py + 12, 11, 600, other ? P.muted : col.text, 'center'); });
       drawPill(pillR, 1 - dayK); drawPill(pillO, dayK);
     });
     g.restore();
   });
 }
-const spotlight = t => t < T.LAND ? 0 : sstep(T.LAND + 0.05, T.LAND + 0.45, t);
+function monthEntry(x, y, s, title, col) {                                // a month-cell entry in another week
+  const w = MCW - 18, tm = TIMES[s];
+  rr(x, y, w, 22, 4); g.fillStyle = col.soft; g.fill(); g.fillStyle = col.bar; g.fillRect(x, y, 3, 22);
+  text(tm, x + 9, y + 16, 14, 500, col.text); text(fit(title, 14, 500, w - 14 - tw(tm + ' ', 14)), x + 9 + tw(tm + ' ', 14), y + 16, 14, 500, col.text);
+}
+const spotlight = t => t < T.LAND ? 0 : sstep(T.LAND + 0.05, T.LAND + 0.45, t) * hlOn(t);
 function calendar(t, L, cam) {
   const gh = gridH(L), m2w = clamp(L, 0, 1), w2d = clamp(L - 1, 0, 1), hh = headH(L), y0 = rowY0(L);
+  const withNew = t >= T.LAND, dim = 1 - 0.7 * spotlight(t);
   g.save(); g.shadowColor = 'rgba(15,23,42,0.08)'; g.shadowBlur = 30 * DPR * camZ; g.shadowOffsetY = 10 * DPR * camZ;
   rr(GRID.x, GRID.y, GRID.w, gh, 18); g.fillStyle = '#fff'; g.fill(); g.restore();
   g.save(); rr(GRID.x, GRID.y, GRID.w, gh, 18); g.clip();
@@ -258,13 +343,16 @@ function calendar(t, L, cam) {
     const dy = (r < TROW ? -1 : 1) * Math.pow(m2w, 3) * 520, a = 1 - sstep(0.1, 0.75, m2w);
     if (a <= 0.01) return;
     withA(a, () => { for (let i = 0; i < 7; i++) {
-      const num = MNUM[r][i], out = (r === 0 && i === 0) || (r === 4 && i >= 3), we = i >= 5;
+      const num = MNUM[r][i], out = isOut(r, i), we = i >= 5;
       withA(out ? 0.7 : 1, () => { rr(MCOL(i), ry + dy, MCW, rh, 10); g.fillStyle = out ? P.off : (r % 2 ? P.sky : P.cream); g.fill(); });
       text(String(num), MCOL(i) + 10, ry + dy + 27, 16, 500, out || we ? P.faint : P.ink);
-      const ev = MONTH_OTHER[`${r}-${i}`];
-      if (ev) ev.forEach(([tm, ti, room], j) => { const s = pop(r * 7 + i); withA(clamp(s), () => {
-        const x = MCOL(i) + 9, y = ry + dy + 37 + j * 26, c = ROOMS[room];
-        withA(1 - 0.7 * spotlight(t), () => { rr(x, y, MCW - 18, 22, 4); g.fillStyle = c.soft; g.fill(); g.fillStyle = c.bar; g.fillRect(x, y, 3, 22); text(`${tm} ${ti}`, x + 9, y + 16, 14, 500, c.text); }); }); });
+      withA(out ? 0.7 : 1, () => MCELL[`${r}-${i}`].forEach(e => {
+        const fk = allK(t, 0, 0, cellDelay(r, i) + (e.mine ? 0 : 0.03 * e.iA)), x = MCOL(i) + 9;
+        if (e.mine) { const ak = clamp(fk), y = ry + dy + 37 + lerp(e.iM, e.iA, ak) * 26;
+          withA(clamp(pop(r * 7 + i)) * dim, () => monthEntry(x, y, e.s, e.t, ROOMS[e.room])); }
+        else { const y = ry + dy + 37 + e.iA * 26;
+          withA(clamp(fk * 1.8) * dim, () => scaled(x + (MCW - 18) / 2, y + 11, 0.86 + 0.14 * fk, () => monthEntry(x, y, e.s, e.t, OTHER))); }
+      }));
     } });
   });
   // the target week: cells → columns → (Thu) the day
@@ -284,11 +372,17 @@ function calendar(t, L, cam) {
       // the month cell's own number (fades as the cell becomes a column)
       withA(1 - sstep(0, 0.3, m2w), () => { const num = MNUM[TROW][i];
         if (num === 27) { g.beginPath(); g.arc(c.x + 24, c.y + 22, 14, 0, Math.PI * 2); g.fillStyle = P.navy; g.fill(); text('27', c.x + 24, c.y + 28, 16, 700, '#fff', 'center'); }
-        else text(String(num), c.x + 10, c.y + 27, 16, 500, we ? P.faint : P.ink);
-        if (i === 2 && L < 0.5 && t < T.D2M[0]) text('+1 more', c.x + 13, c.y + 37 + 4 * 26 + 12, 11, 600, P.muted); });
+        else text(String(num), c.x + 10, c.y + 27, 16, 500, we ? P.faint : P.ink); });
     });
   }
-  if (L <= 0.02 && t >= T.D2M[0]) { const c = colRect(2, 0); withA(1 - 0.7 * spotlight(t), () => text('+1 more', c.x + 13, c.y + 37 + 4 * 26 + 12, 11, 600, P.muted)); }
+  // "+N more" under the fourth entry (index.html:8346): Mine's and All's counts cross over with the filter
+  const moreA = (1 - sstep(0, t < T.D2M[0] ? 0.3 : 0.04, L)) * dim;
+  if (moreA > 0.01) for (let i = 0; i < 7; i++) {
+    const nM = tgtList(i, withNew, 0).length, nA = tgtList(i, withNew, 1).length, ak = clamp(allK(t, 0, 0, cellDelay(TROW, i) + 0.1));
+    const c = colRect(i, L), y = c.y + 37 + 4 * 26 + 12;
+    if (nM > 4) withA(moreA * (1 - ak), () => text(`+${nM - 4} more`, c.x + 13, y, 11, 600, P.muted));
+    if (nA > 4) withA(moreA * ak, () => text(`+${nA - 4} more`, c.x + 13, y, 11, 600, P.muted));
+  }
   // the time-grid chrome: navy head, time column
   withA(sstep(0.3, 0.8, m2w), () => {
     const hg = g.createLinearGradient(GRID.x, GRID.y, GRID.x + GRID.w, GRID.y); hg.addColorStop(0, P.navy); hg.addColorStop(1, P.navy);
@@ -297,8 +391,8 @@ function calendar(t, L, cam) {
     g.fillStyle = '#fff'; g.fillRect(GRID.x, y0, 64, 18 * RH);
     for (let s = 0; s < 18; s++) { if (s % 2 === 0) { g.fillStyle = '#f8fafc'; g.fillRect(GRID.x, y0 + s * RH, 64, RH); } text(TIMES[s], 217, y0 + s * RH + 22, 12, 500, P.muted, 'center'); }
     g.fillStyle = P.line; g.fillRect(GRID.x + 63, y0, 1, 18 * RH);
-    // week heads (Mon · 9/21 · 0 mtgs) — they ride their columns; Thu's gives way to the rooms
-    const MT = [0, 0, 5, 1, 1, 0, 0], WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    // week heads (Mon · 9/21 · 0 mtgs — the product counts only mine here) — they ride their columns; Thu's gives way to the rooms
+    const MT = [0, 1, 2, 3, 4, 5, 6].map(d => BK.filter(b => b.d === d && b.mine).length), WD = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     for (let i = 0; i < 7; i++) { const c = colRect(i, L), a = 1 - sstep(0.05, 0.5, w2d); if (c.w < 20) continue;
       withA(a, () => { text(WD[i], c.x + c.w / 2, GRID.y + 25, 15, 700, '#fff', 'center'); text(`9/${21 + i} · ${MT[i]} mtgs`, c.x + c.w / 2, GRID.y + 43, 11, 500, '#cbd5e1', 'center');
         if (i === 6) { g.fillStyle = P.accent; g.fillRect(c.x, GRID.y + hh - 3, c.w, 3); } }); }
@@ -306,19 +400,19 @@ function calendar(t, L, cam) {
     withA(sstep(0.5, 1, w2d), () => ROOM_ORDER.forEach((r, k) => { const cx = c3.x + (k + 0.5) * c3.w / 6, lw = tw(r, 15, 700);
       g.beginPath(); g.arc(cx - lw / 2 - 10, GRID.y + 19, 4, 0, Math.PI * 2); g.fillStyle = ROOMS[r].bar; g.fill(); text(r, cx + 4, GRID.y + 25, 15, 700, '#fff', 'center'); }));
   });
-  // meetings
-  const withNew = t >= T.LAND;
-  for (const b of BK) { if (!b.mine && L <= 1) continue; const R = blockRect(b, L, withNew), fa = t < 1.5 ? clamp(OM.spring(t - T.FILL0 - 0.08 * b.d - 0.05 * b.s / 2, 0.7, 18)) : 1; block(b, R, R.a * fa, L, t); }
+  // meetings: everyone else's first (grey), then mine on top
+  for (const pass of [0, 1]) for (const b of BK) { if (b.mine !== pass) continue;
+    const R = blockRect(b, L, withNew, t), fa = b.mine && t < 1.5 ? clamp(OM.spring(t - T.FILL0 - 0.08 * b.d - 0.05 * b.s / 2, 0.7, 18)) : 1; block(b, R, R.a * fa, L, t); }
   // the free half hour: the product's hover box (index.html:2138-2143), then the dialog grows out of it
   const hov = sstep(T.HOVER, T.HOVER + 0.12, t) * (1 - sstep(T.OPEN0, T.OPEN0 + 0.1, t));
   if (hov > 0.003 && L > 1.9) withA(hov, () => { rr(SLOT.x, SLOT.y, SLOT.w, SLOT.h, 6); g.fillStyle = 'rgba(255,255,255,0.85)'; g.fill();
     g.setLineDash([6, 4]); g.lineWidth = 2; g.strokeStyle = P.navy; g.stroke(); g.setLineDash([]); text('14:00 – 14:30 Free', SLOT.x + 10, SLOT.y + 19, 12, 700, P.navy); });
-  if (withNew) { const R = newRect(t, L); block(NEW, R, 1, L, t); }
+  if (withNew) { const R = newRect(t, L); block(NEW, R, R.a ?? 1, L, t); }
   g.restore();
 }
 function newRect(t, L) {                                                  // the new meeting, through every level
-  if (L >= 2) return { x: WCOL0 + 4, y: rowY0(2) + 10 * RH + 1, w: DCW - 8, h: RH - 2, k: 1 };
-  const R = blockRect(NEW, L, true); return R;
+  if (L >= 2) return { x: WCOL0 + 4, y: rowY0(2) + 10 * RH + 1, w: DCW - 8, h: RH - 2, k: 1, a: 1 };
+  return blockRect(NEW, L, true, t);
 }
 
 // ────────────────────────────── the dialog (shots-v2/05, 05b; index.html:2187-2198) ──────────────────────────────
@@ -329,7 +423,7 @@ function dialogRect(t) {
   return null;
 }
 const FLD = { date: [32, 106, 384, 'Date', '2026/09/24'], start: [444, 106, 384, 'Start Time', '14:00'], subj: [32, 191, 384, 'Subject', ''],
-  end: [444, 191, 384, 'End Time', '14:30'], room: [32, 276, 384, 'Room', '302'], org: [444, 276, 384, 'Organizer', 'Iris'], att: [32, 361, 796, 'Attendees (optional)', ''] };
+  end: [444, 191, 384, 'End Time', '14:30'], room: [32, 276, 384, 'Room', '302'], org: [444, 276, 384, 'Organizer', 'Ryan'], att: [32, 361, 796, 'Attendees (optional)', ''] };
 const OKB = { x: 676, y: 429, w: 152, h: 37 };
 function dialog(t, V, R) {
   const s = R.w / DLG.w, open = t < T.FOLD0;
@@ -389,7 +483,7 @@ function drawPill(t, cam) {
 function toast(t, V) {
   const a = sstep(T.TOAST, T.TOAST + 0.2, t) * (1 - sstep(T.CLICK_MONTH - 0.05, T.CLICK_MONTH + 0.2, t)); if (a <= 0.003) return;
   const r = OM.popIn(t, T.TOAST, { rise: 18 }); setM(V);
-  const s = 'Added: New Feature Kickoff (302, 14:00–14:30)', w = tw(s, 17, 600) + 40;
+  const s = 'Added: Project Meeting (302, 14:00–14:30)', w = tw(s, 17, 600) + 40;
   withA(a, () => { rr(960 - w / 2, 1008 + r.dy, w, 44, 12); g.fillStyle = P.navy; g.fill(); text(s, 960, 1036 + r.dy, 17, 600, '#fff', 'center'); });
 }
 function titleBlock(t) {
@@ -397,12 +491,14 @@ function titleBlock(t) {
   const k0 = OM.wordRise(t, T.TITLE[0], { dist: 18 }), k1 = OM.wordRise(t, T.TITLE[1], { dist: 34 }), k2 = OM.wordRise(t, T.TAG, { dist: 18 });
   if (t >= T.TITLE[0]) withA(k0.op, () => { g.letterSpacing = '3px'; text('GAMA MEETING ROOM', 100, 452 + k0.y, 18, 800, P.accent); g.letterSpacing = '0px'; });
   if (t >= T.TITLE[1]) withA(k1.op, () => { g.save(); g.translate(96, 540 + k1.y); g.scale(k1.s, k1.s); g.letterSpacing = LOOK.track('display', 84); text('My Calendar', 0, 0, 84, 700, '#fff', 'left', 'display'); g.letterSpacing = '0px'; g.restore(); });
-  if (t >= T.TAG) withA(k2.op, () => text('From the month to the half hour.', 100, 600 + k2.y, 30, 500, '#dbe4f0'));
+  if (t >= T.TAG) withA(k2.op, () => text(TAGLINE, 100, 600 + k2.y, 30, 500, '#dbe4f0'));
 }
+const TAGLINE = "Month, week or day. Just mine, or everyone's.";
 let HAND = [];
-function handAt(t) { if (t < 1.1 || t > 10.35) return null; return OM.cursor(t, HAND, CLICKS); }
+const HAND_IN = 1.0;
+function handAt(t) { if (t < HAND_IN || t > T.HAND_OUT) return null; return OM.cursor(t, HAND, CLICKS); }
 function drawHand(t) { const c = handAt(t); if (!c) return; setM(SCREEN);
-  withA(sstep(1.1, 1.3, t) * (1 - sstep(10.1, 10.35, t)), () => { g.save(); g.translate(c.x - 4, c.y - 3); g.scale(c.s, c.s);
+  withA(sstep(HAND_IN, HAND_IN + 0.2, t) * (1 - sstep(T.HAND_OUT - 0.25, T.HAND_OUT, t)), () => { g.save(); g.translate(c.x - 4, c.y - 3); g.scale(c.s, c.s);
     g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 5 * DPR; g.shadowOffsetY = 2 * DPR; g.fillStyle = '#111'; g.fill(CURSOR);
     g.shadowColor = 'transparent'; g.lineWidth = 2.5; g.strokeStyle = '#fff'; g.lineJoin = 'round'; g.stroke(CURSOR); g.restore(); }); }
 
@@ -433,7 +529,7 @@ function trackAt(t) {
   out.grid = OM.projectBox(V, { x: GRID.x, y: GRID.y, w: GRID.w, h: gridH(L), op: 1 });
   const hov = sstep(T.HOVER, T.HOVER + 0.12, t) * (1 - sstep(T.OPEN0, T.OPEN0 + 0.1, t)); if (hov > 0.01) out.slot = OM.projectBox(V, { ...SLOT, op: hov });
   const R = dialogRect(t); if (R) out.dialog = OM.projectBox(V, { ...R, op: 1 });
-  if (t >= T.LAND) { const n = newRect(t, L); out.booked = OM.projectBox(V, { x: n.x, y: n.y, w: n.w, h: n.h, op: 1 }); }
+  if (t >= T.LAND) { const n = newRect(t, L); out.booked = OM.projectBox(V, { x: n.x, y: n.y, w: n.w, h: n.h, op: n.a ?? 1 }); }
   const pb = pillScreen(t, cam); out.pill = { x: pb.x, y: pb.y, w: pb.w, h: pb.h, op: 1 };
   if (t >= T.TITLE[0]) out.title = { x: 94, y: 430, w: 700, h: 185, op: OM.wordRise(t, T.TITLE[0]).op };
   const h = handAt(t); if (h) out.hand = [h.x, h.y];
@@ -449,7 +545,8 @@ window.__motion = (t0, t1) => {
   const V1 = OM.view(c1), V0 = OM.view(c0), L0 = levelAt(t0), L1 = levelAt(t1);
   for (let i = 0; i < 7; i++) { const a = OM.projectBox(V0, colRect(i, L0)), b = OM.projectBox(V1, colRect(i, L1));
     d = Math.max(d, Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.x + a.w - b.x - b.w), Math.abs(a.y + a.h - b.y - b.h)); }
-  for (const bk of BK.concat(t1 >= T.LAND ? [NEW] : [])) { const ra = bk.isNew ? newRect(t0, L0) : blockRect(bk, L0, t0 >= T.LAND), rb = bk.isNew ? newRect(t1, L1) : blockRect(bk, L1, t1 >= T.LAND);
+  for (const bk of BK.concat(t1 >= T.LAND ? [NEW] : [])) { const ra = bk.isNew ? newRect(t0, L0) : blockRect(bk, L0, t0 >= T.LAND, t0), rb = bk.isNew ? newRect(t1, L1) : blockRect(bk, L1, t1 >= T.LAND, t1);
+    if ((ra.a ?? 1) < 0.01 && (rb.a ?? 1) < 0.01) continue;
     const a = OM.projectBox(V0, ra), b = OM.projectBox(V1, rb); d = Math.max(d, Math.abs(a.x - b.x), Math.abs(a.y - b.y), Math.abs(a.x + a.w - b.x - b.w), Math.abs(a.y + a.h - b.y - b.h)); }
   const a = trackAt(t0), b = trackAt(t1);
   for (const k of ['dialog', 'pill', 'hand', 'title']) { const p = a[k], r = b[k]; if (!p || !r) continue;
@@ -462,6 +559,8 @@ window.__events = () => {
   for (let r = 0; r < 3; r++) ev.push({ t: T.FILL0 + r * 0.25, kind: 'fill', pan: -0.3 + r * 0.3, v: 0.5 });
   CLICKS.forEach(t => ev.push({ t, kind: 'click', pan: hx(t), v: t === T.CLICK_OK ? 1 : 0.7 }));
   ev.push({ t: T.M2W[0], kind: 'unfold', pan: 0, v: 0.8, dur: T.M2W[1] - T.M2W[0] });
+  ev.push({ t: T.ALL_IN, kind: 'flood', pan: 0, v: 0.7, dur: 0.6 });
+  ev.push({ t: T.MINE_OUT, kind: 'retract', pan: 0, v: 0.6, dur: 0.4 });
   ev.push({ t: T.W2D[0], kind: 'widen', pan: 0, v: 0.8, dur: T.W2D[1] - T.W2D[0] });
   ev.push({ t: T.HOVER, kind: 'hover', pan: -0.6, v: 0.4 });
   ev.push({ t: T.OPEN0, kind: 'open', pan: 0, v: 1 });
@@ -470,8 +569,9 @@ window.__events = () => {
   ev.push({ t: T.TOAST, kind: 'toast', pan: 0, v: 0.5 });
   ev.push({ t: T.D2M[0], kind: 'collapse', pan: 0, v: 1, dur: T.D2M[1] - T.D2M[0] });
   ev.push({ t: T.D2M[1], kind: 'dot', pan: 0.3, v: 0.9 });
+  ev.push({ t: T.ALL2_IN, kind: 'flood', pan: 0, v: 0.85, dur: 0.8 });
   ev.push({ t: T.TITLE[1], kind: 'word', pan: -0.5, v: 0.5 });
-  return { T, events: ev.sort((a, b) => a.t - b.t) };
+  return { T, dur: DUR, events: ev.sort((a, b) => a.t - b.t) };
 };
 window.__logZoom = t => Math.log(camAt(t).zoom);
 window.__level = t => levelAt(t);
@@ -484,14 +584,20 @@ window.__ready = LOOK.ready.then(() => document.fonts.ready).then(() => {
   // the hand: what it clicks, where that is on screen at that moment
   const scr = (t, wx, wy) => { const p = OM.project(OM.view(camAt(t)), wx, wy); return { x: p[0], y: p[1] }; };
   const dl = (t, fx, fy) => scr(t, DLGW.x + fx * DLGW.w / DLG.w, DLGW.y + fy * DLGW.h / DLG.h);
-  const wk = scr(T.CLICK_WEEK, 1522 + 81 + 34, 246), thu = scr(T.CLICK_THU, WCOL0 + 3 * WCW + WCW / 2, 330), sl = scr(T.CLICK_SLOT, SLOT.x + 150, SLOT.y + 16);
-  const subj = dl(7.2, 32 + 200, 191 + 23), ok = dl(7.9, OKB.x + 76, OKB.y + 19), mo = scr(T.CLICK_MONTH, 622 + 3 + 38, 246);
-  HAND = [ { t: 1.10, x: 1780, y: 1170 }, { t: 1.60, x: wk.x + 30, y: wk.y + 30 }, { t: 1.72, x: wk.x, y: wk.y }, { t: 1.95, x: wk.x, y: wk.y },
-    { t: 3.00, x: thu.x + 160, y: thu.y + 240 }, { t: 3.58, x: thu.x + 20, y: thu.y + 22 }, { t: 3.70, x: thu.x, y: thu.y }, { t: 3.90, x: thu.x, y: thu.y },
-    { t: 4.80, x: 900, y: 820 }, { t: 5.25, x: sl.x + 40, y: sl.y + 26 }, { t: 5.40, x: sl.x + 6, y: sl.y + 4 }, { t: 5.70, x: sl.x, y: sl.y }, { t: 5.90, x: sl.x, y: sl.y },
-    { t: 6.60, x: subj.x + 60, y: subj.y + 120 }, { t: 6.82, x: subj.x + 8, y: subj.y + 8 }, { t: 6.90, x: subj.x, y: subj.y }, { t: 7.60, x: subj.x + 40, y: subj.y + 36 },
-    { t: 7.85, x: ok.x + 10, y: ok.y + 10 }, { t: 7.95, x: ok.x, y: ok.y }, { t: 8.15, x: ok.x, y: ok.y },
-    { t: 8.80, x: 1150, y: 880 }, { t: 9.55, x: 1150, y: 880 }, { t: 9.85, x: mo.x + 16, y: mo.y + 14 }, { t: 9.95, x: mo.x, y: mo.y }, { t: 10.10, x: mo.x, y: mo.y }, { t: 10.35, x: 1300, y: 1200 } ];
+  const wk = scr(T.CLICK_WEEK, 1522 + 81 + 34, 246), all1 = scr(T.CLICK_ALL, 1472, 246), mine1 = scr(T.CLICK_MINE, 1414, 246);
+  const thu = scr(T.CLICK_THU, WCOL0 + 3 * WCW + WCW / 2, 330), sl = scr(T.CLICK_SLOT, SLOT.x + 150, SLOT.y + 16);
+  const subj = dl(9.7, 32 + 200, 191 + 23), ok = dl(10.25, OKB.x + 76, OKB.y + 19), mo = scr(T.CLICK_MONTH, 622 + 3 + 38, 246), all2 = scr(T.CLICK_ALL2, 1472, 246);
+  const at = (t, p, dx = 0, dy = 0) => ({ t, x: p.x + dx, y: p.y + dy });
+  HAND = [ { t: HAND_IN, x: 1780, y: 1170 }, at(1.42, wk, 30, 30), at(1.55, wk), at(1.80, wk),
+    at(2.75, all1, 70, 110), at(2.98, all1, 12, 10), at(3.10, all1), at(3.40, all1), at(4.80, all1), at(4.95, all1),   // the rest: the hand waits on All
+    at(5.38, mine1, 12, 10), at(5.50, mine1), at(5.72, mine1),
+    at(6.40, thu, 22, 22), at(6.55, thu), at(6.75, thu),
+    { t: 7.65, x: 900, y: 820 }, at(8.20, sl, 40, 26), at(8.30, sl, 6, 4), at(8.35, sl), at(8.52, sl),
+    at(9.20, subj, 60, 120), at(9.34, subj, 8, 8), at(9.40, subj), at(9.95, subj, 40, 36),
+    at(10.22, ok, 10, 10), at(10.30, ok), at(10.48, ok),
+    { t: 11.10, x: 1150, y: 880 }, { t: 11.25, x: 1150, y: 880 }, { t: 11.55, x: 1150, y: 880 },
+    at(11.95, mo, 16, 14), at(12.05, mo), at(12.25, mo),
+    { t: 13.30, x: 1300, y: 560 }, at(13.88, all2, 14, 12), at(14.05, all2), at(14.30, all2), { t: T.HAND_OUT, x: 1560, y: 1200 } ];
   seek(0); return true;
 });
 if (q.has('t')) __ready.then(() => seek(parseFloat(q.get('t'))));

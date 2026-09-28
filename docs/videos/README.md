@@ -1,10 +1,10 @@
 # 介紹短片
 
-用 [onetake](https://github.com/feitangyuan/onetake) skill 製作（2026-09-27），1080p30 草稿。片中人名、會議主題都是虛構的，「Johnny Office」「Jackal Office」改成 Studio、Lounge。
+用 [onetake](https://github.com/feitangyuan/onetake) skill 製作（2026-09-27），1080p30 草稿。片中人名、會議主題取自正式資料庫的真實預約（登入者為 Ryan，2026-09-28 更新）；會議室維持片中版面，「Johnny Office」「Jackal Office」改成 Studio、Lounge。
 
 | 影片 | 內容 | 原始檔 |
 |---|---|---|
-| `my-calendar-15s.mp4` | My Calendar：從月推到週、日，點空檔預約，再拉回月 | `src/my-calendar/` |
+| `my-calendar-20s.mp4` | My Calendar：月／週／日切換、週檢視 Mine ↔ All、點空檔預約，拉回月再切 All | `src/my-calendar/` |
 | `notifications-20s.mp4` | 桌面通知：新增、改時間、開會前提醒、取消 | `src/notifications/` |
 
 ## 原始檔

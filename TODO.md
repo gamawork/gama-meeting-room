@@ -8,6 +8,9 @@
 ## 待辦
 
 - [ ] 建立單元測試框架，為 `checkRecurringConflicts`（`index.html:5591`）寫表格測試（R8；2026-09-25）
+- [ ] 「我的行事曆」月檢視選 All 時，每格改成自己的會議排前面、別人的排後面（同組內照時間）；現在只照時間排，
+      每格只顯示 4 筆（`mycalMonthDayItems`、`index.html:8472`；`slice(0, 4)` 在 `index.html:8492`），自己的會議會被收進「+N more」。
+      介紹短片 `docs/videos/src/my-calendar/comp.html` 的 `cmpMine` 已先這樣排（使用者 2026-09-28 決定，待安排修改）
 
 ### 功能：「我的行事曆」頁籤（2026-09-27 規劃，新功能）
 
