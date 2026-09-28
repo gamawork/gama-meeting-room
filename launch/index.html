@@ -3,10 +3,34 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>會議室，重新發明</title>
+<script>
+  // 除錯模式（網址加 ?debug 才啟動）：查 iPhone 打開就跳到最下面，畫面上列出每次捲動與觸發者
+  if (/[?&]debug\b/.test(location.search)) (function () {
+    var t0 = performance.now(), lines = [], box = null, lastY = -1;
+    function ms() { return Math.round(performance.now() - t0); }
+    function sc() { var se = document.scrollingElement || document.documentElement; return 'y=' + Math.round(window.scrollY) + ' se=' + Math.round(se.scrollTop) + ' body=' + Math.round(document.body ? document.body.scrollTop : -1) + ' h=' + se.scrollHeight + '/' + window.innerHeight; }
+    function log(s) { lines.push(ms() + 'ms ' + s); if (lines.length > 60) lines.shift(); if (box) box.textContent = lines.join('\n'); }
+    function caller() { var st = (new Error().stack || '').split('\n'); return (st[3] || st[2] || '').trim().slice(0, 80); }
+    log('start hash=' + (location.hash || '-') + ' restore=' + (history.scrollRestoration || '?') + ' ' + navigator.userAgent.replace(/.*(iPhone OS [\d_]+|Android [\d.]+).*/, '$1'));
+    ['scrollTo', 'scrollBy', 'scroll'].forEach(function (fn) { var o = window[fn]; window[fn] = function () { log('window.' + fn + ' ' + JSON.stringify([].slice.call(arguments)) + ' ← ' + caller()); return o.apply(window, arguments); }; });
+    var siv = Element.prototype.scrollIntoView; Element.prototype.scrollIntoView = function () { log('scrollIntoView ' + (this.id || this.className) + ' ← ' + caller()); return siv.apply(this, arguments); };
+    var fo = HTMLElement.prototype.focus; HTMLElement.prototype.focus = function () { log('focus ' + (this.id || this.className || this.tagName)); return fo.apply(this, arguments); };
+    addEventListener('scroll', function (e) { var y = Math.round(window.scrollY); if (Math.abs(y - lastY) > 80) { lastY = y; log('scroll ' + sc()); } }, { passive: true });
+    document.addEventListener('scroll', function (e) { if (e.target !== document) log('scroll on ' + (e.target.id || e.target.className || e.target.tagName)); }, { capture: true, passive: true });
+    ['touchstart', 'hashchange', 'load', 'pageshow', 'focusin'].forEach(function (ev) { addEventListener(ev, function (e) { log(ev + (e.persisted ? ' persisted' : '') + (ev === 'focusin' ? ' ' + (e.target.id || e.target.className || e.target.tagName) : '') + ' ' + sc()); }, { capture: true, passive: true }); });
+    document.addEventListener('DOMContentLoaded', function () {
+      box = document.createElement('pre');
+      box.style.cssText = 'position:fixed;left:6px;right:6px;top:calc(env(safe-area-inset-top,0px) + 58px);max-height:55vh;overflow:auto;z-index:99;margin:0;padding:8px;background:rgba(0,0,0,.82);color:#7CFC9A;font:11px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;border-radius:10px;pointer-events:auto';
+      document.body.appendChild(box);
+      log('DOMContentLoaded ' + sc());
+    });
+    [500, 1500, 3000, 6000, 10000].forEach(function (d) { setTimeout(function () { log('@' + d + ' ' + sc() + ' active=' + (document.activeElement && (document.activeElement.id || document.activeElement.tagName))); }, d); });
+  })();
+</script>
 <link rel="canonical" href="https://gama-meeting-room-launch.gamawork2025.workers.dev/">
 <script>
   // 同一份 launch/ 也會被 GitHub Pages 發布，但那邊影片下載很慢；從 github.io 進來的一律轉到 Cloudflare 那份
-  if (location.hostname.endsWith('github.io')) location.replace('https://gama-meeting-room-launch.gamawork2025.workers.dev/' + location.hash);
+  if (location.hostname.endsWith('github.io')) location.replace('https://gama-meeting-room-launch.gamawork2025.workers.dev/' + location.search + location.hash);
   // 手機瀏覽器會沿用上次的捲動位置（使用者回報每次打開都在最下面）：沒有 #段落 時一律從頂端開始，
   // 但使用者在載入完成前就自己捲動或點過，就不把他拉回去
   if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
