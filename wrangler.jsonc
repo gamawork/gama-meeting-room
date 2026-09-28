@@ -1,0 +1,7 @@
+// Cloudflare Workers（gama-meeting-room-launch）：只把 launch/ 介紹頁當靜態網站部署。
+// 沒有這個設定時，Workers Builds 會把整個 repo（含 node_modules）當成網站上傳而失敗。
+{
+  "name": "gama-meeting-room-launch",
+  "compatibility_date": "2026-09-01",
+  "assets": { "directory": "./launch" }
+}
