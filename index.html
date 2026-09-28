@@ -8477,7 +8477,11 @@ function mycalRender(zoomOut) {
     document.querySelectorAll('#mycalScaleSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scale === mycalState.scale)));
     document.querySelectorAll('#mycalFilterSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === mycalState.filter)));
     // 日檢視一律顯示全部、不提供這顆切換（藏起別人的預約會讓已佔用的時段看起來是空的）
-    document.getElementById('mycalFilterSeg').hidden = mycalState.scale === 'day';
+    // 用 visibility 保留位置：若改用 hidden 移出版面，旁邊的月週日切換會失去靠右而跳到左邊
+    const filterSeg = document.getElementById('mycalFilterSeg');
+    const hideFilter = mycalState.scale === 'day';
+    filterSeg.style.visibility = hideFilter ? 'hidden' : '';
+    filterSeg.setAttribute('aria-hidden', String(hideFilter));
     const view = document.getElementById('mycalView');
     view.className = 'mycal-view';
     void view.offsetWidth; // 重播縮放動畫
