@@ -77,6 +77,20 @@ exclude using gist (
 Git 身分：工作帳號 `gamawork`，見 `~/.claude/environments/GitHub.md`（L18-24）。
 remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）。
 
+## 部署（push 到 main 會同時觸發兩邊）
+
+| 內容 | 主機與網址 | 怎麼部署 |
+|---|---|---|
+| 會議室系統（根目錄 `index.html`） | GitHub Pages：`https://gamawork.github.io/gama-meeting-room/` | push 到 main |
+| 新功能介紹頁（`launch/`） | Cloudflare Worker `gama-meeting-room-launch`（帳號 Gamawork2025）：`https://gama-meeting-room-launch.gamawork2025.workers.dev/` | push 到 main；Workers Builds 連 GitHub，照根目錄 `wrangler.jsonc` 只部署 `launch/` |
+
+- `wrangler.jsonc` 的 `assets.directory` 必須指向 `./launch`：少了它，Workers Builds 會把整個 repo（含 `node_modules`）當網站上傳，
+  因單檔超過 25MB 而失敗（2026-09-28 實際發生）。`name` 必須跟 Cloudflare 上的 Worker 名稱一致。
+- 同一份 `launch/` 也會被 GitHub Pages 發布，`launch/index.html` 開頭的 JS 會把 github.io 來的訪客轉到 Cloudflare。
+  原因：這個網路連 GitHub Pages 很慢，1.4MB 影片實測約 29 秒，Cloudflare 約 1.4 秒（2026-09-28）。
+- 介紹頁的影片是 `launch/media/*-1080.mp4`，不是 `docs/videos` 原檔（原檔 7.7MB，給系統右上角 i 鈕用）。原檔換新時要重壓一份：
+  `ffmpeg -i 原檔.mp4 -c:v libx264 -preset veryslow -tune animation -crf 30 -pix_fmt yuv420p -c:a aac -b:a 64k -movflags +faststart 輸出.mp4`
+
 ## 發生亂碼時的處理
 
 - 不要直接在壞掉的檔案上繼續修字串。
