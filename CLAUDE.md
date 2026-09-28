@@ -93,8 +93,11 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
   因單檔超過 25MB 而失敗（2026-09-28 實際發生）。`name` 必須跟 Cloudflare 上的 Worker 名稱一致。
 - 同一份 `launch/` 也會被 GitHub Pages 發布，`launch/index.html` 開頭的 JS 會把 github.io 來的訪客轉到 Cloudflare。
   原因：這個網路連 GitHub Pages 很慢，1.4MB 影片實測約 29 秒，Cloudflare 約 1.4 秒（2026-09-28）。
-- 介紹頁的影片是 `launch/media/*-1080.mp4`，不是 `docs/videos` 原檔（原檔 7.7MB，給系統右上角 i 鈕用）。原檔換新時要重壓一份：
+- 介紹頁的影片是 `launch/media/*-1080.mp4`，不是 `docs/videos` 原檔（原檔 7.7MB，只當重壓的來源）。原檔換新時要重壓一份：
   `ffmpeg -i 原檔.mp4 -c:v libx264 -preset veryslow -tune animation -crf 30 -pix_fmt yuv420p -c:a aac -b:a 64k -movflags +faststart 輸出.mp4`
+- **系統依賴介紹頁**：`index.html` 右上角 i 鈕的「看 20 秒示範」（中英各兩顆 `help-video-btn`）的 `data-video`
+  直接連到 Cloudflare 上的 `launch/media/*-1080.mp4`（2026-09-28 起，為了避開 GitHub Pages 下載慢）。
+  刪掉或改名 `launch/media` 的影片、改 Worker 名稱或網址前，先改這四個 `data-video`，不然系統裡的示範會壞掉。
 
 ## 發生亂碼時的處理
 
