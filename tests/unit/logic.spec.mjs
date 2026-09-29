@@ -6,6 +6,7 @@
 // 已對照 CLAUDE.md 的半開區間 [) 語意與 calculateRelativeWeeklyDate 的月底退回邏輯確認合理。
 import { test, expect } from './support/mock-supabase.mjs';
 import { gotoApp } from './support/app.mjs';
+import { readFileSync } from 'node:fs';
 
 test.describe('checkRecurringConflicts（時段防撞第 1 層，半開區間 [)）', () => {
   const rows = [
@@ -149,5 +150,22 @@ test.describe('mycalIsMine（我的行事曆「我的會議」判斷）', () => 
     await gotoApp(page);
     const r = await page.evaluate(b => { mycalState.me = null; return mycalIsMine(b); }, booking({ organizer: 'Ray', attendees: 'Ray' }));
     expect(r).toBe(false);
+  });
+});
+
+test.describe('人員名單', () => {
+  test('Mei 不再出現在個人或群組的可選名單', () => {
+    const source = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+    const directorySource = source.match(/const attendeeGroups = (\[[\s\S]*?\]);\s*const attendeeDirectory/);
+    const teamsSource = source.match(/const ATTENDEE_TEAMS = (\[[\s\S]*?\]);\s*\/\/ 成員被改名或刪除/);
+
+    expect(directorySource).not.toBeNull();
+    expect(teamsSource).not.toBeNull();
+
+    const attendeeGroups = Function(`return ${directorySource[1]}`)();
+    const attendeeTeams = Function(`return ${teamsSource[1]}`)();
+
+    expect(attendeeGroups.flat()).not.toContain('Mei');
+    expect(attendeeTeams.flatMap(team => team.members)).not.toContain('Mei');
   });
 });
