@@ -136,7 +136,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 #### 本專案對照（驗證節奏與今天的測試規則落在哪）
 
 - 風險類在本專案指（model-dispatch §6 風險類的具體化，不另立一套）：`bookings` 預約資料（時段防撞三層失效造成重複預約）、Supabase 資料遺失或毀損。
-- 追蹤檔與未修的 M／L 清單：`TODO.md` 的「延後的 M」段；接手先讀 `TODO.md` 的「下一步入口」。
+- 追蹤檔與未修的 M／L 清單：`TODO.md` 的「未修的 M／L 清單」段；接手先讀 `TODO.md` 的「下一步入口」。
 - 瀏覽器重複檢查登記簿：`tests/checks.md`（還沒建時照 browser-verify 守則由主對話建）；腳本目錄：`tests/scripts/`；驗證 harness：未建。
 
 ## 開工閘門：使用情境

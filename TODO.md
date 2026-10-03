@@ -58,7 +58,7 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 
 - 從月到半小時的縮放檢視（月總覽、日網格、從空檔帶入表單）：[docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md)（2026-09-27，來自介紹短片）
 
-## 延後的 M
+## 未修的 M／L 清單
 
 （驗證節奏試行，CLAUDE.md「驗證節奏：分風險收工」延後的非風險類 M 級 finding 記在這裡）
 
