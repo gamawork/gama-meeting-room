@@ -2140,6 +2140,10 @@
 .mycal-day-cell.mycal-w1 { background: var(--mycal-sky); }
 .mycal-day-cell.mycal-out { background: var(--mycal-off); opacity: .7; }
 .mycal-day-cell .mycal-num { font-weight: 800; font-size: 16px; margin-bottom: 2px; }
+.mycal-holiday { display: inline-block; color: #b45309; font-size: calc(11px * 1.2); font-weight: 700; line-height: 1.3; }
+.mycal-day-cell .mycal-holiday { display: block; margin: 0 0 3px; }
+.mycal-tg-head .mycal-holiday { display: block; margin-top: 2px; color: #fde68a; }
+#mycalViewTitle .mycal-holiday { margin-left: 8px; color: #fde68a; font-size: calc(13px * 1.2); }
 .mycal-day-cell.mycal-we .mycal-num, .mycal-day-cell.mycal-out .mycal-num { color: var(--mycal-faint); }
 .mycal-day-cell.mycal-today .mycal-num {
     background: var(--mycal-navy); color: #fff; width: 28px; height: 28px; border-radius: 50%;
@@ -5143,6 +5147,7 @@ function setTimeSelectValue(selectId, timeValue) {
 // ===== 政府行事曆（人事行政總處辦公日曆，資料來源：ruyut/TaiwanCalendar） =====
         const holidayData = {};        // 'YYYY-MM-DD' -> { name, isHoliday, emoji }
         const holidayYearsLoaded = {}; // year -> 'loading' | 'done' | 'error'
+        const holidayLoadPromises = {}; // year -> in-flight or settled Promise, shared by both calendar views
 
         // 中華民國國旗（青天白日滿地紅）內嵌 SVG —— Windows 不支援 🇹🇼 國旗 emoji，改用 SVG 確保各平台正確顯示
         const ROC_FLAG_SVG = '<svg viewBox="0 0 30 20" style="width:1em;height:1em;vertical-align:-0.15em" xmlns="http://www.w3.org/2000/svg"><rect width="30" height="20" fill="#FE0000"/><rect width="15" height="10" fill="#000095"/><polygon points="7.5,1.8 7.89,3.55 9.1,2.23 8.56,3.94 10.27,3.4 8.95,4.61 10.7,5 8.95,5.39 10.27,6.6 8.56,6.06 9.1,7.77 7.89,6.45 7.5,8.2 7.11,6.45 5.9,7.77 6.44,6.06 4.73,6.6 6.05,5.39 4.3,5 6.05,4.61 4.73,3.4 6.44,3.94 5.9,2.23 7.11,3.55" fill="#fff"/><circle cx="7.5" cy="5" r="1.5" fill="#000095"/><circle cx="7.5" cy="5" r="1.1" fill="#fff"/></svg>';
@@ -5158,8 +5163,7 @@ function setTimeSelectValue(selectId, timeValue) {
             { match: ['端午'], emoji: '🐉' },
             { match: ['中秋'], emoji: '🥮' },
             { match: ['教師', '孔子'], emoji: '📖' },
-            { match: ['國慶'], emoji: ROC_FLAG_SVG },
-            { match: ['光復', '古寧頭'], emoji: '🇹🇼' },
+            { match: ['國慶', '光復', '古寧頭'], emoji: ROC_FLAG_SVG },
             { match: ['行憲'], emoji: '📜' },
             { match: ['補假'], emoji: '🌴' },
         ];
@@ -5177,7 +5181,6 @@ function setTimeSelectValue(selectId, timeValue) {
             '02-14': { name: '情人節', emoji: '💕' },
             '03-11': { name: '囧尼生日', emoji: '🎂' },
             '08-08': { name: '父親節', emoji: '👔' },
-            '12-02': { name: '街口生日', emoji: '🎂' },
             '12-25': { name: '聖誕節', emoji: '🎄' }, // 覆蓋同日的「行憲紀念日」顯示
         };
 
@@ -5221,9 +5224,9 @@ function setTimeSelectValue(selectId, timeValue) {
         }
 
         async function loadHolidayCalendar(year) {
-            if (holidayYearsLoaded[year]) return;
+            if (holidayLoadPromises[year]) return holidayLoadPromises[year];
             holidayYearsLoaded[year] = 'loading';
-            try {
+            holidayLoadPromises[year] = (async () => { try {
                 const res = await fetch(`https://cdn.jsdelivr.net/gh/ruyut/TaiwanCalendar/data/${year}.json`);
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const list = await res.json();
@@ -5242,12 +5245,13 @@ function setTimeSelectValue(selectId, timeValue) {
             } catch (e) {
                 console.warn(`載入 ${year} 年行事曆失敗:`, e);
                 holidayYearsLoaded[year] = 'error';
-            }
+            } })();
+            return holidayLoadPromises[year];
         }
 
         // 確保指定年份的行事曆已載入；載入完成後執行 onReady（用於重繪）
         async function ensureHolidayYears(years, onReady) {
-            const need = years.filter(y => !holidayYearsLoaded[y]);
+            const need = years.filter(y => holidayYearsLoaded[y] !== 'done' && holidayYearsLoaded[y] !== 'error');
             if (need.length === 0) return;
             await Promise.all(need.map(loadHolidayCalendar));
             if (typeof onReady === 'function') onReady();
@@ -5273,11 +5277,6 @@ function setTimeSelectValue(selectId, timeValue) {
             '囧尼生日': {
                 zh: n => n === 1 ? '囧尼生日就是明天！' : `囧尼生日倒數 ${n} 天`,
                 en: n => n === 1 ? "Johnny's birthday is tomorrow!" : `${n} days to Johnny's birthday`,
-                sub: () => '😈😈😈😈😈😈'
-            },
-            '街口生日': {
-                zh: n => n === 1 ? '街口生日就是明天！' : `街口生日倒數 ${n} 天`,
-                en: n => n === 1 ? "Jackal's birthday is tomorrow!" : `${n} days to Jackal's birthday`,
                 sub: () => '😈😈😈😈😈😈'
             },
         };
@@ -5324,7 +5323,6 @@ function setTimeSelectValue(selectId, timeValue) {
             '七夕': 'Qixi',
             '聖誕節': 'Christmas',
             '囧尼生日': "Johnny's Birthday",
-            '街口生日': "Jackal's Birthday",
         };
 
         // 中文顯示名覆蓋（縮短／改用通俗名稱；不動底層資料與 emoji／英文比對）
@@ -8482,6 +8480,18 @@ function mycalBindJumpPop() {
 }
 
 // ---------- 主繪製 ----------
+function mycalHolidayLabel(dateStr) {
+    const holiday = getHoliday(dateStr);
+    // emoji 只來自檔內對照表（國慶日是 SVG）；外部節日名稱仍須 escape。
+    return holiday ? `<span class="mycal-holiday">${holiday.emoji || ''}${escapeHtml(holidayNameFor(holiday.name))}</span>` : '';
+}
+function mycalHolidayYears() {
+    const c = mycalState.cursor;
+    if (mycalState.scale === 'day') return [c.getFullYear()];
+    const start = mycalState.scale === 'week' ? mycalMondayOf(c) : mycalMondayOf(new Date(c.getFullYear(), c.getMonth(), 1));
+    const end = mycalState.scale === 'week' ? mycalAddDays(start, 6) : mycalAddDays(mycalMondayOf(new Date(c.getFullYear(), c.getMonth() + 1, 0)), 6);
+    return [...new Set([start.getFullYear(), end.getFullYear()])];
+}
 function mycalRender(zoomOut) {
     document.querySelectorAll('#mycalScaleSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.scale === mycalState.scale)));
     document.querySelectorAll('#mycalFilterSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === mycalState.filter)));
@@ -8511,6 +8521,8 @@ function mycalRender(zoomOut) {
         document.getElementById('mycalEmptyPick').addEventListener('click', mycalOpenPicker);
         return;
     }
+    // 先畫既有會議；年度資料到齊後只補重繪節日，CDN 失敗也不會阻斷日曆。
+    ensureHolidayYears(mycalHolidayYears(), () => { if (mycalState.active) mycalRender(); });
     ({ month: mycalRenderMonth, week: mycalRenderWeek, day: mycalRenderDay })[mycalState.scale](view);
 }
 
@@ -8537,7 +8549,7 @@ function mycalRenderMonth(view) {
         const items = mycalMonthDayItems(ds);
         const shown = items.slice(0, 4);
         cells += `<div class="mycal-day-cell mycal-w${week % 2}${out ? ' mycal-out' : ''}${mycalInRange(d) ? '' : ' mycal-locked'}${mycalIsWeekend(d) ? ' mycal-we' : ''}${ds === formatDate(MYCAL_TODAY) ? ' mycal-today' : ''}" data-date="${ds}" role="button" tabindex="0" aria-label="${escapeHtml(t('mycal.day.ariaLabel', { m: d.getMonth() + 1, d: d.getDate(), n: dayMineCount }))}">
-            <span class="mycal-num">${d.getDate()}</span>
+            <span class="mycal-num">${d.getDate()}</span>${mycalHolidayLabel(ds)}
             ${shown.map(it => `<button type="button" class="mycal-ev${it.mine ? '' : ' mycal-other'}${it.b.id === mycalState.highlightId ? ' mycal-new' : ''}" data-id="${it.b.id}" style="${mycalRoomStyle(it.b.room)}"><b>${formatTimeDisplay(it.b.startTime)}</b>${escapeHtml(it.b.title || t('table.untitled'))}</button>`).join('')}
             ${items.length > shown.length ? `<span class="mycal-more">${escapeHtml(t('mycal.month.more', { n: items.length - shown.length }))}</span>` : ''}
             <span class="mycal-dots">${items.map(it => `<i class="${it.mine ? '' : 'mycal-dot-other'}" style="${mycalRoomStyle(it.b.room)}"></i>`).join('')}</span>
@@ -8631,7 +8643,7 @@ function mycalRenderWeek(view) {
         return {
             date: ds, weekend: mycalIsWeekend(d), items: items, room: null,
             // 欄頭的場次數維持只算我的，跟尺度膠囊跳轉面板／小月曆一致，不受這顆切換影響
-            head: `<div class="mycal-tg-head mycal-clickable${ds === formatDate(MYCAL_TODAY) ? ' mycal-today' : ''}" data-date="${ds}" title="${escapeHtml(t('mycal.week.headTitle'))}">${escapeHtml(getDayName(d))}<small>${d.getMonth() + 1}/${d.getDate()} · ${escapeHtml(t('mycal.week.headCount', { n: mineList.length }))}</small></div>`
+            head: `<div class="mycal-tg-head mycal-clickable${ds === formatDate(MYCAL_TODAY) ? ' mycal-today' : ''}" data-date="${ds}" title="${escapeHtml(t('mycal.week.headTitle'))}">${escapeHtml(getDayName(d))}<small>${d.getMonth() + 1}/${d.getDate()} · ${escapeHtml(t('mycal.week.headCount', { n: mineList.length }))}</small>${mycalHolidayLabel(ds)}</div>`
         };
     });
     document.getElementById('mycalViewCount').textContent = t('mycal.count.dayMix', { mine: totalMine, all: totalAll });
@@ -8641,7 +8653,7 @@ function mycalRenderWeek(view) {
 function mycalRenderDay(view) {
     const d = mycalState.cursor;
     const ds = formatDate(d);
-    document.getElementById('mycalViewTitle').textContent = t('mycal.day.title', { m: d.getMonth() + 1, d: d.getDate(), wd: getDayName(d) });
+    document.getElementById('mycalViewTitle').innerHTML = escapeHtml(t('mycal.day.title', { m: d.getMonth() + 1, d: d.getDate(), wd: getDayName(d) })) + mycalHolidayLabel(ds);
     const all = mycalBookingsOnDate(ds);
     const mineCount = all.filter(mycalIsMine).length;
     document.getElementById('mycalViewCount').textContent = t('mycal.count.dayMix', { mine: mineCount, all: all.length });

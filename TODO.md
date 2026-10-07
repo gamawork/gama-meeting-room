@@ -7,6 +7,26 @@
 
 ## 待辦
 
+### 功能：我的行事曆顯示節日（2026-10-07）
+
+情境卡已移至 [docs/使用情境.md](docs/使用情境.md)「已完成功能」（使用者確認 2026-10-07；完成 2026-10-07）。
+
+驗收條件：
+- [x] 月日期格、週欄頭、日標題都用既有節日來源與中英名稱顯示，且不受 Mine／All 篩選影響。證據：`index.html:8484,8552,8646,8656`；`tests/unit/mycal-holiday.spec.mjs:4`。
+- [x] 跨年份載入目前檢視需要的年度；CDN 非同步失敗時，既有會議仍顯示且可操作。證據：`index.html:8488,8525`；`tests/unit/mycal-holiday.spec.mjs:27,59`。
+- [x] 已停用的自訂節日不再出現在節日、今日面板、倒數與中英文顯示名稱。證據：`index.html:5178,5275,5324`；`tests/unit/mycal-holiday.spec.mjs:40`。
+- [x] 安全單元測試先紅後綠並完成變異驗證；只跑 `test:unit` 或更小範圍。證據：原碼 4 紅、修改後 4 綠；暫拔月節日接線測試紅，還原後 `npm run test:unit -- --reporter=line` 78 passed。
+- [x] `docs/使用情境.md` 與 `CLAUDE.md` 的專案摘要、正本位置同步，逐項 read-back 核對。證據：`docs/使用情境.md:3`、`CLAUDE.md:3,10`。
+
+階段 2 退出條件：
+- [x] 0 方向：N/A；既有月／週／日畫面及節日標籤是基準，使用者已確認放置位置（2026-10-07）。
+- [x] 0a 情境：`docs/使用情境.md` 的功能情境卡與 5 行已由使用者確認（2026-10-07）。
+- [x] 0b 規格：N/A；沿用既有節日資料與三種檢視，不增新規則。
+- [x] 1 範例表：N/A；不新增算錢或預約規則。
+- [x] 2 走通：月／週／日顯示節日並保留預約操作。證據：`tests/unit/mycal-holiday.spec.mjs:4,27,59`，隔離式瀏覽器實跑通過。
+- [x] 3 逐條：測試先紅後綠、read-back、第 1 輪驗收無 H／風險類 finding；`npm run test:unit -- --reporter=line` 78 passed；本功能納入本次 commit。
+- [x] 4 交付：未修的 M／L 已列於下方清單（2026-10-07），交由主對話排序與回報。
+
 - [ ] 建立單元測試框架，為 `checkRecurringConflicts`（`index.html:5591`）寫表格測試（R8；2026-09-25）
 - [ ] 「我的行事曆」月檢視選 All 時，每格改成自己的會議排前面、別人的排後面（同組內照時間）；現在只照時間排，
       每格只顯示 4 筆（`mycalMonthDayItems`、`index.html:8472`；`slice(0, 4)` 在 `index.html:8492`），自己的會議會被收進「+N more」。
@@ -59,6 +79,11 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 - 從月到半小時的縮放檢視（月總覽、日網格、從空檔帶入表單）：[docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md)（2026-09-27，來自介紹短片）
 
 ## 未修的 M／L 清單
+
+「我的行事曆顯示節日」第 1 輪驗收（2026-10-07；無 H、無風險類 finding；24 組版面矩陣無整頁溢出或日期／節日／會議點重疊）：
+
+- [ ] M：320px 寬（根字級 100%／200%）月檢視的 12/25「🎄聖誕節」近似單字直排，標籤約 57px 高、日期格約 107px；375px 也換行。定位 `index.html:2143-44,2363-67,8553`；[320px／200% 證物](C:/Users/ryanchen.GAMA/.codex/visualizations/2026/10/07/01a115ac-862b-7a80-8802-0a2a8cef28b6/mycal-holiday-320-200.png)。
+- [ ] L：跨年政府節日測試 `tests/unit/mycal-holiday.spec.mjs:36` 使用 `toContainText('元旦')`，斷言較弱；後續可改為精確核對完整標籤。
 
 （驗證節奏試行，CLAUDE.md「驗證節奏：分風險收工」延後的非風險類 M 級 finding 記在這裡）
 
