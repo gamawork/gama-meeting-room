@@ -5,3 +5,5 @@ playwright/.cache/
 .DS_Store
 *.log
 playwright-report-unit/
+# Claude Code worktree
+.claude/worktrees/
