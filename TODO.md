@@ -1,66 +1,86 @@
 # TODO — Gama Meeting Room
 
-## 下一步入口
+## 下一步入口：我的行事曆收尾（分支 main｜2026-10-11）
 
-「我的行事曆」頁籤：已實作並 push（2026-09-27）。規格見 [docs/ideas/my-calendar/README.md](docs/ideas/my-calendar/README.md)；
-單元測試 `npm run test:unit`（57 條，不碰正式 DB）。剩下的是下方「延後的 M」清單，等使用者排順序。
+**狀態**：進行中（功能已實作並 push，剩階段 2 第 3、4 步與延後的 M／L；2026-10-11 對齊 TODO 時實跑發現 1 個新問題，見 W-0927-my-calendar 驗收第 12 條）
+**目標**：「我的行事曆」頁籤收尾：先確認詳情彈窗「加入行事曆」選單的裁切問題，再依使用者排序處理延後的 M／L 與月檢視排序
+**已完成**：4774435 頁籤＋月／週／日檢視＋單元測試框架 `npm run test:unit`；26a71a5 桌面通知；ee3ae22 日檢視切換時工具列不移位；2026-10-11 實跑 `npm run test:unit` 74 passed
+**審查輪數**：已跑 3 輪（R1、R2、R2 修正的風險類再審）；單元測試第二輪修正的最後一輪再審使用者 2026-09-27 裁定跳過；未修 M／L 見「未修的 M／L 清單」
+**下一步**：W-0927-my-calendar 驗收第 12 條（加入行事曆選單）→ W-0928-month-mine-first；階段 2 第 3、4 步等「待決」
+**裁定**：使用者 2026-09-27 的裁定寫在 W-0927-my-calendar 與「未修的 M／L 清單」末段（尚無獨立決策紀錄檔，歸檔 W-0927-my-calendar 前先建，見 SPEC.md）
+**關鍵位置**：`index.html:8518`（`mycalMonthDayItems`）、`index.html:8538`（`slice(0, 4)`）、`index.html:8756`（`mycalBindDetailActions`，選單在 `#mycalDetailCalMenu`）；行號 2026-10-11 快照
+**已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
-## 待辦
+## 待決
 
-### 功能：我的行事曆顯示節日（2026-10-07）
+- W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L（見「未修的 M／L 清單」）等使用者排順序｜
+- W-0927-my-calendar｜驗收第 12 條新發現：詳情彈窗「加入行事曆」選單被卡片裁掉一截，要不要修、這一輪還是延後｜
+- W-0927-my-calendar｜R3-2 共用的 showModal 不走 pushState（部分失敗視窗不能用返回鍵關），要不要補｜
+- W-0927-my-calendar｜F7 舊資料主辦人 `HH`、`景涵` 不在名單內，資料清理由使用者決定｜
 
-情境卡已移至 [docs/使用情境.md](docs/使用情境.md)「已完成功能」（使用者確認 2026-10-07；完成 2026-10-07）。
+## 進行中工作項
 
-驗收條件：
-- [x] 月日期格、週欄頭、日標題都用既有節日來源與中英名稱顯示，且不受 Mine／All 篩選影響。證據：`index.html:8484,8552,8646,8656`；`tests/unit/mycal-holiday.spec.mjs:4`。
-- [x] 跨年份載入目前檢視需要的年度；CDN 非同步失敗時，既有會議仍顯示且可操作。證據：`index.html:8488,8525`；`tests/unit/mycal-holiday.spec.mjs:27,59`。
-- [x] 已停用的自訂節日不再出現在節日、今日面板、倒數與中英文顯示名稱。證據：`index.html:5178,5275,5324`；`tests/unit/mycal-holiday.spec.mjs:40`。
-- [x] 安全單元測試先紅後綠並完成變異驗證；只跑 `test:unit` 或更小範圍。證據：原碼 4 紅、修改後 4 綠；暫拔月節日接線測試紅，還原後 `npm run test:unit -- --reporter=line` 78 passed。
-- [x] `docs/使用情境.md` 與 `CLAUDE.md` 的專案摘要、正本位置同步，逐項 read-back 核對。證據：`docs/使用情境.md:3`、`CLAUDE.md:3,10`。
+### W-0928-month-mine-first：「我的行事曆」月檢視選 All 時自己的會議排前面（使用者 2026-09-28 決定，待安排修改）
 
-階段 2 退出條件：
-- [x] 0 方向：N/A；既有月／週／日畫面及節日標籤是基準，使用者已確認放置位置（2026-10-07）。
-- [x] 0a 情境：`docs/使用情境.md` 的功能情境卡與 5 行已由使用者確認（2026-10-07）。
-- [x] 0b 規格：N/A；沿用既有節日資料與三種檢視，不增新規則。
-- [x] 1 範例表：N/A；不新增算錢或預約規則。
-- [x] 2 走通：月／週／日顯示節日並保留預約操作。證據：`tests/unit/mycal-holiday.spec.mjs:4,27,59`，隔離式瀏覽器實跑通過。
-- [x] 3 逐條：測試先紅後綠、read-back、第 1 輪驗收無 H／風險類 finding；`npm run test:unit -- --reporter=line` 78 passed；本功能納入本次 commit。
-- [x] 4 交付：未修的 M／L 已列於下方清單（2026-10-07），交由主對話排序與回報。
-
-- [ ] 建立單元測試框架，為 `checkRecurringConflicts`（`index.html:5591`）寫表格測試（R8；2026-09-25）
 - [ ] 「我的行事曆」月檢視選 All 時，每格改成自己的會議排前面、別人的排後面（同組內照時間）；現在只照時間排，
-      每格只顯示 4 筆（`mycalMonthDayItems`、`index.html:8472`；`slice(0, 4)` 在 `index.html:8492`），自己的會議會被收進「+N more」。
+      每格只顯示 4 筆（`mycalMonthDayItems`、`index.html:8518`；`slice(0, 4)` 在 `index.html:8538`），自己的會議會被收進「+N more」。
       介紹短片 `docs/videos/src/my-calendar/comp.html` 的 `cmpMine` 已先這樣排（使用者 2026-09-28 決定，待安排修改）
+      — 2026-10-11 核對仍未做：`mycalMonthDayItems` 的 all 分支只照 `mycalBookingsOnDate` 的時間排序（`index.html:8518-8522`）；行號已更新為當天值
 
-### 功能：「我的行事曆」頁籤（2026-09-27 規劃，新功能）
+### W-0927-my-calendar：功能：「我的行事曆」頁籤（2026-09-27 規劃，新功能）
 
 UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 的短片畫面。
+規格見 [docs/ideas/my-calendar/README.md](docs/ideas/my-calendar/README.md)（SPEC.md 索引列出）。
 
 已拍板（使用者 2026-09-27）：
 - 「我的會議」＝ `organizer` 是我，或 `attendees` 含我；比對吃 `MEMBER_ALIASES` 別名。
 - 日檢視＝會議室 × 半小時網格（照圖 03），我的會議亮色、別人的淡顯，空檔可點來新增。
 - 先做可點樣稿（獨立 HTML＋假資料，不動 `index.html`），確認後再實作。
 
-驗收條件：
-- [ ] 新頁籤可切換「週表（現行）／我的行事曆」，現行週表行為不變
-- [ ] 名字可從 `attendeeGroups` 名單下拉選（可搜尋），選定後存 localStorage，重開頁面自動帶入、可更換
-- [ ] 月檢視（圖 01/02）：每格列「時間＋主題」、超過收成 `+N more`、依會議室上色，只顯示我的會議
-- [ ] 週檢視：7 天 × 半小時網格，只顯示我的會議
-- [ ] 日檢視（圖 03）：6 間會議室 × 09:00–17:30 半小時，我的亮、別人淡；空檔可點
-- [ ] 點空檔跳出預填表單（圖 04）：日期／時間／會議室帶入、主辦人帶入我的名字；送出走既有 `submitBooking()`，時段防撞三層全在（不另開寫入路徑）
-- [ ] 送出後新預約出現在當前檢視（圖 05 強調色落格）
-- [ ] 可瀏覽範圍照週表 `changeWeek` 上限（今天所在週 −4／+20 週），邊界停用 ‹ ›；範圍在已載入區間內，不另補抓（README 第 12 條）
-- [ ] 週／日檢視點膠囊可跳轉：週→週清單、日→小月曆（使用者回饋 2026-09-27，README 第 11 條）
-- [ ] 日曆彈窗支援週期性預約，與側欄共用選項、日期產生與防撞（使用者要求 2026-09-27，README 第 13 條）
-- [ ] 月／週檢視「只看我的／全部」切換（使用者要求 2026-09-27，README 第 15 條）
+驗收條件（2026-10-11 對齊：功能 2026-09-27 已隨 4774435 上線，下列勾選依 2026-10-11 實跑；
+「臨時實跑」＝在 `tests/unit` 的假 Supabase 環境寫一次性腳本實操頁面，跑完已刪除、不進版控，輸出摘要記在各條）：
+- [x] 新頁籤可切換「週表（現行）／我的行事曆」，現行週表行為不變
+      — 證據：臨時實跑：點頁籤後 `#tabMycal` 顯示、`#tabTable` 隱藏，切回後週表恢復；`index.html:8082`（`mycalBindTabs`）
+- [x] 名字可從 `attendeeGroups` 名單下拉選（可搜尋），選定後存 localStorage，重開頁面自動帶入、可更換
+      — 證據：臨時實跑：第一次切頁籤自動跳選名字、搜尋 Ray 出現選項、選定後 `mycalLoadName()`＝Ray、reload 後直接帶入不再跳窗、點名字膠囊可再開選人窗；`index.html:7985-7994`
+- [x] 月檢視（圖 01/02）：每格列「時間＋主題」、超過收成 `+N more`、依會議室上色，只顯示我的會議
+      — 證據：臨時實跑：同一天我的 5 場，格內 4 個 `.mycal-ev`＋`+1 more`，色彩來自 `--mycal-bar/soft/text` 變數；`tests/unit/mine-filter.spec.mjs:12`（只顯示我的）
+- [x] 週檢視：7 天 × 半小時網格，只顯示我的會議
+      — 證據：臨時實跑：7 個欄頭、每欄 18 格（09:00–18:00）；`tests/unit/mine-filter.spec.mjs:52`
+- [x] 日檢視（圖 03）：6 間會議室 × 09:00–17:30 半小時，我的亮、別人淡；空檔可點
+      — 證據：臨時實跑：6 欄（302、301、茶水間、囧尼辦公室、街口辦公室、會客區）、18 格（最後一格 17:30 開始）、別人的方塊帶 `mycal-other`、點空檔開表單
+- [x] 點空檔跳出預填表單（圖 04）：日期／時間／會議室帶入、主辦人帶入我的名字；送出走既有 `submitBooking()`，時段防撞三層全在（不另開寫入路徑）
+      — 證據：臨時實跑：日期、會議室、主辦人帶入，右上提示「… is free · 30 min」，撞到別人時「301 is already booked for this time」且送出鈕 disabled；
+      `tests/unit/booking-flow.spec.mjs:11`（POST body）、`:111`／`:124`（雙擊只送一次）、`:211`／`:239`／`:274`（第 1 層擋下不送 POST）通過；
+      注意：日曆彈窗走的是與 `submitBooking()` 共用的 `checkAndSaveBookings()`（`index.html:6905`、`:8958`），不是直接呼叫 `submitBooking()`，意旨（不另開寫入路徑）成立，字面與條文不同
+- [x] 送出後新預約出現在當前檢視（圖 05 強調色落格）
+      — 證據：`tests/unit/booking-flow.spec.mjs:176`（成功的在下個月也看得到）斷言 `.mycal-new` 落在該格（`:201`）；只驗 class，色彩未目視
+- [x] 可瀏覽範圍照週表 `changeWeek` 上限（今天所在週 −4／+20 週），邊界停用 ‹ ›；範圍在已載入區間內，不另補抓（README 第 12 條）
+      — 證據：`tests/unit/browse-range.spec.mjs:19-113`（10 條，含 `changeWeek` 與月／週／日邊界）通過
+- [x] 週／日檢視點膠囊可跳轉：週→週清單、日→小月曆（使用者回饋 2026-09-27，README 第 11 條）
+      — 證據：臨時實跑：週檢視膠囊開出 25 週清單、目前這週反白 1 個；日檢視膠囊開出 35 格小月曆；Esc、點外面、返回鍵都能關且不離開頁面
+- [x] 日曆彈窗支援週期性預約，與側欄共用選項、日期產生與防撞（使用者要求 2026-09-27，README 第 13 條）
+      — 證據：`tests/unit/booking-flow.spec.mjs:40`（筆數與日期＝`generateRecurringDates()`）、`:144`（部分失敗）、`:239`（只有第 2 次撞到整批不寫）通過
+- [x] 月／週檢視「只看我的／全部」切換（使用者要求 2026-09-27，README 第 15 條）
+      — 證據：`tests/unit/mine-filter.spec.mjs:12`／`:32`／`:52`／`:68` 通過（月、週各驗 mine／all 與計數文字）
 - [ ] 詳情彈窗帶入週表四個操作：加入行事曆、複製、編輯（切回週表）、刪除（使用者要求 2026-09-27，README 第 16 條）
-- [ ] F3 可瀏覽範圍邊界的月份計數與格子要跟 DB 一致（載入範圍涵蓋邊界月份整月）
-- [ ] F4 日曆彈窗日期限制在可瀏覽範圍（min／max＋送出前檢查）
-- [ ] F5 Realtime 事件（別人新增／刪改）也重繪「我的行事曆」，彈窗開著時重算空檔提示
-- [ ] F9 測試：`tests/unit/` 用 Playwright 載入 index.html、攔截全部 Supabase 請求（不碰正式資料庫），
+      — 2026-10-11 臨時實跑：編輯（切回週表、`isEditMode`＝true、標題帶入）、刪除（原確認視窗 `#bookingModal` 出現）、複製（標題與會議室帶入、日期不帶）都通過；
+      **加入行事曆不通過**：選單 `#mycalDetailCalMenu` 計算位置 left:-145px，被彈窗卡片裁掉左半（1280×720 時選項中心點命中的是遮罩 `#mycalDetailModal`，Playwright 點不到；
+      375 寬時選項 x＝-110，落在畫面外）。截圖 `C:\Users\n9191\.claude\scratchpad\p2-gmr-detail-calmenu.png`。修好前不打勾（見「待決」）
+- [x] F3 可瀏覽範圍邊界的月份計數與格子要跟 DB 一致（載入範圍涵蓋邊界月份整月）
+      — 證據：`tests/unit/data-range.spec.mjs:14` 通過（GET 帶 `gte.2026-08-01`／`lte.2027-02-28`）；`index.html:4766-4771`
+- [x] F4 日曆彈窗日期限制在可瀏覽範圍（min／max＋送出前檢查）
+      — 證據：`index.html:8787-8788`（min／max）、`:8833`（提示）、`:8938`（送出前檢查）；臨時實跑：min／max＝2026-08-24..2027-02-14，輸入範圍外日期出現「Please choose a date within the visible range」且送出鈕 disabled
+- [x] F5 Realtime 事件（別人新增／刪改）也重繪「我的行事曆」，彈窗開著時重算空檔提示
+      — 證據：`tests/unit/realtime.spec.mjs:7`（新增彈窗開著收到 INSERT）、`:36`（詳情開著被 DELETE）通過；`index.html:4716-4734`、`:9011`（`mycalOnDataChanged`）
+- [x] F9 測試：`tests/unit/` 用 Playwright 載入 index.html、攔截全部 Supabase 請求（不碰正式資料庫），
       表格測試 `checkRecurringConflicts`（基準＝現行輸出）、週期日期產生、我的會議篩選、可瀏覽範圍邊界、網格定位；
       接線測試：日曆彈窗送出經共用函式送出的 insert 內容；拔接線要會紅（變異驗證）
-- [ ] 中英 i18n、手機版（日網格 6 欄的排法）、關閉路徑（Esc／點外面／返回鍵）
+      — 證據：`npm run test:unit` 74 passed（2026-10-11）：`logic.spec.mjs:47`（防撞）、`:81`／`:91`／`:99`（週期日期）、`:113-149`（我的會議）、`browse-range.spec.mjs`、`grid-layout.spec.mjs:24`／`:42`、`booking-flow.spec.mjs`；
+      變異驗證（2026-10-11）：暫時把 `checkRecurringConflicts` 改成 `return [];` 並關掉 `mycalSubmitBooking` 的 `isSubmitting` 重入鎖，`logic`＋`booking-flow` 36 條中 11 條轉紅，用 `git checkout index.html` 還原（與備份 `cmp` 相同）
+- [x] 中英 i18n、手機版（日網格 6 欄的排法）、關閉路徑（Esc／點外面／返回鍵）
+      — 證據：臨時實跑：`setLang('zh')` 後月檢視標題 `10/2026`→`2026 年 10 月`、`+1 more`→`+1 場`；375 寬月檢視會議鈕隱藏、改顯示小點（`.mycal-dots` flex），日檢視 `scrollWidth` 904 > `clientWidth` 313 可左右滑；
+      關閉路徑驗過：選人窗 Esc、膠囊面板 Esc／點外面／返回鍵、詳情與新增彈窗的 Esc／返回鍵（新增彈窗未驗點外面、返回鍵，共用 `mycalOpenModal`／`mycalBindOverlayClose`，`index.html:8044`、`:8073`）
 
 階段 2 退出條件：
 - [x] 0 方向：僅 §6「方向未定」時做可點樣稿並附「做完長這樣才算對」描述（§6）、使用者明確確認；有設計稿／既有畫面／規格範例就 N/A 附來源
@@ -68,8 +88,10 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
   使用者確認 2026-09-27：「很完美，基本上要一模一樣」→ 正式版畫面與互動照樣稿一比一。
 - [x] 0b 規格：大改版照 §6 先派 opus 審規格（不論第 0 步是否 N/A）；非大改版標 N/A — N/A：新增頁籤，非大改版
 - [x] 1 範例表：有核心邏輯（R8）才做；使用者給「輸入 → 預期數字」，覆蓋要求與定稿前的 opus 審表照 R8，寫成先紅的測試 — N/A：無新核心邏輯，防撞沿用既有三層
-- [ ] 2 走通：一條畫面 → 邏輯 → 存檔的最簡路徑用真實操作走過一次，畫面上的數字來自核心邏輯（PWA：pwa-starter Phase 0 過了才做）
+- [x] 2 走通：一條畫面 → 邏輯 → 存檔的最簡路徑用真實操作走過一次，畫面上的數字來自核心邏輯（PWA：pwa-starter Phase 0 過了才做）
+  — 證據：`tests/unit/booking-flow.spec.mjs:11`（空檔點開 → 填主題 → 送出 → POST 內容正確）2026-10-11 通過；功能 2026-09-27 已 push（4774435）
 - [ ] 3 逐條：核心邏輯先紅後綠，其他層照 R8 時機；眼睛看過、commit；每個功能項完成即照 §6 審查與「分風險收工」收工輪；PWA 每個階段收尾跑 pwa-starter §3-5
+  — 2026-10-11 對齊：審查 3 輪已跑（見「未修的 M／L 清單」），commit 已有；缺「使用者眼睛看過」確認（見「待決」）；驗收第 12 條未過
 - [ ] 4 交付：延後的 M 列給使用者排序
 
 備註：0b 預計 N/A（新增頁籤，非大改版）；1 預計 N/A（無新核心邏輯，防撞沿用既有三層），「是不是我的會議」比對函式歸 R8 多分支純函式層、跟實作一起寫表格測試；第 4 步「從空檔新增」會寫入預約，屬風險類。
@@ -87,6 +109,9 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 
 （驗證節奏試行，CLAUDE.md「驗證節奏：分風險收工」延後的非風險類 M 級 finding 記在這裡）
 
+2026-10-11 核對（順著程式碼）：下列 F7、R2-8、R3-2、月檢視事件鈕 Enter 四項仍存在——F7 是資料問題；R2-8 因 `updateRecurringPeriodOptions()` 每次重建選項都把預設設回 12（`index.html:4916` 起）；
+R3-2 因 `pushState` 只出現在 `mycalOpenModal()`（`index.html:8047`），`showModal()`（`index.html:7597`）沒有；月檢視 Enter 因 keydown 只看 `.mycal-day-cell`（`index.html:8679`）。其餘 L 級未逐項核對。
+
 「我的行事曆」第 1 輪審查（2026-09-27，報告 scratchpad `review-my-calendar-r1.md`，行號以該輪快照為準）：
 
 - [ ] F7 舊資料主辦人有 `HH`、`景涵` 等不在名單內的值，這些會議不會出現在任何人的日曆（資料清理由使用者決定）
@@ -102,6 +127,6 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 - [ ] 月檢視非 locked 格子裡的會議按鈕按 Enter 會被格子的 keydown 帶去日檢視，打不開詳情（本功能既有，無障礙）
 - [ ] L 級：部分失敗時黃色落格在 modal 遮罩後播完；部分失敗 modal 比側欄少「頻率／期間」兩行；performDelete 裡重繪若丟例外會誤報刪除失敗；本機刪除後 Realtime 再重繪一次（動畫重播）
 - （R3-1 游標停在失敗日期、看不到黃色落格：主對話已修，補測試 `tests/unit/booking-flow.spec.mjs`「第一次就失敗」，拔掉修正會紅）
-- 單元測試第二輪修正（死代理防線、掃描改遞迴、防撞測試等待送出完成）的最後一輪風險類再審：使用者 2026-09-27 裁定跳過（「這只是個簡單的程式，不要搞這麼複雜」），未經再審；`npm run test:unit` 57 passed
+- 單元測試第二輪修正（死代理防線、掃描改遞迴、防撞測試等待送出完成）的最後一輪風險類再審：使用者 2026-09-27 裁定跳過（「這只是個簡單的程式，不要搞這麼複雜」），未經再審；`npm run test:unit` 57 passed（2026-10-11 實跑為 74 passed：之後加了桌面通知測試 26a71a5）
 
 使用者 2026-09-27 裁定本功能內處理、不延後（移到功能驗收條件）：F3 邊界月份少算、F4 日期無 min／max、F5 Realtime 不重繪日曆、F9 缺測試。

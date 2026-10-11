@@ -12,8 +12,11 @@
 
 | 要查什麼 | 去哪 |
 |---|---|
+| 完整規格 | `SPEC.md`（索引，指到各子檔：`docs/ideas/my-calendar/README.md`、本檔的 Supabase／防撞／部署節等） |
+| 進度、驗收清單、交接、待決 | `TODO.md`；完成的工作項在 `archive/TODO-封存.md` |
+| 為什麼這樣設計、已結案的裁定 | 尚無獨立決策紀錄檔（見 `SPEC.md`；使用者 2026-09-27 的裁定目前寫在 `TODO.md`） |
+| 改行為時要同步更新的正本 | `SPEC.md` 或其子檔（同一 commit 內，見全域 `rules/judgment.md` R2 第 5 項） |
 | 專案層使用情境與已完成功能 | `docs/使用情境.md` |
-| 進度與驗收條件 | `TODO.md` |
 | 「我的行事曆」規格與互動基準 | `docs/ideas/my-calendar/README.md` |
 | 系統程式與節日資料流 | `index.html` |
 
@@ -129,7 +132,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 
 | 本專案路徑 | 對應 R8 的層 | 什麼時候寫 |
 |---|---|---|
-| `checkRecurringConflicts(...)`（`index.html:5591`，時段防撞第 1 層） | 核心邏輯（R8：業務規則，防重複預約） | 寫程式之前（R8）；目前無單元測試框架，待建立（見 `TODO.md` 待辦） |
+| `checkRecurringConflicts(...)`（`index.html`，時段防撞第 1 層） | 核心邏輯（R8：業務規則，防重複預約） | 寫程式之前（R8）；單元測試框架已建立：`tests/unit/logic.spec.mjs`、`npm run test:unit`（工作項 W-0925-unit-test-framework 已封存於 `archive/TODO-封存.md`） |
 | `tests/i18n.spec.mjs`（`npm test` 走 Playwright） | **E2E**（不是核心邏輯層測試） | 只守 3–5 條關鍵使用者旅程，不拿來覆蓋狀態組合（狀態組合歸核心邏輯層） |
 | `index.html` 其餘畫面渲染（週表、modal、表單） | 畫面 | 穩定後只補兩類（顯示對的數字、關閉路徑） |
 
@@ -142,12 +145,12 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 
 ### 本專案約定
 
-- 追蹤檔與未修的 M／L 清單：`TODO.md` 的「未修的 M／L 清單」段。
-- 接手先讀：`TODO.md` 的「下一步入口」。
+- 追蹤檔與未修的 M／L 清單：`TODO.md` 的「未修的 M／L 清單」段；完成的工作項封存在 `archive/TODO-封存.md`。
+- 接手先讀：`TODO.md` 的「下一步入口」與「待決」（SessionStart hook 開場會注入；沒注入就先讀）。工作項編號、待決段、封存規則照全域 `rules/judgment.md` R7。
 - 追蹤檔打勾的 commit：無專案專屬規定（附證據照全域硬規則 4）。
 - 驗證腳本目錄：`tests/scripts/`；驗證 harness：未建。
 - 瀏覽器重複檢查登記簿：`tests/checks.md`（還沒建時照 browser-verify 守則由主對話建）。
-- 單元測試框架待建時的待辦寫法：上方層對照表對 `checkRecurringConflicts` 記「待建立」，待辦見 `TODO.md`
+- 單元測試框架待建時的待辦寫法：上方層對照表對 `checkRecurringConflicts` 記「待建立」，待辦見 `TODO.md`（已完成並封存於 `archive/TODO-封存.md`：W-0925-unit-test-framework）
   （建立單元測試框架，為 `checkRecurringConflicts` 寫表格測試）；現況：`tests/unit/` 與 `npm run test:unit`
   （不碰正式資料庫）已存在，見 `TODO.md` 的「下一步入口」。
 - 量測或工具的已知陷阱：（尚無）
