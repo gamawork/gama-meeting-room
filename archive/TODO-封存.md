@@ -5,7 +5,7 @@
 ## W-1007-mycal-holiday：功能：我的行事曆顯示節日（2026-10-07 建立；2026-10-11 搬移封存）
 
 舊制時期的功能項（原在 TODO.md「待辦」，遠端 3d669e0 加入，當時沒有編號；編號依建立日補上）。無量測行（verify-level 之前）。
-下列證據行號是 2026-10-07 當時的快照，2026-10-11 重新定位後的現值見本項末段。
+下列 `index.html` 證據行號 2026-10-11 併入本機分支後，依函式名（`mycalHolidayLabel`、`mycalHolidayYears`、`ensureHolidayYears`、`CUSTOM_FIXED` 等）重新 grep 核對，與現行檔一致；`CLAUDE.md:3,10` 因併入本機的 CLAUDE.md 改動，正本位置段標題現在在第 11 行。
 
 情境卡已移至 [docs/使用情境.md](docs/使用情境.md)「已完成功能」（使用者確認 2026-10-07；完成 2026-10-07）。
 
@@ -14,7 +14,7 @@
 - [x] 跨年份載入目前檢視需要的年度；CDN 非同步失敗時，既有會議仍顯示且可操作。證據：`index.html:8488,8525`；`tests/unit/mycal-holiday.spec.mjs:27,59`。
 - [x] 已停用的自訂節日不再出現在節日、今日面板、倒數與中英文顯示名稱。證據：`index.html:5178,5275,5324`；`tests/unit/mycal-holiday.spec.mjs:40`。
 - [x] 安全單元測試先紅後綠並完成變異驗證；只跑 `test:unit` 或更小範圍。證據：原碼 4 紅、修改後 4 綠；暫拔月節日接線測試紅，還原後 `npm run test:unit -- --reporter=line` 78 passed。
-- [x] `docs/使用情境.md` 與 `CLAUDE.md` 的專案摘要、正本位置同步，逐項 read-back 核對。證據：`docs/使用情境.md:3`、`CLAUDE.md:3,10`。
+- [x] `docs/使用情境.md` 與 `CLAUDE.md` 的專案摘要、正本位置同步，逐項 read-back 核對。證據：`docs/使用情境.md:3`、`CLAUDE.md:3,11`（2026-10-11 併入後行號）。
 
 階段 2 退出條件：
 - [x] 0 方向：N/A；既有月／週／日畫面及節日標籤是基準，使用者已確認放置位置（2026-10-07）。
@@ -31,7 +31,7 @@
 
 舊制時期的待辦（原在 TODO.md「待辦」第一條，當時沒有編號；編號依建立日補上），無量測行（verify-level 之前）。
 
-- [x] 建立單元測試框架，為 `checkRecurringConflicts`（`index.html:5591`；2026-10-11 該函式在 `index.html:6487`）寫表格測試（R8；2026-09-25）
+- [x] 建立單元測試框架，為 `checkRecurringConflicts`（`index.html:5591`；2026-10-11 該函式在 `index.html:6485`（併入節日功能後重新定位））寫表格測試（R8；2026-09-25）
   — 證據（2026-10-11）：
   - 框架：`playwright.unit.config.js`、`package.json` 的 `test:unit`、`tests/unit/support/mock-supabase.mjs`（攔截全部 Supabase 請求，不碰正式資料庫），隨 4774435 加入；
   - 表格測試：`tests/unit/logic.spec.mjs:11-51`（`checkRecurringConflicts` 10 組：背靠背正反、完全包含、部分重疊前／後、不同會議室、週期只有一天撞到、跨午、完全相同、新的包住既有）；

@@ -2,6 +2,8 @@
 
 ## 專案 5 行摘要（使用者確認 2026-10-07）
 
+（2026-10-11 併入驗證等級機制：第 2 行「風險類」是舊制名稱，現行對應見下方「驗證等級」的 L2 觸發；第 3、5 行已同步進該段的「必驗」「外部出狀況要的行為」。）
+
 1 對象與防護：既有公司同事在桌機／手機瀏覽器使用；沿用現有存取控制。
 2 風險類＝：不得造成重複預約或 Supabase bookings 資料遺失／毀損。
 3 必驗：預約時段防撞與資料顯示；「我的行事曆」月／週／日節日顯示、跨年份、中英文切換、已停用的自訂節日不再出現、節日 CDN 失敗時會議仍可見可操作。
@@ -138,7 +140,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 
 - 驗證 UI：`preview_start`（見 `.claude/launch.json`）；不用 Bash 起 server。
 - commit 前不跑 `npm test`：它會執行 `tests/i18n.spec.mjs`，對正式 Supabase 送出真實預約（見「Supabase」節，已套用到正式資料庫）。只在動到 i18n 或預約流程、且經使用者確認後手動跑，跑完務必確認清理（afterEach）成功，殘留假預約會被 `bookings_no_overlap` 擋住真實時段。
-- 全跑：`npm run test:unit` 可安全自動跑（走假 Supabase，不碰正式資料庫；2026-10-11 實跑 74 條全過），入口 `tests/unit/logic.spec.mjs`；`npm test`（i18n E2E）仍不可自動跑，見上條。
+- 全跑：`npm run test:unit` 可安全自動跑（走假 Supabase，不碰正式資料庫；2026-10-11 併入節日功能後實跑 79 條全過），入口 `tests/unit/logic.spec.mjs`；`npm test`（i18n E2E）仍不可自動跑，見上條。
 - 本專案的「單一定義處」（假回應要從這裡推導）：`tests/unit/support/mock-supabase.mjs`（`SUPABASE_URL` 從 `index.html` 抽出、`SLOT_CONFLICT_CODES`、`FIXED_NOW_UTC`），新測試的假回應常數從這裡匯入，不手抄。
 - 函式內嵌在 7000+ 行的 `index.html` 裡，單元測試不必先抽出函式：用 `page.evaluate` 直接呼叫 `index.html` 的全域函式本體（例：`checkRecurringConflicts`，見 `tests/unit/logic.spec.mjs`）。
 
@@ -148,7 +150,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 - 接手先讀：`TODO.md` 的「下一步入口」與「待決」（SessionStart hook 開場會注入；沒注入就先讀）。工作項編號、待決段、封存規則照全域 `rules/judgment.md` R7。
 - 追蹤檔打勾的 commit：無專案專屬規定（附證據照全域硬規則 4）。
 - 驗證腳本目錄：`tests/scripts/`；驗證 harness：未建。
-- 瀏覽器重複檢查登記簿：`tests/checks.md`（還沒建時照 browser-verify 守則由主對話建）。
+- 瀏覽器重複檢查登記簿：`tests/checks.md`（已建，2026-10-07 起登錄節日顯示 4 項，腳本欄都是「待腳本化」）。
 - 單元測試框架待建時的待辦寫法：上方層對照表對 `checkRecurringConflicts` 記「待建立」，待辦見 `TODO.md`（已完成並封存於 `archive/TODO-封存.md`：W-0925-unit-test-framework）
   （建立單元測試框架，為 `checkRecurringConflicts` 寫表格測試）；現況：`tests/unit/` 與 `npm run test:unit`
   （不碰正式資料庫）已存在，見 `TODO.md` 的「下一步入口」。
@@ -163,7 +165,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 升 L2 的觸發（只准路徑 glob 或函式名，供 commit 前比對）：checkRecurringConflicts()、checkSeriesEditConflicts()、submitBooking()、saveBooking()、updateSingleBooking()、updateSeriesBookings()、updatePartialSeriesBookings()、performDelete()、isSlotConflictError()
 降級慣例（使用者 YYYY-MM-DD）：（尚無）
 不驗（使用者明說 YYYY-MM-DD）：（尚無）；審查與驗收不報，回報末尾列「已知不處理」
-必驗（規格）：（待補；使用者確認後填）
-外部出狀況要的行為：（待補；使用者確認後填）
+必驗（規格）：預約時段防撞與資料顯示；「我的行事曆」月／週／日節日顯示、跨年份、中英文切換、已停用的自訂節日不再出現、節日 CDN 失敗時會議仍可見可操作（使用者確認 2026-10-07，即上方 5 行摘要第 3 行；本次改到的才驗，不是每次全驗）
+外部出狀況要的行為：節日 CDN 失敗時不阻擋預約與會議顯示；Supabase 無法連線時顯示錯誤，不假裝預約成功（使用者確認 2026-10-07，即上方 5 行摘要第 5 行）
 誰用、錯了的代價：多人（跨分頁、跨使用者）預約同一批會議室的系統（根目錄 `index.html`，GitHub Pages），預約存在 Supabase `bookings`。錯了的代價：時段防撞三層失效造成重複預約；Supabase 預約資料遺失或毀損；`npm test` 會對正式 Supabase 送出真實預約，殘留假預約會被 `bookings_no_overlap` 擋住真實時段；改資料庫 DDL 由使用者在後台執行（Claude 無法直接下 DDL）；push main 會同時觸發 GitHub Pages 與 Cloudflare Worker 部署
 ```
