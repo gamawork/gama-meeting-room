@@ -138,10 +138,9 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 
 - 驗證 UI：`preview_start`（見 `.claude/launch.json`）；不用 Bash 起 server。
 - commit 前不跑 `npm test`：它會執行 `tests/i18n.spec.mjs`，對正式 Supabase 送出真實預約（見「Supabase」節，已套用到正式資料庫）。只在動到 i18n 或預約流程、且經使用者確認後手動跑，跑完務必確認清理（afterEach）成功，殘留假預約會被 `bookings_no_overlap` 擋住真實時段。
-- 全跑：目前沒有可安全自動跑的測試。
-- 本專案的「單一定義處」（假回應要從這裡推導）：目前無假回應常數；核心邏輯尚未拆出獨立單元測試前不適用。
-- 函式內嵌在 7000+ 行的 `index.html` 裡，要為 `checkRecurringConflicts` 這類函式寫單元測試前得先抽出來，
-  這會跟本檔「修改策略：不要一次重整整份 index.html」有張力，抽取時只動需要的函式、不整檔重排。
+- 全跑：`npm run test:unit` 可安全自動跑（走假 Supabase，不碰正式資料庫；2026-10-11 實跑 74 條全過），入口 `tests/unit/logic.spec.mjs`；`npm test`（i18n E2E）仍不可自動跑，見上條。
+- 本專案的「單一定義處」（假回應要從這裡推導）：`tests/unit/support/mock-supabase.mjs`（`SUPABASE_URL` 從 `index.html` 抽出、`SLOT_CONFLICT_CODES`、`FIXED_NOW_UTC`），新測試的假回應常數從這裡匯入，不手抄。
+- 函式內嵌在 7000+ 行的 `index.html` 裡，單元測試不必先抽出函式：用 `page.evaluate` 直接呼叫 `index.html` 的全域函式本體（例：`checkRecurringConflicts`，見 `tests/unit/logic.spec.mjs`）。
 
 ### 本專案約定
 
