@@ -1,7 +1,7 @@
 // 這個檔案是「假 Supabase」的唯一定義處，所有 tests/unit/*.spec.mjs 都經由這裡
 // 取得已經裝好 fail-closed 路由攔截、Realtime websocket 阻擋、固定時鐘的 page。
 //
-// 安全模型（跟正式 tests/i18n.spec.mjs 完全不同、不共用）：
+// 安全模型（專案內唯一一套；原本連正式站的 tests/i18n.spec.mjs 已於 2026-10-17 刪除）：
 //   - 這裡從不連正式 Supabase，也不連任何真實網路。page.route('**/*', ...) 是唯一一個路由
 //     handler，用「host 比對」（不是字串前綴）分派：localhost/127.0.0.1 放行（本機 http-server）、
 //     Supabase host 走下面的 fail-closed REST 分派、unpkg 的 supabase-js SDK 與 jsdelivr 的假日

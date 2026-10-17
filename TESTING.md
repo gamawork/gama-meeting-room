@@ -1,7 +1,10 @@
-# 測試指南 — Playwright i18n 雙語模式
+# 測試指南 — Playwright（假 Supabase）
 
-> 本檔原本只有下面這份會寫入正式 Supabase 的 i18n 測試。「我的行事曆」加入後第一輪審查發現
-> 完全沒有測試守住新接線（F9），這裡另外補了 `tests/unit/`，見文末「單元測試（tests/unit/）」。
+> 整個專案的測試都在 `tests/unit/`，全部走假 Supabase（`tests/unit/support/mock-supabase.mjs`），
+> 沒有任何測試會連正式 Supabase，隨時可以安全地跑。2026-10-17 起，原本會寫入正式資料庫的
+> `tests/i18n.spec.mjs`（12 條中英文切換測試）已搬進 `tests/unit/i18n.spec.mjs`，舊的正式站測試工具
+> （`tests/helpers/`、`tests/scripts/cleanup-orphans.mjs`、`npm run test:cleanup`、`playwright.config.js`）
+> 已刪除，不再需要任何清理流程。
 
 ## 一次安裝
 
@@ -13,7 +16,7 @@ npx playwright install chromium
 ## 跑測試
 
 ```bash
-# headless（預設）
+# headless（預設）。npm test 與 npm run test:unit 完全同義，都走 playwright.unit.config.js
 npm test
 
 # 看畫面
@@ -23,135 +26,43 @@ npm run test:headed
 npm run test:ui
 
 # 單獨跑某一個測試
-npx playwright test -g "預設英文"
+npx playwright test --config=playwright.unit.config.js -g "預設英文"
 ```
 
 Playwright 會自動：
 1. 啟動 `http-server` 在 `http://localhost:4321`
 2. 跑 chromium browser
 3. 失敗時保留 trace / screenshot / video（在 `test-results/`）
-4. 產生 HTML 報告（`playwright-report/`）
-
-## 資料庫安全（重要）
-
-所有寫入 DB 的測試遵守以下協議：
-
-| 標記 | 值 | 用途 |
-|---|---|---|
-| `organizer` | `__playwright_test__` | Layer 2 清理依據 |
-| `title` 前綴 | `__pwtest__` | Layer 3 清理依據 |
-| INSERT 回應 id | 即時記錄到 set | Layer 1 精準清理 |
-
-### 三層清理機制
-
-```
-測試結束 (afterEach)
-  ├─ Layer 1：依 createdIds 精準刪除（recorder 抓到的 id）
-  ├─ Layer 2：依 organizer = __playwright_test__ sweep
-  └─ Layer 3：依 title LIKE __pwtest__% sweep
-
-整個 spec 跑完 (afterAll)
-  └─ 再 sweep 一次（Layer 2 + 3）
-
-整個 spec 跑前 (beforeAll)
-  └─ 先 sweep 一次（清掉上次 crash 殘留的）
-```
-
-### 手動清理（保險用）
-
-如果 Playwright crash、CI 中斷、或就是不放心，跑：
-
-```bash
-npm run test:cleanup
-```
-
-腳本會：
-1. 列出所有符合測試標記的殘留 record
-2. 確認後刪除（依 organizer + title 前綴雙條件）
-
-### 萬一連手動清理也失敗
-
-直接在 Supabase Console 跑 SQL：
-
-```sql
--- 預覽
-select id, date, room, start_time, end_time, title, organizer
-from public.bookings
-where organizer = '__playwright_test__'
-   or title like '__pwtest__%';
-
--- 刪除（確認預覽結果後執行）
-delete from public.bookings
-where organizer = '__playwright_test__'
-   or title like '__pwtest__%';
-```
-
-## 測試案例清單（12 項）
-
-| # | 名稱 | 寫入 DB？ |
-|---|---|:---:|
-| 1 | 預設英文，切換中文後 localStorage 保留 | ❌ |
-| 2 | 表單 label / placeholder 翻譯 | ❌ |
-| 3 | 會議室下拉 301/302 + 其他 | ❌ |
-| 4 | 日期格式分流 (Tue, May 12, 2026 / 2026年5月12日) | ❌ |
-| 5 | 表格星期欄縮寫 | ❌ |
-| 6 | 空白日 row 提示 | ❌ |
-| 7 | 必填驗證錯誤 modal | ❌ |
-| 8 | **端到端成功預約** | ✅ |
-| 9 | 與會者 / 登記者名單原文保留 | ❌ |
-| 10 | Back to This Week min-width 132px | ❌ |
-| 11 | 行事曆下拉翻譯 | ❌ |
-| 12 | 操作按鈕 aria-label | ❌ |
-
-只有測試 8 會寫入 DB，其他都是讀取或 UI 互動。
-
-## 設定
-
-`playwright.config.js`：
-- `workers: 1` + `fullyParallel: false`：寫入測試序列跑，避免清理時序混亂
-- `retries: 0`：失敗不重試，避免重複寫入
-- baseURL `http://localhost:4321`
+4. 產生 HTML 報告（`playwright-report-unit/`）
 
 ## 測試失敗排查
 
-1. **`pickSafeFutureDate` throw 找不到無衝突日期**
-   - 表示未來 90-180 天全滿，極不可能但可放寬範圍或換 room
-
-2. **`expect(createdIds.size).toBeGreaterThan(0)` 失敗**
-   - INSERT 攔截 recorder 沒抓到，可能 Supabase 回應 schema 變了，去看 `attachInsertRecorder` parse 邏輯
-
-3. **`afterEach` cleanup 拋錯**
-   - 看 console，`[CLEANUP layer1 fail by id]` 或 `[CLEANUP layer2/3 errors]` 會印出細節
-   - 跑 `npm run test:cleanup` 手動補刀
-
-4. **Loading overlay 永遠卡住**
-   - Supabase 連不上（網路 / RLS / token 過期）
-   - 先用瀏覽器手動開 `http://localhost:4321/index.html` 確認頁面正常
+1. **`tests/unit 安全網守門檢查失敗`**
+   - 新 spec 沒有從 `./support/mock-supabase.mjs` import `test`，或直接 import 了 `@playwright/test`，見下方「防線 1」
+2. **`Supabase mock 攔到未預期請求`**
+   - 頁面打了假 Supabase 沒處理的路徑／方法（例如沒呼叫 `mock.allowInserts()` 就 POST），照訊息補 mock 或測試，不要放寬 fail-closed
+3. **Loading overlay 永遠卡住**
+   - 先確認 `index.html` 抽出的 `SUPABASE_URL`、supabase-js 版本跟 `package.json` 釘住的版本一致（不一致 mock 會 abort 並記違規）
 
 ## 單元測試（`tests/unit/`）
 
-跟上面整份 i18n 測試完全分開、不共用任何 helper：
+所有 spec 都在這裡，設定檔是 `playwright.unit.config.js`（`testDir: './tests/unit'`）。
 
 ```bash
-npm run test:unit
+npm test          # 同 npm run test:unit
 ```
 
 ### 防線與已知缺口（不會碰正式資料庫、不連真實網路、任何時區任何機器結果都一樣）
 
-上面的 i18n 測試會對正式 Supabase 寫入真實預約（見「資料庫安全」一節），所以一直沒有可以在
-commit 前隨手跑的測試。`tests/unit/` 改用 `tests/unit/support/mock-supabase.mjs` 提供的假
-Supabase，`page.goto` 之前就把路由攔好。2026-09-27 對抗式審查（`review-unit-tests.md`）後
-做了一輪修正，同一天又有第二輪再審（`review-unit-tests-r2.md`，對第一輪的修正結果挑錯）。
-下面照實列出現在有哪幾道防線、各自防什麼、還留了哪些缺口——**不是「繞不過去」**，第二輪
-審查就是專門在挑第一輪自稱「繞不過去」的地方，並且真的找到了四種繞法（見下方「防線 1」），
-所以這裡改成誠實描述範圍，不誇大。
+`tests/unit/` 用 `tests/unit/support/mock-supabase.mjs` 提供的假 Supabase，`page.goto` 之前就把路由攔好。
+2026-09-27 對抗式審查（`review-unit-tests.md`）後做了一輪修正，同一天又有第二輪再審
+（`review-unit-tests-r2.md`，對第一輪的修正結果挑錯）。下面照實列出現在有哪幾道防線、各自防什麼、
+還留了哪些缺口——**不是「繞不過去」**，第二輪審查就是專門在挑第一輪自稱「繞不過去」的地方，
+並且真的找到了四種繞法（見下方「防線 1」），所以這裡改成誠實描述範圍，不誇大。
 
-- **設定跟 i18n 完全分開**：`npm run test:unit` 走 `playwright.unit.config.js`（`testDir:
-  './tests/unit'`），不是主要的 `playwright.config.js`（那份給 `tests/i18n.spec.mjs` 用，
-  會寫入正式 Supabase）。`playwright.config.js` 另外加了 `testIgnore: '**/unit/**'`
-  （R2-4），確保 `npm test`（不帶參數）只跑 i18n，不會把 `tests/unit` 一起跑進去——這點很
-  重要：主設定沒有 `globalSetup`、也沒有 `use.timezoneId`，如果 `tests/unit` 混進主設定跑，
-  下面幾道防線裡跟「設定層級」有關的那幾條完全不生效。
+- **單一設定檔**：不再有會寫入正式 Supabase 的第二份設定。所有防線（`globalSetup`、`use.proxy`、
+  `use.timezoneId`）都掛在 `playwright.unit.config.js`，`npm test`、`test:headed`、`test:ui` 都指到它，
+  不會有「某條路徑跑測試卻沒套到防線」的情況。
 
 #### 防線 1：靜態掃描 import 來源（`global-setup.mjs`），防「新 spec 忘記接線」
 
@@ -295,6 +206,8 @@ Asia/Taipei），變成誤以為防護還在。
   `tests/unit/network-independence.spec.mjs`。
 - 瀏覽器時區真的是 Asia/Taipei（不靠 `TZ` 環境變數這種間接訊號）：
   `tests/unit/timezone-guard.spec.mjs`。
+- 中英文切換（i18n，12 條）：`tests/unit/i18n.spec.mjs`。這是 E2E 層，資料用 `mock.seed()` 灌一筆固定時鐘當天（2026-09-27）的預約，
+  所以「本週有預約／有空白日」是保證的，不靠 `test.skip` 跳過；「預約成功 modal」那條寫入的是假表，對 `mock.insertCalls`／`mock.table.rows` 斷言，不需要清理。
 
 ### 新增測試時的規矩
 

@@ -1,47 +1,36 @@
-// i18n / 雙語模式 Playwright 測試
-// 規則：所有寫入 DB 的測試一律帶 TEST_TAG (organizer) + TEST_TITLE_PREFIX (title 前綴)，
-//       並在 afterEach / afterAll 透過 fullCleanup() 完整清除（三層保險）。
+// i18n / 雙語模式測試（原 tests/i18n.spec.mjs，搬進假 Supabase：不連正式站、不寫正式資料庫）。
+// 12 條斷言意圖不變。跟舊版的差異只有資料來源與清理：
+//   - 資料改成 mock.seed() 灌進假表，不再依賴「正式站本週剛好有沒有預約」，
+//     所以舊版「本週無預約就 test.skip」的分支改成硬斷言（資料是自己灌的，沒有就是壞了，不該靜默跳過）。
+//   - 測試 8（預約成功）改對假表斷言，不需要任何清理。
+import { test, expect } from './support/mock-supabase.mjs';
+import { gotoApp } from './support/app.mjs';
 
-import { test, expect } from '@playwright/test';
-import {
-  attachInsertRecorder,
-  fullCleanup,
-  sweepByMarkers,
-  makeTestTitle,
-  pickSafeFutureDate,
-} from './helpers/cleanup.mjs';
-import { TEST_TAG } from './helpers/supabase.mjs';
-import { setupCleanPage, switchLang } from './helpers/page-setup.mjs';
+// 固定時鐘是 2026-09-27（週日）。灌一筆當天的預約，保證本週有預約可測（測試 11、12），
+// 同時本週其他天沒有預約，保證有空白日 row 可測（測試 6）。
+const SEED_ROWS = [
+  { id: 1, date: '2026-09-27', room: '302', start_time: '10:00:00', end_time: '11:00:00', title: 'i18n seed meeting', organizer: 'Ray', attendees: null },
+];
 
-// 每個 test file 跑前先掃一次殘留（防止上次 crash 留下的資料）
-test.beforeAll(async () => {
-  const r = await sweepByMarkers();
-  if (r.byTag + r.byTitle > 0) {
-    console.log(`[pre-sweep] removed ${r.byTag} by tag + ${r.byTitle} by title prefix`);
-  }
-});
+async function switchLang(page, target) {
+  const current = await page.evaluate(() => window.localStorage.getItem('gama_lang') || 'en');
+  if (current === target) return;
+  await page.locator('#langSwitch').click();
+  // 等切換生效（h1 文字變動）
+  const expected = target === 'en' ? 'Gama Meeting Room Booking System' : 'Gama 會議室預約系統';
+  await page.waitForFunction(
+    (t) => document.querySelector('h1')?.textContent?.trim() === t,
+    expected,
+    { timeout: 3000 }
+  );
+}
 
-test.afterAll(async () => {
-  const r = await sweepByMarkers();
-  if (r.byTag + r.byTitle > 0) {
-    console.log(`[post-sweep] removed ${r.byTag} by tag + ${r.byTitle} by title prefix`);
-  }
-});
-
-// 每個測試的記錄集
-let createdIds;
-
-test.beforeEach(async ({ page }) => {
-  createdIds = new Set();
-  await attachInsertRecorder(page, createdIds);
-  await setupCleanPage(page, { lang: 'en' });
-});
-
-test.afterEach(async () => {
-  const result = await fullCleanup(createdIds);
-  if (result.deletedById + result.deletedByTag + result.deletedByTitle > 0) {
-    console.log('[cleanup]', result);
-  }
+// 注意：每個 test 預設用全新 BrowserContext，localStorage 是乾淨的，會自動 fallback 到 'en'。
+// 不能用 addInitScript 預設語言——它會在每次 navigation 都跑，蓋掉使用者切換的結果，
+// 導致「reload 後語言應保留」這類測試假性失敗。
+test.beforeEach(async ({ page, mock }) => {
+  mock.seed(SEED_ROWS);
+  await gotoApp(page);
 });
 
 // -----------------------------------------------------------------------------
@@ -144,7 +133,7 @@ test('日期格式：英文 Tue, May 12, 2026 / 中文 2026年5月12日 (週二)
 test('表格星期欄位英文 Sun-Sat / 中文 週日-週六', async ({ page }) => {
   const dayCells = page.locator('td.day-cell');
   const count = await dayCells.count();
-  test.skip(count === 0, '表格無 day cell（可能尚未載入）');
+  expect(count, '表格應有 day cell（假表已灌資料，週表一定會渲染）').toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
     await expect(dayCells.nth(i)).toHaveText(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)$/);
   }
@@ -160,8 +149,7 @@ test('表格星期欄位英文 Sun-Sat / 中文 週日-週六', async ({ page })
 // -----------------------------------------------------------------------------
 test('空白日 row 顯示 Click here to set this date', async ({ page }) => {
   const emptyCell = page.locator('td.empty-cell').first();
-  const hasEmpty = (await emptyCell.count()) > 0;
-  test.skip(!hasEmpty, '本週所有日子都有預約，無空 row 可測');
+  expect(await emptyCell.count(), '本週只灌了一天的預約，應有空 row 可測').toBeGreaterThan(0);
   await expect(emptyCell).toContainText('Click here to set this date');
 
   await switchLang(page, 'zh');
@@ -181,11 +169,12 @@ test('空白送出顯示 Booking Failed', async ({ page }) => {
 });
 
 // -----------------------------------------------------------------------------
-// 測試 8：端到端成功預約（會寫入 DB → afterEach 會清掉）
+// 測試 8：端到端成功預約（寫入的是假表，不碰正式資料庫，不需清理）
 // -----------------------------------------------------------------------------
-test('預約成功 modal 顯示英文細節（會寫入並清理 DB）', async ({ page }) => {
-  const safeDate = await pickSafeFutureDate('302', '14:00', '14:30');
-  const title = makeTestTitle('success-en');
+test('預約成功 modal 顯示英文細節（寫入假表）', async ({ page, mock }) => {
+  const organizer = 'i18n-tester';
+  const title = 'i18n-success-en';
+  mock.allowInserts();
 
   await page.locator('#meetingTitle').fill(title);
   await page.locator('#meetingRoom').selectOption('302');
@@ -193,10 +182,10 @@ test('預約成功 modal 顯示英文細節（會寫入並清理 DB）', async (
     const inp = document.getElementById('meetingDate');
     inp.value = d;
     inp.dispatchEvent(new Event('change', { bubbles: true }));
-  }, safeDate);
+  }, '2026-10-07');
   await page.locator('#startTime').selectOption('14:00');
   await page.locator('#endTime').selectOption('14:30');
-  await page.locator('#organizer').fill(TEST_TAG);
+  await page.locator('#organizer').fill(organizer);
 
   await page.locator('#submitBtn').click();
   await expect(page.locator('#bookingModal h3')).toHaveText('Meeting Details', { timeout: 15_000 });
@@ -205,10 +194,14 @@ test('預約成功 modal 顯示英文細節（會寫入並清理 DB）', async (
   await expect(body).toContainText('Location:');
   await expect(body).toContainText('Organizer:');
   await expect(body).toContainText(title);
-  await expect(body).toContainText(TEST_TAG);
+  await expect(body).toContainText(organizer);
 
-  // 驗證 recorder 真的有抓到 id
-  expect(createdIds.size).toBeGreaterThan(0);
+  // 對假表斷言：真的寫入了一筆，內容正確（取代舊版 createdIds recorder）
+  expect(mock.insertCalls).toHaveLength(1);
+  expect(mock.insertCalls[0][0]).toMatchObject({
+    date: '2026-10-07', room: '302', start_time: '14:00', end_time: '14:30', title, organizer,
+  });
+  expect(mock.table.rows.filter(r => r.title === title)).toHaveLength(1);
 });
 
 // -----------------------------------------------------------------------------
@@ -244,7 +237,7 @@ test('Back to This Week min-width 132px', async ({ page }) => {
 // -----------------------------------------------------------------------------
 test('行事曆下拉英文 / 中文翻譯', async ({ page }) => {
   const trigger = page.locator('.calendar-btn-dropdown').first();
-  if ((await trigger.count()) === 0) test.skip(true, '本週無預約可測行事曆按鈕');
+  expect(await trigger.count(), '本週已灌一筆預約，應有行事曆按鈕').toBeGreaterThan(0);
   await trigger.click();
   const menu = page.locator('.calendar-menu').first();
   await expect(menu).toContainText('Google Calendar');
@@ -264,7 +257,7 @@ test('行事曆下拉英文 / 中文翻譯', async ({ page }) => {
 // -----------------------------------------------------------------------------
 test('表格操作按鈕 aria-label / title 英文', async ({ page }) => {
   const copy = page.locator('button.copy-btn').first();
-  if ((await copy.count()) === 0) test.skip(true, '本週無預約可測操作按鈕');
+  expect(await copy.count(), '本週已灌一筆預約，應有操作按鈕').toBeGreaterThan(0);
   await expect(copy).toHaveAttribute('aria-label', 'Copy');
   await expect(copy).toHaveAttribute('title', 'Copy');
   await expect(page.locator('button.edit-btn').first()).toHaveAttribute('aria-label', 'Edit');

@@ -2,6 +2,8 @@
 
 > 驗收全勾的工作項整段搬到這裡，新的在上，標搬移日期。規則見全域 `rules/judgment.md` R7。
 
+- 2026-10-17｜L1 新功能：i18n 測試改走假 Supabase（`tests/unit/i18n.spec.mjs`），刪除連正式站的 helper／`playwright.config.js`／`cleanup-orphans.mjs`，`npm test` 改跑 unit 設定，91 passed｜推薦 L1→核准 L1｜實作 5 分｜驗證 5 分｜finding 中修了之後改變行為或數字的條數 0（sonnet 審查 0 H、2 L 過時註解已修）
+
 ## W-1007-mycal-holiday：功能：我的行事曆顯示節日（2026-10-07 建立；2026-10-11 搬移封存）
 
 舊制時期的功能項（原在 TODO.md「待辦」，遠端 3d669e0 加入，當時沒有編號；編號依建立日補上）。無量測行（verify-level 之前）。

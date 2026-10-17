@@ -5,11 +5,10 @@
   "description": "Gama Meeting Room Booking System (static SPA)",
   "scripts": {
     "serve": "http-server -p 4321 -c-1 --silent .",
-    "test": "playwright test",
+    "test": "playwright test --config=playwright.unit.config.js",
     "test:unit": "playwright test --config=playwright.unit.config.js",
-    "test:headed": "playwright test --headed",
-    "test:ui": "playwright test --ui",
-    "test:cleanup": "node tests/scripts/cleanup-orphans.mjs"
+    "test:headed": "playwright test --config=playwright.unit.config.js --headed",
+    "test:ui": "playwright test --config=playwright.unit.config.js --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",

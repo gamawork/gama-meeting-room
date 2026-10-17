@@ -135,12 +135,11 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 | 本專案路徑 | 對應 R8 的層 | 什麼時候寫 |
 |---|---|---|
 | `checkRecurringConflicts(...)`（`index.html`，時段防撞第 1 層） | 核心邏輯（R8：業務規則，防重複預約） | 寫程式之前（R8）；單元測試框架已建立：`tests/unit/logic.spec.mjs`、`npm run test:unit`（工作項 W-0925-unit-test-framework 已封存於 `archive/TODO-封存.md`） |
-| `tests/i18n.spec.mjs`（`npm test` 走 Playwright） | **E2E**（不是核心邏輯層測試） | 只守 3–5 條關鍵使用者旅程，不拿來覆蓋狀態組合（狀態組合歸核心邏輯層） |
+| `tests/unit/i18n.spec.mjs`（`npm test` 走 Playwright，假 Supabase） | **E2E**（不是核心邏輯層測試） | 只守 3–5 條關鍵使用者旅程，不拿來覆蓋狀態組合（狀態組合歸核心邏輯層） |
 | `index.html` 其餘畫面渲染（週表、modal、表單） | 畫面 | 穩定後只補兩類（顯示對的數字、關閉路徑） |
 
 - 驗證 UI：`preview_start`（見 `.claude/launch.json`）；不用 Bash 起 server。
-- commit 前不跑 `npm test`：它會執行 `tests/i18n.spec.mjs`，對正式 Supabase 送出真實預約（見「Supabase」節，已套用到正式資料庫）。只在動到 i18n 或預約流程、且經使用者確認後手動跑，跑完務必確認清理（afterEach）成功，殘留假預約會被 `bookings_no_overlap` 擋住真實時段。
-- 全跑：`npm run test:unit` 可安全自動跑（走假 Supabase，不碰正式資料庫；2026-10-11 併入節日功能後實跑 79 條全過），入口 `tests/unit/logic.spec.mjs`；`npm test`（i18n E2E）仍不可自動跑，見上條。
+- 全跑：`npm test`（與 `npm run test:unit` 同義，都走 `playwright.unit.config.js`）可安全自動跑、commit 前也可跑——全部走假 Supabase，不碰正式資料庫、不需清理（2026-10-17 i18n 12 條搬進 `tests/unit/i18n.spec.mjs` 後實跑 91 條全過；之前 unit 79 條，2026-10-11 併入節日功能），入口 `tests/unit/logic.spec.mjs`。專案內已沒有任何會連正式 Supabase 的測試。
 - 本專案的「單一定義處」（假回應要從這裡推導）：`tests/unit/support/mock-supabase.mjs`（`SUPABASE_URL` 從 `index.html` 抽出、`SLOT_CONFLICT_CODES`、`FIXED_NOW_UTC`），新測試的假回應常數從這裡匯入，不手抄。
 - 函式內嵌在 7000+ 行的 `index.html` 裡，單元測試不必先抽出函式：用 `page.evaluate` 直接呼叫 `index.html` 的全域函式本體（例：`checkRecurringConflicts`，見 `tests/unit/logic.spec.mjs`）。
 
@@ -167,5 +166,5 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 不驗（使用者明說 YYYY-MM-DD）：（尚無）；審查與驗收不報，回報末尾列「已知不處理」
 必驗（規格）：預約時段防撞與資料顯示；「我的行事曆」月／週／日節日顯示、跨年份、中英文切換、已停用的自訂節日不再出現、節日 CDN 失敗時會議仍可見可操作（使用者確認 2026-10-07，即上方 5 行摘要第 3 行；本次改到的才驗，不是每次全驗）
 外部出狀況要的行為：節日 CDN 失敗時不阻擋預約與會議顯示；Supabase 無法連線時顯示錯誤，不假裝預約成功（使用者確認 2026-10-07，即上方 5 行摘要第 5 行）
-誰用、錯了的代價：多人（跨分頁、跨使用者）預約同一批會議室的系統（根目錄 `index.html`，GitHub Pages），預約存在 Supabase `bookings`。錯了的代價：時段防撞三層失效造成重複預約；Supabase 預約資料遺失或毀損；`npm test` 會對正式 Supabase 送出真實預約，殘留假預約會被 `bookings_no_overlap` 擋住真實時段；改資料庫 DDL 由使用者在後台執行（Claude 無法直接下 DDL）；push main 會同時觸發 GitHub Pages 與 Cloudflare Worker 部署
+誰用、錯了的代價：多人（跨分頁、跨使用者）預約同一批會議室的系統（根目錄 `index.html`，GitHub Pages），預約存在 Supabase `bookings`。錯了的代價：時段防撞三層失效造成重複預約；Supabase 預約資料遺失或毀損；改資料庫 DDL 由使用者在後台執行（Claude 無法直接下 DDL）；push main 會同時觸發 GitHub Pages 與 Cloudflare Worker 部署
 ```

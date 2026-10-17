@@ -1,8 +1,8 @@
 // @ts-check
 import { defineConfig, devices } from '@playwright/test';
 
-// tests/unit 專用設定，跟 playwright.config.js（tests/i18n.spec.mjs 用，會寫入正式 Supabase）
-// 完全分開，互不影響。
+// 專案唯一的 Playwright 設定（npm test 走這份）。原本寫入正式 Supabase 的 playwright.config.js
+// 與 tests/i18n.spec.mjs 已於 2026-10-17 刪除，i18n 測試改在 tests/unit/i18n.spec.mjs 走假 Supabase。
 //
 // timezoneId 固定在這裡的 use 層級，對 testDir 底下每一個 spec 檔都生效，
 // 不像舊版放在 tests/unit/support/mock-supabase.mjs 裡的 test.use()——那個只有第一個
