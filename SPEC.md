@@ -14,6 +14,6 @@
 | `tests/unit/logic.spec.mjs` | 例表：`checkRecurringConflicts`（防撞第 1 層，半開區間）、`generateRecurringDates`、`mycalIsMine` 的輸入 → 預期值 | 預期值取自現行輸出，不是使用者給的範例表；未標「已核准」 |
 | `TESTING.md` | 測試怎麼跑、資料庫安全、單元測試防線與已驗證的變異（測試文件，不是產品規格） | 現行 |
 | `docs/videos/README.md` | 介紹短片原始檔與重新渲染方式（製作文件，不是產品規格） | 現行 |
-| 決策紀錄 | 尚無獨立檔 | 使用者 2026-09-27 的裁定目前寫在 `TODO.md` 的 W-0927-my-calendar 與「未修的 M／L 清單」末段；歸檔 W-0927-my-calendar 前，依 judgment R7 先建根目錄 `決策紀錄.md` 並列進本表 |
+| `決策紀錄.md` | 使用者裁定與取消項索引（D-1：2026-10-19 meeting-room UI 不做＝W-1011-calmenu-clip、W-0928-month-mine-first 不修） | 現行；使用者 2026-09-27 的裁定仍寫在 `TODO.md` 的 W-0927-my-calendar 與「未修的 M／L 清單」末段，歸檔 W-0927-my-calendar 時搬入 |
 
 文件互相矛盾時，實際程式碼最高（judgment R9）。

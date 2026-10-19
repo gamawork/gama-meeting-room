@@ -2,45 +2,20 @@
 
 ## 下一步入口：我的行事曆收尾（分支 main｜2026-10-11）
 
-**狀態**：進行中（功能已實作並 push，剩階段 2 第 3、4 步與延後的 M／L；2026-10-11 對齊 TODO 時實跑發現 1 個新問題，使用者裁定列 W-1011-calmenu-clip、這輪不修）
-**目標**：「我的行事曆」頁籤收尾：詳情彈窗「加入行事曆」選單裁切問題已列 W-1011-calmenu-clip（這輪不修），依使用者排序處理延後的 M／L 與月檢視排序
+**狀態**：進行中（功能已實作並 push，剩階段 2 第 3、4 步與延後的 M／L；2026-10-11 發現的「加入行事曆」選單裁切與月檢視排序，使用者 2026-10-19 確認不修，已封存）
+**目標**：「我的行事曆」頁籤收尾：依使用者排序處理延後的 M／L
 **已完成**：4774435 頁籤＋月／週／日檢視＋單元測試框架 `npm run test:unit`；26a71a5 桌面通知；ee3ae22 日檢視切換時工具列不移位；3d669e0 我的行事曆顯示節日（遠端 10-07，W-1007-mycal-holiday 已封存；2026-10-11 本機分支 rebase 到其上）；2026-10-11 併入遠端節日功能（3d669e0）後重跑 `npm run test:unit` 79 passed（併入前 74；`mycal-holiday.spec.mjs` 加 5 條）
 **審查輪數**：已跑 3 輪（R1、R2、R2 修正的風險類再審）；單元測試第二輪修正的最後一輪再審使用者 2026-09-27 裁定跳過；未修 M／L 見「未修的 M／L 清單」
-**下一步**：W-0928-month-mine-first；W-1011-calmenu-clip 排程由使用者定；階段 2 第 3、4 步等「待決」
-**裁定**：使用者 2026-09-27 的裁定寫在 W-0927-my-calendar 與「未修的 M／L 清單」末段（尚無獨立決策紀錄檔，歸檔 W-0927-my-calendar 前先建，見 SPEC.md）
+**下一步**：階段 2 第 3、4 步等「待決」（W-0928-month-mine-first、W-1011-calmenu-clip 已於 2026-10-19 裁定不做、封存於 archive/TODO-封存.md）
+**裁定**：使用者 2026-09-27 的裁定寫在 W-0927-my-calendar 與「未修的 M／L 清單」末段；2026-10-19 的「meeting-room UI 不做」＝決策紀錄.md D-1（歸檔 W-0927-my-calendar 時把 09-27 裁定也搬進去）
 **關鍵位置**：`index.html:8530`（`mycalMonthDayItems`）、`index.html:8550`（`slice(0, 4)`）、`index.html:8768`（`mycalBindDetailActions`，選單在 `#mycalDetailCalMenu`）；行號 2026-10-11 併入遠端節日功能（3d669e0）後依函式名重新定位
 **已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
 ## 待決
 
-- W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L（見「未修的 M／L 清單」）等使用者排順序｜
-- W-0927-my-calendar｜R3-2 共用的 showModal 不走 pushState（部分失敗視窗不能用返回鍵關），要不要補｜
-- W-0927-my-calendar｜F7 舊資料主辦人 `HH`、`景涵` 不在名單內，資料清理由使用者決定｜
+- W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
-
-### W-1011-calmenu-clip：「我的行事曆」詳情彈窗「加入行事曆」選單被卡片裁切（2026-10-11 發現；使用者裁定列工作項、這輪不修）
-
-- 現象：詳情彈窗按「加入行事曆」開出的選單 `#mycalDetailCalMenu`，計算位置 left:-145px，左半被彈窗卡片裁掉。
-  1280×720 時選項中心點命中的是遮罩 `#mycalDetailModal`（點不到選項）；375 寬時選項 x＝-110，整個落在畫面外。
-- 重現：開「我的行事曆」頁籤 → 點任一會議開詳情彈窗 → 點「加入行事曆」，視窗設 1280×720 與 375 寬各試一次。
-  截圖 `C:\Users\n9191\.claude\scratchpad\p2-gmr-detail-calmenu.png`。相關程式：`index.html:8768`（`mycalBindDetailActions`，行號 2026-10-11 併入節日功能後重新定位）。
-- 2026-10-11 併入遠端節日功能（3d669e0）後重新確認（Playwright 臨時腳本＋假 Supabase，腳本在 repo 外、已刪）：**仍重現，沒有變輕**。
-  - 1280×720：選單 `left:-145.16px`，選單 x＝292.8–468.0；卡片 `.mycal-dialog.mycal-sm`（`overflow:auto`）x＝406–866，選單左側約 113px 在卡片外被裁；
-    兩個選項（Google／Apple）中心點 `elementFromPoint` 都命中 `#mycalDetailModal` 遮罩。截圖 `C:\Users\n9191\.claude\scratchpad\gmr-calmenu-after-rebase-20261011-172227-1280.png`。
-  - 375 寬：選單 x＝-111.2–64.0（視窗 0–375），兩個選項 x＝-110.2、寬 173；卡片 x＝16–351，選單只有約 48px 落在卡片內。截圖 `C:\Users\n9191\.claude\scratchpad\gmr-calmenu-after-rebase-20261011-172227-375.png`。
-- 驗收條件：
-  - [ ] 1280×720：詳情彈窗的「加入行事曆」選單每個選項都點得到（點選項中心不會命中遮罩）
-  - [ ] 375 寬：選單整個在畫面內，每個選項都點得到
-  - [ ] 補一條實跑或單元測試守住兩種視窗尺寸（斷言選項中心點命中選項本身）
-  - [ ] 完成後回頭把 W-0927-my-calendar「詳情彈窗帶入週表四個操作」那條打勾
-
-### W-0928-month-mine-first：「我的行事曆」月檢視選 All 時自己的會議排前面（使用者 2026-09-28 決定，待安排修改）
-
-- [ ] 「我的行事曆」月檢視選 All 時，每格改成自己的會議排前面、別人的排後面（同組內照時間）；現在只照時間排，
-      每格只顯示 4 筆（`mycalMonthDayItems`、`index.html:8530`；`slice(0, 4)` 在 `index.html:8550`），自己的會議會被收進「+N more」。
-      介紹短片 `docs/videos/src/my-calendar/comp.html` 的 `cmpMine` 已先這樣排（使用者 2026-09-28 決定，待安排修改）
-      — 2026-10-11 核對仍未做：`mycalMonthDayItems` 的 all 分支只照 `mycalBookingsOnDate` 的時間排序（`index.html:8530-8534`）；行號已更新為併入節日功能後的現值
 
 ### W-0927-my-calendar：功能：「我的行事曆」頁籤（2026-09-27 規劃，新功能）
 
@@ -81,7 +56,7 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 - [ ] 詳情彈窗帶入週表四個操作：加入行事曆、複製、編輯（切回週表）、刪除（使用者要求 2026-09-27，README 第 16 條）
       — 2026-10-11 臨時實跑：編輯（切回週表、`isEditMode`＝true、標題帶入）、刪除（原確認視窗 `#bookingModal` 出現）、複製（標題與會議室帶入、日期不帶）都通過；
       **加入行事曆不通過**：選單 `#mycalDetailCalMenu` 計算位置 left:-145px，被彈窗卡片裁掉左半（1280×720 時選項中心點命中的是遮罩 `#mycalDetailModal`，Playwright 點不到；
-      375 寬時選項 x＝-110，落在畫面外）。截圖 `C:\Users\n9191\.claude\scratchpad\p2-gmr-detail-calmenu.png`。修好前不打勾（使用者 2026-10-11 裁定列 W-1011-calmenu-clip，這輪不修）
+      375 寬時選項 x＝-110，落在畫面外）。截圖 `C:\Users\n9191\.claude\scratchpad\p2-gmr-detail-calmenu.png`。修好前不打勾（使用者 2026-10-11 裁定列 W-1011-calmenu-clip，這輪不修；2026-10-19 使用者確認不修、W-1011-calmenu-clip 已封存，決策紀錄 D-1，本條因此維持未勾）
 - [x] F3 可瀏覽範圍邊界的月份計數與格子要跟 DB 一致（載入範圍涵蓋邊界月份整月）
       — 證據：`tests/unit/data-range.spec.mjs:14` 通過（GET 帶 `gte.2026-08-01`／`lte.2027-02-28`）；`index.html:4770-4778`
 - [x] F4 日曆彈窗日期限制在可瀏覽範圍（min／max＋送出前檢查）
