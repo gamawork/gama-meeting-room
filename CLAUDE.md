@@ -59,6 +59,21 @@ alter table public.bookings
 add column if not exists attendees text;
 ```
 
+### 新建資料表要另下 GRANT（2026-10-30 起）
+
+Supabase 通知（使用者 2026-10-27 轉貼）：2026-10-30 起，既有專案在 `public` 新建的表不再自動開放給 Data API，
+要明確 `GRANT`，否則 supabase-js 會回 `permission denied`。既有的表保留原權限、不受影響。
+
+- 2026-10-27 實查：前端只用 `bookings` 一張表（`index.html` 的 `.from('bookings')`），repo 內沒有建表 SQL 或 migration，目前不受影響。
+- 之後要新增表時，建表與 GRANT 寫在同一段 SQL，由使用者在 SQL Editor 執行。
+  前端用的是公開金鑰（`anon` 角色）直接讀寫，所以前端要寫入的表，`anon` 也要給寫入權限，不能只照信裡範例給 `select`：
+
+```sql
+grant select, insert, update, delete on public.新表名 to anon;          -- 前端只讀的表只給 select
+grant select, insert, update, delete on public.新表名 to authenticated;
+grant select, insert, update, delete on public.新表名 to service_role;
+```
+
 ### Realtime（即時同步與桌面通知的前提）
 
 `bookings` 必須在 `supabase_realtime` publication 裡，否則前端訂閱會顯示 joined 卻收不到任何事件：
