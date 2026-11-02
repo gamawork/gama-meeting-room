@@ -41,7 +41,7 @@ B 的主辦人用系統信箱（例：`meeting-room@gamasys.com.tw`），預約�
 
 ## 待 IT 確認（搬 VM 時一起問）
 
-1. 公司信箱是 Microsoft 365 還是自架 Exchange？
+1. 公司信箱是 Microsoft 365 還是自架 Exchange？→ **自架 Exchange**（使用者 2026-11-02）；寄法 C（Microsoft Graph）不適用，B 走內網 SMTP relay 或系統寄件帳號。
 2. 能否開一個系統寄件帳號（例：`meeting-room@gamasys.com.tw`），或允許 VM 透過內網 SMTP relay 寄信？
 3. VM 的規格、網址、誰管理、還原點怎麼做（同事提議搬 VM 的理由之一是能建還原點）。
 
