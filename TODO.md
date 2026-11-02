@@ -89,6 +89,7 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 ## 構想（未決）
 
 - 從月到半小時的縮放檢視（月總覽、日網格、從空檔帶入表單）：[docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md)（2026-09-27，來自介紹短片）
+- 預約時寄 Outlook 會議邀請給與會者（暱稱對信箱、後端代寄、修改／取消同步；先等 IT 回覆信箱是 M365 或 Exchange、能否給寄件帳號，並和「搬內部 VM」一起決定）：[docs/ideas/email-invite/](docs/ideas/email-invite/README.md)（2026-11-02，來自同事建議）
 
 ## 未修的 M／L 清單
 
