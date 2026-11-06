@@ -12,18 +12,18 @@
 **已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
 ## 下一步入口：搬內部 VM＋自架 Supabase（分支 main｜2026-11-06）
-**狀態**：待使用者：在 VM 裝 Docker（要 sudo）；另待 IT：內部網域與 HTTPS 憑證
+**狀態**：待使用者：雲端 Session pooler 連線字串（匯出結構與資料用，密碼由使用者自己輸入）；另待 IT：內部網域與 HTTPS 憑證
 **目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
-**已完成**：VM 唯讀盤點（Ubuntu 24.04、2 核、3.8 GB，沒有 Docker，對外連線通）；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4
+**已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2 已勾）
 **審查輪數**：不適用（尚未改程式碼）
-**下一步**：W-1106-vm-migration 驗收第 1 條
+**下一步**：W-1106-vm-migration 驗收第 3 條（從雲端匯出結構；資料庫沒對外 port，匯入走 VM 內）
 **裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
 **關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」「資料庫存取現況」；`index.html:3528-3529`（Supabase 網址與金鑰）
 **已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
 
 ## 待決
 
-- W-1106-vm-migration｜使用者在 VM 裝 Docker（sudo）；IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）｜2026-11-06
+- W-1106-vm-migration｜使用者給雲端 Session pooler 連線字串；IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）｜2026-11-06
 - W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
@@ -102,8 +102,8 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 規劃與現況：[docs/ideas/vm-migration/README.md](docs/ideas/vm-migration/README.md)；裁定：決策紀錄 D-3、D-4。等級：推薦 L2→核准 L2（使用者 2026-11-06）。
 做法：VM（`10.10.2.96`）上架自架 Supabase＋網站，用測試網址並行試跑，舊站照常服務；通過後才停寫、搬最後一份資料、切換。
 
-- [ ] 1 VM 裝好 Docker，`gama` 可不經 sudo 執行 `docker`（要 sudo 的步驟由使用者執行）
-- [ ] 2 自架 Supabase 跑起來（精簡服務，保留 db／auth／rest／realtime／kong／studio／meta），重開機後自動起來；閒置記憶體用量記下來
+- [x] 1 VM 裝好 Docker，`gama` 可不經 sudo 執行 `docker`（要 sudo 的步驟由使用者執行）——2026-11-06 使用者安裝；實跑 `id -nG` 含 docker、`docker run hello-world` 成功、Docker 29.9.3／Compose v5.7.0、`systemctl is-enabled docker`＝enabled
+- [x] 2 自架 Supabase 跑起來（精簡服務，保留 db／auth／rest／realtime／kong／studio／meta），重開機後自動起來；閒置記憶體用量記下來——2026-11-06 主對話 SSH 核對：`docker compose ps` 7 個服務 healthy（閘道是新版預設 Envoy 不是 Kong，功能相同）、7 個容器 restart policy 皆 `unless-stopped`、`.env` 權限 600；本機打 `:8000/` 無帳密 401、`/auth/v1/health` 無金鑰 401。`down`→`up` 模擬重啟後仍 healthy（subagent 實跑）；真的重開 VM 要 sudo，未測。記憶體：容器合計約 630 MiB，整機已用 1.3 GiB、可用 2.5 GiB；Postgres 17.6
 - [ ] 3 資料庫結構從雲端匯出重建：`bookings`（含 `attendees`）、GRANT、RLS 政策、`btree_gist`＋`bookings_no_overlap`、`supabase_realtime` publication；與雲端逐項比對一致
 - [ ] 4 試搬資料：雲端匯出→地端匯入，總筆數一致，頭、尾、隨機各抽 1 筆內容一致
 - [ ] 5 內部網域與 HTTPS 憑證到位（IT），公司電腦與手機都信任

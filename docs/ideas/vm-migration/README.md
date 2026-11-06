@@ -30,6 +30,16 @@
 - 規格低於 Supabase 官方自架最低需求（4 GB RAM、2 核、40 GB；建議 8 GB、4 核，[官方文件](https://supabase.com/docs/guides/self-hosting/docker) 2026-11-06 查）。
   使用者 2026-11-06：先照現有規格用。做法：關掉用不到的服務（Storage、imgproxy、Edge Functions、analytics／logflare、vector），保留 db、auth、rest（PostgREST）、realtime、kong、studio（管理後台）、meta；試跑時觀察記憶體，不夠再找 IT 加。
 
+### 自架 Supabase 安裝紀錄（2026-11-06）
+
+- 位置：VM `~/supabase-project`（官方 `self-hosted/v0.8.4`，版本寫在 `.supabase-version`，可用官方 `update.sh` 升級）；原始 compose 備份 `docker-compose.yml.orig`；密鑰在 `.env`（權限 600，全部用官方腳本新產生，只在 VM 上）。
+- 對外入口：`http://10.10.2.96:8000`（API 閘道；`/` 是管理後台，要帳密）。還沒有 HTTPS 與網域。
+- 留下的服務：db（PostgreSQL 17.6）、auth、rest、realtime、meta、studio、API 閘道（新版預設 Envoy，不是 Kong）。拿掉 storage、imgproxy、functions、supavisor（pooler）；analytics、vector 新版已移到另一個 compose 檔，本來就不啟動。
+- 拿掉 pooler 後，**資料庫沒有對外 port**，只能在 VM 內 `docker exec supabase-db psql -U postgres`。搬資料時從 VM 內匯入，或屆時再開 port。
+- 閒置記憶體：容器合計約 630 MiB，整機可用約 2.5 GiB。
+- 已知：管理後台密碼在架設時曾出現在工具輸出，已當場換新（舊密碼實測 401）。
+- 2026-11-06 14:47–15:02 本機連 VM 的所有 port 都被拒絕，VM 本身沒重開、容器也沒中斷；推測是公司網路設備擋了短時間內大量連線，未證實。之後對 VM 的大量測試要放慢。
+
 ## 資料庫存取現況（2026-11-06 實測，雲端 Supabase）
 
 前端沒有登入，`index.html` 裡寫著 Supabase 網址與公開金鑰（`anon`），任何打得開網頁的人都拿得到。實測只用這把公開金鑰：
