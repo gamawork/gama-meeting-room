@@ -12,18 +12,17 @@
 **已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
 ## 下一步入口：搬內部 VM＋自架 Supabase（分支 main｜2026-11-06）
-**狀態**：待使用者：雲端 Session pooler 連線字串（匯出結構與資料用，密碼由使用者自己輸入）；另待 IT：內部網域與 HTTPS 憑證
+**狀態**：進行中；另待 IT：內部網域與 HTTPS 憑證
 **目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
-**已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2 已勾）
+**已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2）；雲端結構匯出並在地端重建、逐項比對一致（驗收 3）
 **審查輪數**：不適用（尚未改程式碼）
-**下一步**：W-1106-vm-migration 驗收第 3 條（從雲端匯出結構；資料庫沒對外 port，匯入走 VM 內）
-**裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
-**關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」「資料庫存取現況」；`index.html:3528-3529`（Supabase 網址與金鑰）
+**下一步**：W-1106-vm-migration 驗收第 4 條（試搬資料）：照 `scripts/export-cloud-schema.sh` 的做法在 VM 上連雲端匯出資料，密碼由使用者在終端機輸入（Session pooler：`aws-0-us-east-1.pooler.supabase.com:5432`，帳號 `postgres.vicvccudnqluufsgyznk`；要的是資料庫密碼，不是網站登入密碼）**裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
+**關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」（含連 VM 會被擋的注意事項）「資料庫存取現況」；`docs/ideas/vm-migration/scripts/`；`index.html:3528-3529`（Supabase 網址與金鑰）
 **已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
 
 ## 待決
 
-- W-1106-vm-migration｜使用者給雲端 Session pooler 連線字串；IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）｜2026-11-06
+- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）｜2026-11-06
 - W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
@@ -104,7 +103,7 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 
 - [x] 1 VM 裝好 Docker，`gama` 可不經 sudo 執行 `docker`（要 sudo 的步驟由使用者執行）——2026-11-06 使用者安裝；實跑 `id -nG` 含 docker、`docker run hello-world` 成功、Docker 29.9.3／Compose v5.7.0、`systemctl is-enabled docker`＝enabled
 - [x] 2 自架 Supabase 跑起來（精簡服務，保留 db／auth／rest／realtime／kong／studio／meta），重開機後自動起來；閒置記憶體用量記下來——2026-11-06 主對話 SSH 核對：`docker compose ps` 7 個服務 healthy（閘道是新版預設 Envoy 不是 Kong，功能相同）、7 個容器 restart policy 皆 `unless-stopped`、`.env` 權限 600；本機打 `:8000/` 無帳密 401、`/auth/v1/health` 無金鑰 401。`down`→`up` 模擬重啟後仍 healthy（subagent 實跑）；真的重開 VM 要 sudo，未測。記憶體：容器合計約 630 MiB，整機已用 1.3 GiB、可用 2.5 GiB；Postgres 17.6
-- [ ] 3 資料庫結構從雲端匯出重建：`bookings`（含 `attendees`）、GRANT、RLS 政策、`btree_gist`＋`bookings_no_overlap`、`supabase_realtime` publication；與雲端逐項比對一致
+- [x] 3 資料庫結構從雲端匯出重建：`bookings`（含 `attendees`）、GRANT、RLS 政策、`btree_gist`＋`bookings_no_overlap`、`supabase_realtime` publication；與雲端逐項比對一致——2026-11-06：VM 上用 db 容器的 `pg_dump`／`psql` 連雲端 Session pooler 唯讀匯出（`docs/ideas/vm-migration/scripts/export-cloud-schema.sh`，密碼由使用者在終端機輸入），照 dump 改寫 `scripts/rebuild-schema.sql` 在地端單一 transaction 套用成功；兩邊跑同一份 `scripts/inventory.sql` 後 diff，`bookings` 的欄位、約束、索引、觸發器、複寫識別、權限、RLS 與 4 條政策、`btree_gist`（在 public）、publication 成員全部相同，public 預設權限另查也相同。diff 只剩三處無關差異：版本 17.4／17.6、地端多 `pg_net`（自架預設）、雲端多 `supabase_realtime_messages_publication`（Realtime Broadcast 內部用；前端只用 `postgres_changes`，`index.html:4705`）。地端防撞實測（transaction 內、已 rollback、剩 0 筆）：重疊時段回 `23P01 bookings_no_overlap`，背靠背與不同會議室同時段可寫入。證據：`docs/ideas/vm-migration/evidence/2026-11-06-schema/`（雲端 dump、雲端與地端盤點）
 - [ ] 4 試搬資料：雲端匯出→地端匯入，總筆數一致，頭、尾、隨機各抽 1 筆內容一致
 - [ ] 5 內部網域與 HTTPS 憑證到位（IT），公司電腦與手機都信任
 - [ ] 6 網站放 VM、指向地端 Supabase，測試網址可用；`npm test` 全過（mock 從 `index.html` 抽網址）

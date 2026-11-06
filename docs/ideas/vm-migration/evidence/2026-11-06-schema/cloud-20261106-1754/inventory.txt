@@ -1,0 +1,59 @@
+SET
+## 伺服器版本（僅供參考，雲端與地端可不同）
+17.4
+## public 內的關聯（種類｜名稱）
+r | bookings
+## bookings 欄位（名稱｜型別｜可空｜預設｜identity）
+id | uuid | not null | gen_random_uuid() | 
+date | date | not null |  | 
+room | text | not null |  | 
+start_time | time without time zone | not null |  | 
+end_time | time without time zone | not null |  | 
+title | text | not null |  | 
+organizer | text | not null |  | 
+created_at | timestamp with time zone | null | now() | 
+attendees | text | null |  | 
+## bookings 約束（名稱｜定義）
+bookings_no_overlap | EXCLUDE USING gist (room WITH =, tsrange((date + start_time), (date + end_time)) WITH &&)
+bookings_pkey | PRIMARY KEY (id)
+## bookings 索引
+bookings_no_overlap | CREATE INDEX bookings_no_overlap ON public.bookings USING gist (room, tsrange((date + start_time), (date + end_time)))
+bookings_pkey | CREATE UNIQUE INDEX bookings_pkey ON public.bookings USING btree (id)
+idx_bookings_date | CREATE INDEX idx_bookings_date ON public.bookings USING btree (date)
+idx_bookings_room_date | CREATE INDEX idx_bookings_room_date ON public.bookings USING btree (room, date)
+## bookings 觸發器
+## bookings 複寫識別（d=預設主鍵 f=FULL）
+d
+## public 物件權限（名稱｜角色=權限）
+bookings | anon=arwdDxtm, authenticated=arwdDxtm, postgres=arwdDxtm, service_role=arwdDxtm
+## public 欄位層級權限
+## schema public 權限
+=U, anon=U, authenticated=U, pg_database_owner=UC, postgres=U, service_role=U
+## RLS 開關（表｜啟用｜強制）
+bookings | true | false
+## RLS 政策（表｜名稱｜permissive｜角色｜動作｜USING｜WITH CHECK）
+bookings | Allow delete access | PERMISSIVE | public | DELETE | true | 
+bookings | Allow insert access | PERMISSIVE | public | INSERT |  | true
+bookings | Allow read access | PERMISSIVE | public | SELECT | true | 
+bookings | Allow update access | PERMISSIVE | public | UPDATE | true | 
+## 擴充套件（名稱｜所在 schema；雲端與地端預設裝的不同，只比對本專案用到的）
+btree_gist | public
+pg_stat_statements | extensions
+pgcrypto | extensions
+plpgsql | pg_catalog
+supabase_vault | vault
+uuid-ossp | extensions
+## publication（名稱｜全部表｜insert update delete truncate）
+supabase_realtime | false | true true true true
+supabase_realtime_messages_publication | false | true true true true
+## publication 內的資料表
+supabase_realtime | public.bookings
+supabase_realtime_messages_publication | realtime.messages_2026_11_03
+supabase_realtime_messages_publication | realtime.messages_2026_11_04
+supabase_realtime_messages_publication | realtime.messages_2026_11_05
+supabase_realtime_messages_publication | realtime.messages_2026_11_06
+supabase_realtime_messages_publication | realtime.messages_2026_11_07
+supabase_realtime_messages_publication | realtime.messages_2026_11_08
+supabase_realtime_messages_publication | realtime.messages_2026_11_09
+## public 自訂函式（不含擴充套件的）
+## public 自訂型別（enum、domain、composite；不含擴充套件與表的列型別）
