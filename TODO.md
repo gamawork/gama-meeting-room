@@ -16,7 +16,8 @@
 **目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
 **已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2）；雲端結構匯出並在地端重建、逐項比對一致（驗收 3）
 **審查輪數**：不適用（尚未改程式碼）
-**下一步**：W-1106-vm-migration 驗收第 4 條（試搬資料）：照 `scripts/export-cloud-schema.sh` 的做法在 VM 上連雲端匯出資料，密碼由使用者在終端機輸入（Session pooler：`aws-0-us-east-1.pooler.supabase.com:5432`，帳號 `postgres.vicvccudnqluufsgyznk`；要的是資料庫密碼，不是網站登入密碼）**裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
+**下一步**：W-1106-vm-migration 驗收第 4 條（試搬資料）：照 `scripts/export-cloud-schema.sh` 的做法在 VM 上連雲端匯出資料，密碼由使用者在終端機輸入（Session pooler：`aws-0-us-east-1.pooler.supabase.com:5432`，帳號 `postgres.vicvccudnqluufsgyznk`；要的是資料庫密碼，不是網站登入密碼）
+**裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
 **關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」（含連 VM 會被擋的注意事項）「資料庫存取現況」；`docs/ideas/vm-migration/scripts/`；`index.html:3528-3529`（Supabase 網址與金鑰）
 **已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
 
