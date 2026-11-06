@@ -7,3 +7,7 @@ playwright/.cache/
 playwright-report-unit/
 # Claude Code worktree
 .claude/worktrees/
+# 本機帳密，不進版控
+SSH.ENV.txt
+*.ENV
+*.ENV.txt

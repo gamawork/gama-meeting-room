@@ -11,8 +11,19 @@
 **關鍵位置**：`index.html:8530`（`mycalMonthDayItems`）、`index.html:8550`（`slice(0, 4)`）、`index.html:8768`（`mycalBindDetailActions`，選單在 `#mycalDetailCalMenu`）；行號 2026-10-11 併入遠端節日功能（3d669e0）後依函式名重新定位
 **已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
+## 下一步入口：搬內部 VM＋自架 Supabase（分支 main｜2026-11-06）
+**狀態**：待使用者：在 VM 裝 Docker（要 sudo）；另待 IT：內部網域與 HTTPS 憑證
+**目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
+**已完成**：VM 唯讀盤點（Ubuntu 24.04、2 核、3.8 GB，沒有 Docker，對外連線通）；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4
+**審查輪數**：不適用（尚未改程式碼）
+**下一步**：W-1106-vm-migration 驗收第 1 條
+**裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
+**關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」「資料庫存取現況」；`index.html:3528-3529`（Supabase 網址與金鑰）
+**已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
+
 ## 待決
 
+- W-1106-vm-migration｜使用者在 VM 裝 Docker（sudo）；IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）｜2026-11-06
 - W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
@@ -86,9 +97,26 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 
 備註：0b 預計 N/A（新增頁籤，非大改版）；1 預計 N/A（無新核心邏輯，防撞沿用既有三層），「是不是我的會議」比對函式歸 R8 多分支純函式層、跟實作一起寫表格測試；第 4 步「從空檔新增」會寫入預約，屬風險類。
 
+### W-1106-vm-migration：系統搬到內部 VM＋自架 Supabase（2026-11-06 開工，L2）
+
+規劃與現況：[docs/ideas/vm-migration/README.md](docs/ideas/vm-migration/README.md)；裁定：決策紀錄 D-3、D-4。等級：推薦 L2→核准 L2（使用者 2026-11-06）。
+做法：VM（`10.10.2.96`）上架自架 Supabase＋網站，用測試網址並行試跑，舊站照常服務；通過後才停寫、搬最後一份資料、切換。
+
+- [ ] 1 VM 裝好 Docker，`gama` 可不經 sudo 執行 `docker`（要 sudo 的步驟由使用者執行）
+- [ ] 2 自架 Supabase 跑起來（精簡服務，保留 db／auth／rest／realtime／kong／studio／meta），重開機後自動起來；閒置記憶體用量記下來
+- [ ] 3 資料庫結構從雲端匯出重建：`bookings`（含 `attendees`）、GRANT、RLS 政策、`btree_gist`＋`bookings_no_overlap`、`supabase_realtime` publication；與雲端逐項比對一致
+- [ ] 4 試搬資料：雲端匯出→地端匯入，總筆數一致，頭、尾、隨機各抽 1 筆內容一致
+- [ ] 5 內部網域與 HTTPS 憑證到位（IT），公司電腦與手機都信任
+- [ ] 6 網站放 VM、指向地端 Supabase，測試網址可用；`npm test` 全過（mock 從 `index.html` 抽網址）
+- [ ] 7 測試網址上跑完 README「切換後驗收清單」全部條目（含雙分頁防撞、Realtime、桌面通知、Supabase 停掉時顯示錯誤）
+- [ ] 8 VM 部署方式落地（取代 push main 自動部署），實跑一次部署
+- [ ] 9 正式切換：舊站停寫→最後一次匯出匯入→筆數核對→開新站→舊網址轉址；雲端保留當備援
+- [ ] 10 備份：每天自動匯出＋實際還原演練一次
+- [ ] 11 正本同步：`CLAUDE.md`（部署、Supabase 段）、`SPEC.md`、`docs/使用情境.md`
+
 ## 構想（未決）
 
-- 系統搬到內部 VM 架設，Supabase 一起地端化（已定，決策紀錄 D-3；同事建議：方便管理、可建還原點、開發平台內網收斂；IT 會給 VM，HTTPS 憑證到時再問，信箱是自架 Exchange；搬完才做下方會議邀請信，見決策紀錄 D-2）：[docs/ideas/vm-migration/](docs/ideas/vm-migration/README.md)（2026-11-02）
+- 系統搬到內部 VM 架設，Supabase 一起地端化：已開工作項 W-1106-vm-migration（見上方「進行中工作項」；決策紀錄 D-3、D-4）
 - 從月到半小時的縮放檢視（月總覽、日網格、從空檔帶入表單）：[docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md)（2026-09-27，來自介紹短片）
 - 預約時寄 Outlook 會議邀請給與會者（暱稱對信箱、後端代寄、修改／取消同步；已定採系統信箱代寄，先搬內部 VM 再做、後端放 VM，見決策紀錄 D-2）：[docs/ideas/email-invite/](docs/ideas/email-invite/README.md)（2026-11-02，來自同事建議）
 
