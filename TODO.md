@@ -12,18 +12,18 @@
 **已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
 ## 下一步入口：搬內部 VM＋自架 Supabase（分支 main｜2026-11-06）
-**狀態**：進行中；另待 IT：內部網域與 HTTPS 憑證
+**狀態**：卡住：本機 ssh 連 VM 被拒（2026-11-06 20:3x 起，原因未知，見 README「VM 現況」）；另待 IT：內部網域與 HTTPS 憑證
 **目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
 **已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2）；雲端結構匯出並在地端重建、逐項比對一致（驗收 3）
 **審查輪數**：不適用（尚未改程式碼）
-**下一步**：W-1106-vm-migration 驗收第 4 條（試搬資料）：照 `scripts/export-cloud-schema.sh` 的做法在 VM 上連雲端匯出資料，密碼由使用者在終端機輸入（Session pooler：`aws-0-us-east-1.pooler.supabase.com:5432`，帳號 `postgres.vicvccudnqluufsgyznk`；要的是資料庫密碼，不是網站登入密碼）
+**下一步**：W-1106-vm-migration 驗收第 4 條（試搬資料）：腳本已寫好並 commit，但未上傳 VM、未試跑（`scripts/export-cloud-data.sh`、`import-local-data.sh`、`verify-data.sql`）。先上傳 VM 用假資料乾跑「地端塞 3 筆→匯出→清空→import-local-data.sh→應印『一致』→清回 0 筆」，通過後在 VM 跑 `export-cloud-data.sh`（密碼由使用者在終端機輸入），再跑 `import-local-data.sh <輸出資料夾>`（Session pooler：`aws-0-us-east-1.pooler.supabase.com:5432`，帳號 `postgres.vicvccudnqluufsgyznk`；要的是資料庫密碼，不是網站登入密碼）
 **裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
 **關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」（含連 VM 會被擋的注意事項）「資料庫存取現況」；`docs/ideas/vm-migration/scripts/`；`index.html:3528-3529`（Supabase 網址與金鑰）
 **已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
 
 ## 待決
 
-- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）；VM 上 `~/migration/cloud-20261106-1743`（第一次密碼錯誤留下的空輸出）要不要刪；使用者說可以再開始驗收第 4 條試搬資料（要再輸入一次雲端資料庫密碼）｜2026-11-06
+- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）；VM 上 `~/migration/cloud-20261106-1743`（第一次密碼錯誤留下的空輸出）要不要刪；VM ssh 連不上時要不要找 IT 查（第三次被拒，原因未知）；第 4 條試搬資料要使用者再輸入一次雲端資料庫密碼｜2026-11-06
 - W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
