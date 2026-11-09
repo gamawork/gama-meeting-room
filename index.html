@@ -2351,6 +2351,11 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
     border-radius: 6px; padding: 2px 10px; font: inherit; font-size: 12px; cursor: pointer;
 }
 .help-api-copy:hover { background: #334155; }
+.help-api-copyall {
+    border: 1px solid #c7d2fe; background: #eef2ff; color: #3730a3; border-radius: 999px;
+    padding: 2px 12px; margin: 0 0 8px; font: inherit; font-size: 12px; font-weight: 700; line-height: 1.4; cursor: pointer;
+}
+.help-api-copyall:hover { background: #e0e7ff; }
 .mycal-detail-actions .mycal-detail-copytext svg { width: 14px; height: 14px; }
 /* 詳情彈窗是 mycal-sm（矮），下拉選單往下開容易被 .mycal-dialog 的 overflow:auto 裁掉，改往上開 */
 .mycal-detail-actions .calendar-menu { top: auto; bottom: 100%; }
@@ -2700,6 +2705,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                 <!-- 串接 API：只在 VM 版（網頁與 API 同網址）顯示，網址、金鑰、會議室清單由 mycalInitHelpApi() 帶入 -->
                 <section class="help-section help-api" hidden>
                     <h3>🔌 串接 API：用程式讀寫預約</h3>
+                    <button type="button" class="help-api-copyall">全部複製</button>
                     <p class="help-api-lead">給要寫程式或自動化工具串會議室資料的人。預約存在 <code>bookings</code> 這張表，用一般的 HTTP 請求就能讀取、新增、修改、刪除，系統畫面會即時更新。</p>
                     <p class="help-api-label">1. 先設定兩個變數（網址與金鑰已自動帶入）</p>
                     <div class="help-api-code"><pre data-api-setup></pre><button type="button" class="help-api-copy">複製</button></div>
@@ -2797,6 +2803,7 @@ curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
                 </section>
                 <section class="help-section help-api" hidden>
                     <h3>🔌 API: read and write bookings from code</h3>
+                    <button type="button" class="help-api-copyall">Copy all</button>
                     <p class="help-api-lead">For anyone connecting scripts or automation tools to room bookings. Bookings live in the <code>bookings</code> table. Plain HTTP requests can read, add, change and delete them, and the system updates live.</p>
                     <p class="help-api-label">1. Set two variables first (address and key are filled in for you)</p>
                     <div class="help-api-code"><pre data-api-setup></pre><button type="button" class="help-api-copy">Copy</button></div>
@@ -8357,9 +8364,27 @@ function mycalInitHelpApi() {
         roomsEl.textContent = rooms.join(roomsEl.dataset.sep);
         sec.hidden = false;
     });
+    // 「全部複製」：依畫面上該語言那份 .help-api 當下的 DOM 組成純文字（程式碼區塊用 ``` 包起來），不含任何按鈕文字
+    const collectApiText = sec => {
+        const out = [];
+        Array.from(sec.children).forEach(el => {
+            if (el.tagName === 'BUTTON') return;
+            if (el.classList.contains('help-api-code')) {
+                out.push('```\n' + el.querySelector('pre').textContent.replace(/\s+$/, '') + '\n```');
+            } else if (el.tagName === 'UL' || el.tagName === 'OL') {
+                out.push(Array.from(el.children).map(li => '- ' + li.textContent.trim()).join('\n'));
+            } else {
+                const t = el.textContent.trim();
+                if (t) out.push(t);
+            }
+        });
+        return out.join('\n\n');
+    };
     modal.addEventListener('click', e => {
         const btn = e.target?.closest?.('.help-api-copy');
-        if (btn) copyModalContent(btn.previousElementSibling.textContent, 'notify.copied', mycalToast);
+        if (btn) { copyModalContent(btn.previousElementSibling.textContent, 'notify.copied', mycalToast); return; }
+        const all = e.target?.closest?.('.help-api-copyall');
+        if (all) copyModalContent(collectApiText(all.closest('.help-api')), 'notify.copied', mycalToast);
     });
 }
 function mycalBindNotifyBtn() {
