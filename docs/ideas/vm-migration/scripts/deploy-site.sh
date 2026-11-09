@@ -8,7 +8,9 @@
 # - 預設只部署已 push 的版本：HEAD 與 origin/main 不同就停，避免 VM 跑的是 GitHub 沒有的程式碼。
 # - 只部署已 commit 的 index.html 與 gama.ico（git archive HEAD），工作目錄的未 commit 改動不會上去。
 # - repo 的 index.html 一律保持指向雲端（push main 就是正式站）；部署到 VM 時才把
-#   SUPABASE_URL／SUPABASE_ANON_KEY 換成地端，金鑰從 VM 的 ~/supabase-project/.env 讀，不經過本機。
+#   SUPABASE_URL 換成 window.location.origin（網頁與 API 同網址，由 nginx 轉給地端 API，見 nginx-site.conf）、
+#   SUPABASE_ANON_KEY 換成地端金鑰（從 VM 的 ~/supabase-project/.env 讀，不經過本機）。
+# - nginx 設定取 HEAD 的 nginx-site.conf，放 VM 的 ~/site-conf/default.conf；每次部署都重建 gama-site 容器。
 # - supabase-js 部署時從 unpkg 下載（核對 sha256）放 VM 的 vendor/，頁面改從 VM 載入，不再依賴 unpkg。
 # - 測試站模式（預設）：分頁標題與頁首前加「【VM 測試站】」（<title> 與 i18n 的 app.title），避免同事以為是正式站；--prod 不加。
 # - version.txt 兩行：第一行 commit 短 hash，第二行模式（test／prod）。
@@ -18,7 +20,7 @@ set -euo pipefail
 
 VM=gama@10.10.2.96
 KEY="$HOME/.ssh/id_ed25519_gama_vm"
-LOCAL_SUPABASE_URL=http://10.10.2.96:8000
+LOCAL_SUPABASE_URL=http://10.10.2.96:8000   # 只給部署後檢查直連 API 用；網頁本身走同網址
 
 cd "$(git rev-parse --show-toplevel)"
 
@@ -47,6 +49,7 @@ REV=$(git rev-parse --short HEAD)
 
 # 檔案用 base64 嵌進送到遠端的腳本，腳本與檔案走同一條 ssh 的 stdin
 TAR_B64=$(git archive --format=tar HEAD index.html gama.ico | base64 -w0)
+CONF_B64=$(git show HEAD:docs/ideas/vm-migration/scripts/nginx-site.conf | base64 -w0)
 
 # supabase-js 改由 VM 提供，不從 unpkg 載入（使用者 2026-11-09）。版本與指紋寫死：
 # index.html 換版本時這裡一起改，下載到的檔指紋不符就停。
@@ -58,7 +61,7 @@ grep -qF "src=\"$SDK_URL\"" <<< "$HEAD_HTML" || { echo "停止：HEAD 的 index.
 SDK_B64=$(curl -fsSL --max-time 60 "$SDK_URL" | base64 -w0)
 [ "$(printf '%s' "$SDK_B64" | base64 -d | sha256sum | cut -d' ' -f1)" = "$SDK_SHA256" ] || { echo "停止：下載的 supabase-js 指紋不符"; exit 1; }
 
-{ echo "REV='$REV'; MODE='$MODE'; LOCAL_SUPABASE_URL='$LOCAL_SUPABASE_URL'; TAR_B64='$TAR_B64'; SDK_B64='$SDK_B64'; SDK_URL='$SDK_URL'; SDK_FILE='$SDK_FILE'; SDK_SHA256='$SDK_SHA256'"; cat <<'REMOTE'
+{ echo "REV='$REV'; MODE='$MODE'; LOCAL_SUPABASE_URL='$LOCAL_SUPABASE_URL'; TAR_B64='$TAR_B64'; CONF_B64='$CONF_B64'; SDK_B64='$SDK_B64'; SDK_URL='$SDK_URL'; SDK_FILE='$SDK_FILE'; SDK_SHA256='$SDK_SHA256'"; cat <<'REMOTE'
 set -euo pipefail
 NEW="$HOME/site-new"; LIVE="$HOME/site"
 rm -rf "$NEW"; mkdir -p "$NEW"
@@ -72,7 +75,7 @@ ANON_KEY=$(grep -E '^ANON_KEY=' "$HOME/supabase-project/.env" | cut -d= -f2-)
 
 F="$NEW/index.html"
 sed -i -E \
-  -e "s|^([[:space:]]*const SUPABASE_URL = )'[^']*';|\1'$LOCAL_SUPABASE_URL';|" \
+  -e "s|^([[:space:]]*const SUPABASE_URL = )'[^']*';|\1window.location.origin;|" \
   -e "s|^([[:space:]]*const SUPABASE_ANON_KEY = )'[^']*';|\1'$ANON_KEY';|" \
   -e "s|src=\"$SDK_URL\"|src=\"./$SDK_FILE\"|" \
   "$F"
@@ -84,7 +87,7 @@ if [ "$MODE" = test ]; then   # 測試站模式才加字樣；--prod 跳過
 fi
 
 # 替換一定要剛好命中，否則停（index.html 改過寫法時會在這裡發現，不會默默連到雲端）
-[ "$(grep -c "const SUPABASE_URL = '$LOCAL_SUPABASE_URL';" "$F")" = 1 ] || { echo "停止：SUPABASE_URL 替換失敗"; exit 1; }
+[ "$(grep -c "const SUPABASE_URL = window.location.origin;" "$F")" = 1 ] || { echo "停止：SUPABASE_URL 替換失敗"; exit 1; }
 [ "$(grep -c "const SUPABASE_ANON_KEY = '$ANON_KEY';" "$F")" = 1 ] || { echo "停止：SUPABASE_ANON_KEY 替換失敗"; exit 1; }
 ! grep -q 'supabase\.co' "$F" || { echo "停止：替換後仍有 supabase.co"; grep -n 'supabase\.co' "$F" | cut -c1-120; exit 1; }
 if [ "$MODE" = test ]; then
@@ -97,23 +100,31 @@ fi
 printf '%s\n%s\n' "$REV" "$MODE" > "$NEW/version.txt"
 chmod -R a+rX "$NEW"
 
+# nginx 設定：先用暫存容器檢查語法，通過才換上（設定錯就停，舊站照跑）
+CONF_DIR="$HOME/site-conf"; mkdir -p "$CONF_DIR"
+printf '%s' "$CONF_B64" | base64 -d > "$CONF_DIR/default.conf.new"; unset CONF_B64
+chmod a+r "$CONF_DIR/default.conf.new"
+docker run --rm --add-host=host.docker.internal:host-gateway \
+  -v "$CONF_DIR/default.conf.new":/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t -q \
+  || { echo "停止：nginx 設定檢查沒過"; exit 1; }
+mv "$CONF_DIR/default.conf.new" "$CONF_DIR/default.conf"
+
 # 換上新版：舊的留一份 site-prev
 rm -rf "$HOME/site-prev"; [ -d "$LIVE" ] && mv "$LIVE" "$HOME/site-prev"; mv "$NEW" "$LIVE"
 
-if [ -z "$(docker ps -aq --filter 'name=^gama-site$')" ]; then
-  docker run -d --name gama-site --restart unless-stopped -p 80:80 \
-    -v "$LIVE":/usr/share/nginx/html:ro nginx:alpine > /dev/null
-else
-  docker restart gama-site > /dev/null   # 目錄換了，bind mount 要重掛
-fi
+# 每次都重建容器：目錄換了 bind mount 要重掛，設定檔與 host.docker.internal 也要帶上（退回上一版仍可用 docker restart）
+docker rm -f gama-site > /dev/null 2>&1 || true
+docker run -d --name gama-site --restart unless-stopped -p 80:80 \
+  --add-host=host.docker.internal:host-gateway \
+  -v "$LIVE":/usr/share/nginx/html:ro \
+  -v "$CONF_DIR/default.conf":/etc/nginx/conf.d/default.conf:ro nginx:alpine > /dev/null
 
 sleep 2
 echo "部署版本（第一行 commit、第二行模式）："; curl -fsS http://localhost/version.txt
 echo "supabase-js 由 VM 提供（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/$SDK_FILE")"
 curl -fsS http://localhost/ | grep -o '<title>[^<]*</title>'
-echo "地端 API 用公開金鑰讀 bookings（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "$LOCAL_SUPABASE_URL/rest/v1/bookings?select=id&limit=1")"
-echo "CORS 預檢（應回 Access-Control-Allow-Origin）："
-curl -s -o /dev/null -D - -X OPTIONS -H 'Origin: http://10.10.2.96' -H 'Access-Control-Request-Method: GET' \
-  -H 'Access-Control-Request-Headers: apikey,authorization' "$LOCAL_SUPABASE_URL/rest/v1/bookings" | grep -i '^access-control-allow-origin' || echo "（沒有 CORS 標頭）"
+echo "同網址讀 bookings（經 nginx 轉給 API，應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "http://localhost/rest/v1/bookings?select=id&limit=1")"
+echo "同網址即時同步 WebSocket（應回 101）：$(curl -s -o /dev/null -m 3 -w '%{http_code}' --http1.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' "http://localhost/realtime/v1/websocket?apikey=$ANON_KEY&vsn=1.0.0" || true)"
+echo "直連 API 8000 仍可用（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "$LOCAL_SUPABASE_URL/rest/v1/bookings?select=id&limit=1")"
 REMOTE
 } | ssh -i "$KEY" -o ConnectTimeout=10 -o BatchMode=yes "$VM" bash -s
