@@ -41,6 +41,8 @@
 - 2026-11-06 14:47–15:02 本機連 VM 的所有 port 都被拒絕，VM 本身沒重開、容器也沒中斷；推測是公司網路設備擋了短時間內大量連線，未證實。之後對 VM 的大量測試要放慢。
   2026-11-06 約 17:4x 第二次：幾分鐘內 5～6 條 ssh／scp 後 22 port 被拒，約 3 分鐘恢復。之後每一步只開一條 ssh，檔案從同一條連線的 stdin 傳。
   2026-11-06 約 20:3x 第三次：之前兩個多小時沒連過，第一條 ssh 就被拒，等到 20:45 以後仍未恢復（使用者喊停，沒繼續等）。「連太多次才被擋」的推測不成立，原因未知（公司網路設備或 VM 本身），要請 IT 一起看。
+  2026-11-09 08:56 再連已恢復，VM 期間沒重開（uptime 2 天 19 小時）；原因仍未知。
+- 資料已試搬（2026-11-09，驗收 4）：地端 `bookings` 是 11-09 08:59 的雲端快照 1761 筆，與雲端核對值一致。做法：`scripts/dryrun-import.sh`（假資料乾跑）→ `export-cloud-data.sh` → `import-local-data.sh`；匯出檔只在 VM `~/migration/cloud-data-*`。
 - 結構已重建（2026-11-06，驗收 3）：`bookings` 與雲端逐項一致，做法與證據見 `scripts/`（`export-cloud-schema.sh`、`rebuild-schema.sql`、`inventory.sql`）與 `evidence/2026-11-06-schema/`。雲端是 PostgreSQL 17.4，`btree_gist` 裝在 public。
 
 ## 資料庫存取現況（2026-11-06 實測，雲端 Supabase）
