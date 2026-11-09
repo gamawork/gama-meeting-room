@@ -16,14 +16,14 @@
 **目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
 **已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2）；雲端結構匯出並在地端重建、逐項比對一致（驗收 3）；試搬資料 1761 筆、核對值一致（驗收 4）；測試站 `http://10.10.2.96/` 上線、瀏覽器驗收通過（驗收 6）
 **審查輪數**：不適用（尚未改程式碼）
-**下一步**：W-1106-vm-migration 驗收第 7 條在 `http://10.10.2.96/` 先跑不需 HTTPS 的條目（雙分頁防撞、Supabase 停掉時顯示錯誤、手機寬度）；桌面通知等第 5 條 HTTPS（IT）。改 `index.html` 後要重跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh` 測試站才會更新。地端 `bookings` 現在是 2026-11-09 08:59 的雲端快照（1761 筆），試跑期間寫入的測試資料不會回雲端；正式切換（第 9 條）前要先清空地端再跑 `import-local-data.sh`（腳本只接受空表）
+**下一步**：W-1106-vm-migration 驗收第 7 條只剩桌面通知（等第 5 條 HTTPS，IT）與真手機連公司 Wi-Fi（使用者）；不卡 IT 的可先做第 8 條（VM 部署方式）或第 10 條（每天備份＋還原演練）。改 `index.html` 後要重跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh` 測試站才會更新。地端 `bookings` 現在是 2026-11-09 08:59 的雲端快照（1761 筆），試跑期間寫入的測試資料不會回雲端；正式切換（第 9 條）前要先清空地端再跑 `import-local-data.sh`（腳本只接受空表）
 **裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
 **關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」（含連 VM 會被擋的注意事項）「資料庫存取現況」；`docs/ideas/vm-migration/scripts/`；`index.html:3528-3529`（Supabase 網址與金鑰）
 **已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
 
 ## 待決
 
-- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）；VM 上 `~/migration/` 三個密碼打錯留下的空資料夾（`cloud-20261106-1743`、`cloud-data-20261109-0857`、`cloud-data-20261109-0858`，裡面 0 個檔）要不要刪；VM ssh 11/6 晚上被拒的原因要不要找 IT 查（11/9 已恢復）；supabase-js 要不要改放 VM、不再從 unpkg 載入（切換前決定，見 README 測試站段）｜2026-11-09
+- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；要不要加存取控制（內網任何人可讀寫刪預約）；VM 上 `~/migration/` 三個密碼打錯留下的空資料夾（`cloud-20261106-1743`、`cloud-data-20261109-0857`、`cloud-data-20261109-0858`，裡面 0 個檔）要不要刪；VM ssh 11/6 晚上被拒的原因要不要找 IT 查（11/9 已恢復）｜2026-11-09
 - W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
@@ -108,7 +108,7 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 - [x] 4 試搬資料：雲端匯出→地端匯入，總筆數一致，頭、尾、隨機各抽 1 筆內容一致——2026-11-09：先用 `scripts/dryrun-import.sh` 在地端假資料乾跑（3 筆含中文、逗號、引號、空與會者；匯入後「一致」；表非空再匯入、匯出前後核對值不同兩種情況都被拒；清回 0 筆）。再由使用者在終端機輸入密碼跑 `export-cloud-data.sh`（只讀雲端），匯出前後核對值相同；VM 上 `import-local-data.sh ~/migration/cloud-data-20261109-0859` 印「一致」。`verify-before／after／local.txt` 三檔 md5 皆 `8e5cb32a…`：總筆數 1761、日期範圍 2025-08-20 ~ 2028-08-17、全表雜湊 `e97dacae71f022385d97c8b9f166302b`，頭、尾、隨機 3 列全文相同。匯出檔含預約內容，只留在 VM（權限 700／600），不進 repo
 - [ ] 5 內部網域與 HTTPS 憑證到位（IT），公司電腦與手機都信任
 - [x] 6 網站放 VM、指向地端 Supabase，測試網址可用；`npm test` 全過（mock 從 `index.html` 抽網址）——2026-11-09：測試網址 `http://10.10.2.96/`（VM 上 nginx 容器 `gama-site`，port 80，`unless-stopped`）。repo 的 `index.html` 不改、仍指雲端；`scripts/deploy-site.sh` 部署 HEAD 時才把 `SUPABASE_URL`／`SUPABASE_ANON_KEY` 換成地端（金鑰從 VM `.env` 讀），分頁標題與頁首加「【VM 測試站】」，任一替換沒剛好命中就停。opus 驗收 agent 用 Playwright 實測（DOM＋DB 級）：console 0 error；Supabase 請求 14 個全打 `10.10.2.96:8000`、supabase.co 0 個；Realtime 收到 INSERT／UPDATE／DELETE；週表 11/09–11/15 共 9 列＝DB 9 筆；UI 新增、改標題、刪除後 DB 一致；UI 重疊預約被擋；繞過前端 POST 重疊回 HTTP 400／23P01、背靠背 201；收尾 DB 1761 筆、全表雜湊與第 4 條相同、測試資料殘留 0。標題第一次驗沒過（`index.html:3457` 載入後用 i18n 蓋掉 `<title>`），改 deploy 腳本一併替換 `index.html:2806,3114` 的 `app.title` 後重驗，中英的分頁標題與 h1 都含字樣。`npm test` 91 passed。發現一個既有 M（23P01 提示被蓋掉），列進「未修的 M／L 清單」。未驗（屬第 5、7 條）：桌面通知（http 非安全連線，預期不能用）、雙分頁同時送出、Supabase 停掉時的錯誤、手機寬度
-- [ ] 7 測試網址上跑完 README「切換後驗收清單」全部條目（含雙分頁防撞、Realtime、桌面通知、Supabase 停掉時顯示錯誤）
+- [ ] 7 測試網址上跑完 README「切換後驗收清單」全部條目（含雙分頁防撞、Realtime、桌面通知、Supabase 停掉時顯示錯誤）——2026-11-09 進度：不需 HTTPS 的 8 項由 opus 驗收 agent（Playwright）實測全 PASS：雙分頁同時送出 ×3 每次 DB 只 1 筆（2 次由資料庫 23P01 擋、1 次前端擋）；Realtime 跨分頁新增／修改／刪除自動更新；斷線（`page.route` 擋 `:8000`，載入時與載入後）與真的 `docker stop supabase-rest`（503）都顯示錯誤、沒寫入、沒假裝成功，`start` 後 healthy、資料正常；一鍵複製（http 走 `execCommand` 備援）內容正確；節日月檢視正常、擋 jsdelivr 後會議仍可見可點開；中英切換後可新增；375×812 無整頁溢出、可新增刪除；示範影片 2 支與介紹頁都 200、影片實際播放。收尾 DB 1761 筆、雜湊不變、殘留 0。**剩**：桌面通知（等第 5 條 HTTPS）、真手機連公司 Wi-Fi（要使用者用手機開 `http://10.10.2.96/`）。另未測週期預約、從我的行事曆彈窗新增。新發現 2 條列進「未修的 M／L 清單」。同日改由 VM 提供 supabase-js（使用者裁定，見 README 測試站段）後重驗：unpkg 請求 0、擋掉 unpkg 仍可新增刪除、Realtime 收到事件、REST 計數 1761、殘留 0
 - [ ] 8 VM 部署方式落地（取代 push main 自動部署），實跑一次部署
 - [ ] 9 正式切換：舊站停寫→最後一次匯出匯入→筆數核對→開新站→舊網址轉址；雲端保留當備援
 - [ ] 10 備份：每天自動匯出＋實際還原演練一次
@@ -124,7 +124,9 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 
 W-1106-vm-migration 驗收 6 的瀏覽器驗收（2026-11-09）發現的既有問題（正式站同一份程式碼，非遷移造成）：
 
-- [ ] M（既有，命中 L2 觸發 `saveBooking()`／`submitBooking()`）：側欄送出時若前端衝突檢查放行、被資料庫約束擋下（兩人同時送出的空窗），`index.html:4861` 先顯示 `error.slotTaken`「時段剛被預約」，回到呼叫端後 `index.html:7124` 立刻用 `error.allFailed`「請檢查網路或稍後再試」蓋掉，誤導使用者去查網路。資料沒寫入、沒假裝成功。重現：頁面裡把 `checkRecurringConflicts` 換成回傳空陣列後送出重疊預約（驗收 agent 腳本 `%TEMP%\w1106-verify\verify2.mjs`）。
+- [ ] M（既有，命中 L2 觸發 `saveBooking()`／`submitBooking()`）：側欄送出時若前端衝突檢查放行、被資料庫約束擋下（兩人同時送出的空窗），`index.html:4861` 先顯示 `error.slotTaken`「時段剛被預約」，回到呼叫端後 `index.html:7124` 立刻用 `error.allFailed`「請檢查網路或稍後再試」蓋掉，誤導使用者去查網路。資料沒寫入、沒假裝成功。重現：頁面裡把 `checkRecurringConflicts` 換成回傳空陣列後送出重疊預約（驗收 agent 腳本 `%TEMP%\w1106-verify\verify2.mjs`）。2026-11-09 驗收 7 的雙分頁同時送出 3 次裡重現 2 次，正式切換後最可能被同事回報。
+- [ ] M（遷移相關）：地端 `supabase-rest` 停掉時，自架閘道（Envoy）約 5 秒才回 503；這 5 秒週表整週顯示空白列、沒有載入中提示，同事可能以為本週沒預約。5 秒後會跳「Connection Test Failed」，不會假裝成功。證物 `%TEMP%\w1106-verify\v7-C2b-reload-2s.png`、`v7-C2b-reload-5s.png`。
+- [ ] L（既有）：連不上資料庫時的錯誤文字太技術（列出「Table 'bookings' does not exist / RLS policy misconfigured / check your Supabase setup」給一般同事看）。
 
 「我的行事曆顯示節日」第 1 輪驗收（2026-10-07；無 H、無風險類 finding；24 組版面矩陣無整頁溢出或日期／節日／會議點重疊）：
 

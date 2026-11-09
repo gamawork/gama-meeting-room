@@ -4,6 +4,7 @@
 # - 只部署已 commit 的 index.html 與 gama.ico（git archive HEAD），工作目錄的未 commit 改動不會上去。
 # - repo 的 index.html 一律保持指向雲端（push main 就是正式站）；部署到 VM 時才把
 #   SUPABASE_URL／SUPABASE_ANON_KEY 換成地端，金鑰從 VM 的 ~/supabase-project/.env 讀，不經過本機。
+# - supabase-js 部署時從 unpkg 下載（核對 sha256）放 VM 的 vendor/，頁面改從 VM 載入，不再依賴 unpkg。
 # - 分頁標題與頁首前加「【VM 測試站】」（<title> 與 i18n 的 app.title），避免同事以為是正式站。
 # - 網站由 VM 上的 nginx 容器（gama-site，port 80）提供，重開機自動起來。
 # 整個部署只開一條 ssh（之前短時間連太多條被擋過，見 README「VM 現況」）。
@@ -22,11 +23,24 @@ REV=$(git rev-parse --short HEAD)
 # 檔案用 base64 嵌進送到遠端的腳本，腳本與檔案走同一條 ssh 的 stdin
 TAR_B64=$(git archive --format=tar HEAD index.html gama.ico | base64 -w0)
 
-{ echo "REV='$REV'; LOCAL_SUPABASE_URL='$LOCAL_SUPABASE_URL'; TAR_B64='$TAR_B64'"; cat <<'REMOTE'
+# supabase-js 改由 VM 提供，不從 unpkg 載入（使用者 2026-11-09）。版本與指紋寫死：
+# index.html 換版本時這裡一起改，下載到的檔指紋不符就停。
+SDK_URL=https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js
+SDK_FILE=vendor/supabase-js-2.39.0.js
+SDK_SHA256=e445c2e8479bac47a44867ebf284250c6d1372dc85b2e7910c3f376e26921c54
+HEAD_HTML=$(git show HEAD:index.html)   # 不直接接 grep -q：提早結束會讓 git show 收到 SIGPIPE，pipefail 下誤判失敗
+grep -qF "src=\"$SDK_URL\"" <<< "$HEAD_HTML" || { echo "停止：HEAD 的 index.html 找不到 $SDK_URL（換版本了？請更新本腳本的 SDK_*）"; exit 1; }
+SDK_B64=$(curl -fsSL --max-time 60 "$SDK_URL" | base64 -w0)
+[ "$(printf '%s' "$SDK_B64" | base64 -d | sha256sum | cut -d' ' -f1)" = "$SDK_SHA256" ] || { echo "停止：下載的 supabase-js 指紋不符"; exit 1; }
+
+{ echo "REV='$REV'; LOCAL_SUPABASE_URL='$LOCAL_SUPABASE_URL'; TAR_B64='$TAR_B64'; SDK_B64='$SDK_B64'; SDK_URL='$SDK_URL'; SDK_FILE='$SDK_FILE'; SDK_SHA256='$SDK_SHA256'"; cat <<'REMOTE'
 set -euo pipefail
 NEW="$HOME/site-new"; LIVE="$HOME/site"
 rm -rf "$NEW"; mkdir -p "$NEW"
 printf '%s' "$TAR_B64" | base64 -d | tar xf - -C "$NEW"; unset TAR_B64
+mkdir -p "$NEW/vendor"
+printf '%s' "$SDK_B64" | base64 -d > "$NEW/$SDK_FILE"; unset SDK_B64
+[ "$(sha256sum "$NEW/$SDK_FILE" | cut -d' ' -f1)" = "$SDK_SHA256" ] || { echo "停止：VM 上的 supabase-js 指紋不符"; exit 1; }
 
 ANON_KEY=$(grep -E '^ANON_KEY=' "$HOME/supabase-project/.env" | cut -d= -f2-)
 [ -n "$ANON_KEY" ] || { echo "停止：VM .env 讀不到 ANON_KEY"; exit 1; }
@@ -37,6 +51,7 @@ sed -i -E \
   -e "s|^([[:space:]]*const SUPABASE_ANON_KEY = )'[^']*';|\1'$ANON_KEY';|" \
   -e "0,/<title>/s|<title>|<title>【VM 測試站】|" \
   -e "s|'app.title': '|'app.title': '【VM 測試站】|" \
+  -e "s|src=\"$SDK_URL\"|src=\"./$SDK_FILE\"|" \
   "$F"
 
 # 替換一定要剛好命中，否則停（index.html 改過寫法時會在這裡發現，不會默默連到雲端）
@@ -46,13 +61,15 @@ sed -i -E \
 grep -q '<title>【VM 測試站】' "$F" || { echo "停止：標題沒加上測試站字樣"; exit 1; }
 # 載入後 document.title 與頁首 h1 改由 i18n 的 app.title（中、英各一）決定，兩處都要加
 [ "$(grep -c "'app.title': '【VM 測試站】" "$F")" = 2 ] || { echo "停止：i18n app.title 沒有剛好 2 處加上測試站字樣"; exit 1; }
+[ "$(grep -c "src=\"./$SDK_FILE\"" "$F")" = 1 ] || { echo "停止：supabase-js 載入網址沒換成 VM 上的檔案"; exit 1; }
+! grep -q 'unpkg\.com' "$F" || { echo "停止：替換後仍有 unpkg.com"; exit 1; }
 echo "$REV" > "$NEW/version.txt"
 chmod -R a+rX "$NEW"
 
 # 換上新版：舊的留一份 site-prev
 rm -rf "$HOME/site-prev"; [ -d "$LIVE" ] && mv "$LIVE" "$HOME/site-prev"; mv "$NEW" "$LIVE"
 
-if ! docker ps -a --format '{{.Names}}' | grep -qx gama-site; then
+if [ -z "$(docker ps -aq --filter 'name=^gama-site$')" ]; then
   docker run -d --name gama-site --restart unless-stopped -p 80:80 \
     -v "$LIVE":/usr/share/nginx/html:ro nginx:alpine > /dev/null
 else
@@ -61,6 +78,7 @@ fi
 
 sleep 2
 echo "部署版本：$(curl -fsS http://localhost/version.txt)"
+echo "supabase-js 由 VM 提供（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/$SDK_FILE")"
 curl -fsS http://localhost/ | grep -o '<title>[^<]*</title>'
 echo "地端 API 用公開金鑰讀 bookings（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "$LOCAL_SUPABASE_URL/rest/v1/bookings?select=id&limit=1")"
 echo "CORS 預檢（應回 Access-Control-Allow-Origin）："
