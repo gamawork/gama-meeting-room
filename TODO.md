@@ -112,7 +112,7 @@ UI 參考 [docs/ideas/scale-zoom-views/](docs/ideas/scale-zoom-views/README.md) 
 - [x] 8 VM 部署方式落地（取代 push main 自動部署），實跑一次部署——2026-11-09：使用者選「push 後手動部署」：commit → push main → 本機跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`（正式切換後加 `--prod`，不顯示測試站字樣）。腳本在 HEAD 不等於 origin/main 時停下、不連 VM（實跑：未 push 時印「先 push 再部署」、exit 1）；未知參數印用法。push 後實跑一次：VM `version.txt` 為 `b53eb6a`／`test`，與 origin/main 相同；supabase-js 由 VM 回 200、API 讀取 200、CORS 放行。退回上一版的做法寫在 `docs/ideas/vm-migration/README.md`「部署方式」。`--prod` 模式只核對過程式碼，正式切換（第 9 條）時才實跑
 - [ ] 9 正式切換：舊站停寫→最後一次匯出匯入→筆數核對→開新站→舊網址轉址；雲端保留當備援
 - [x] 10 備份：每天自動匯出＋實際還原演練一次——2026-11-09：VM `gama` 的 crontab 每天 02:30 跑 `~/ops/backup-db.sh`（repo `scripts/backup-db.sh`），備份到 VM `~/backups/YYYYMMDD-HHMMSS/`（pg_dump 自訂格式含結構、權限、RLS 與資料，約 80 KB），紀錄寫 `~/backups/backup.log`。只留最新 7 份（使用者 2026-11-09），新備份成功並核對過才刪最舊的。實測：連跑 9 次剩 7 份、刪掉最舊 2 份；故意讓備份失敗（容器名錯）時 7 份一份都沒少、沒殘留暫存資料夾；用排程同樣的精簡環境（`env -i`，PATH 只有 `/usr/bin:/bin`）跑一次成功。還原演練 `scripts/restore-drill.sh`：還原到暫存資料庫 `restore_drill`，與備份當下核對值「資料一致」（1761 筆、全表雜湊 `e97dacae…` 同第 4 條），`bookings_no_overlap` 約束 1、RLS 啟用、政策 4 條、anon 權限都在，演練完暫存庫已刪。備份只在 VM 本機：VM 整台壞掉會一起沒有，之後 IT 給公司內存放位置再加一份複製（見待決）。第一次真正由排程觸發是 2026-11-10 02:30，下次接手看一眼 `backup.log`
-- [ ] 11 正本同步：`CLAUDE.md`（部署、Supabase 段）、`SPEC.md`、`docs/使用情境.md`
+- [ ] 11 正本同步：`CLAUDE.md`（部署、Supabase 段）、`SPEC.md`、`docs/使用情境.md`——2026-11-09 進度：已確定的部署與備份做法寫進 `CLAUDE.md`「VM 部署」與「地端自架 Supabase 與每日備份」，`SPEC.md` 索引加這兩節與 README，README 的部署、備份步驟改指向 `CLAUDE.md`（不留兩份）。**剩**（都要等第 9 條正式切換才寫得對）：`docs/使用情境.md` 第 2、5 行的 GitHub Pages／雲端 Supabase；`CLAUDE.md` 部署表把 VM 改成正式站、GitHub Pages 改成轉址或停用；「驗證等級」的「誰用、錯了的代價」行；「Claude 無法直接下 DDL」對地端庫要不要改（Claude 有 VM 金鑰、可 `docker exec`），切換時問使用者
 
 ## 構想（未決）
 
