@@ -7648,7 +7648,8 @@ function appendMessageDetails(baseMessage, detailLines = []) {
     return extras.length ? `${baseMessage}<br><br>${extras.join('<br>')}` : baseMessage;
 }
 
-async function copyModalContent(text, okKey = 'notify.modalCopied') {
+// notify：提示用哪個；疊在 .mycal-overlay（z-index 5000）上的彈窗要傳 mycalToast（6000），showNotification（2000）會被遮罩蓋住
+async function copyModalContent(text, okKey = 'notify.modalCopied', notify = showNotification) {
     try {
         if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(text);
@@ -7664,10 +7665,10 @@ async function copyModalContent(text, okKey = 'notify.modalCopied') {
             textArea.remove();
         }
 
-        showNotification(t(okKey), 'success');
+        notify(t(okKey), 'success');
     } catch (error) {
         console.error('複製失敗:', error);
-        showNotification(t('notify.modalCopyFail'), 'error');
+        notify(t('notify.modalCopyFail'), 'error');
     }
 }
 
@@ -8358,7 +8359,7 @@ function mycalInitHelpApi() {
     });
     modal.addEventListener('click', e => {
         const btn = e.target?.closest?.('.help-api-copy');
-        if (btn) copyModalContent(btn.previousElementSibling.textContent, 'notify.copied');
+        if (btn) copyModalContent(btn.previousElementSibling.textContent, 'notify.copied', mycalToast);
     });
 }
 function mycalBindNotifyBtn() {

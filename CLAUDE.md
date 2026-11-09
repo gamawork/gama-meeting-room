@@ -161,6 +161,9 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 
 - 腳本只上傳已 commit 的 `index.html`、`gama.ico`；到 VM 上才把 Supabase 網址換成 `window.location.origin`、金鑰換成地端（金鑰從 VM 的 `~/supabase-project/.env` 讀）。
 - 網頁與 API 同網址（使用者 2026-11-09）：nginx 設定正本是 `docs/ideas/vm-migration/scripts/nginx-site.conf`，部署時放 VM `~/site-conf/default.conf`，把 `/rest/v1`、`/realtime/v1`（WebSocket）轉給 port 8000，其他給靜態網頁；用 IP 或網域打開都能用，之後開 HTTPS 只要一張憑證、不會被瀏覽器擋 http API。每次部署都重建 `gama-site` 容器（設定檔先用暫存容器 `nginx -t` 檢查，沒過就停）。8000 直連仍保留。
+- 說明彈窗的「串接 API」段（使用者 2026-11-09）：右上角 i 鈕的 `#helpModal` 裡中英各一份 `.help-api`，教同事用 curl 讀、新增、修改、刪除 `bookings`，金鑰直接顯示＋複製鈕。
+  只在 `SUPABASE_URL === window.location.origin` 時顯示（`mycalInitHelpApi()`），所以靠上面部署腳本的網址替換：VM 版看得到，GitHub Pages（連雲端）看不到。網址、金鑰、會議室清單（取 `#meetingRoom` 選項）都在網頁上即時帶入，換金鑰或加會議室不用改說明。
+  範例裡的中文一律走 `<<'EOF'` 標準輸入、網址裡的中文會議室用編碼後寫法：Windows（繁中、代碼頁 950）的 Git Bash 會把參數裡的中文轉成 Big5，PostgREST 回「Empty or invalid json」（2026-11-09 實測）。改範例後要在 VM 上照原文實跑一次。
   **repo 的 `index.html` 一律指雲端，不要為了 VM 改它**：正式切換前 push main 就是更新 GitHub Pages 正式站。
 - supabase-js 由 VM 提供：腳本從 unpkg 下載固定版本、核對 sha256 後放 `~/site/vendor/`。換 `index.html` 的 supabase-js 版本時，要同步改腳本裡的 `SDK_*`（沒改腳本會停下）。節日資料仍從 jsdelivr 載入（失敗有降級）。
 - 連 VM：帳號 `gama`、金鑰 `~/.ssh/id_ed25519_gama_vm`。一次只開一條 ssh；22 port 偶爾被拒約 1 分鐘、原因未知（見 `docs/ideas/vm-migration/README.md`「VM 現況」）。

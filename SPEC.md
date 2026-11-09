@@ -7,7 +7,7 @@
 | 子檔 | 管什麼 | 狀態 |
 |---|---|---|
 | `CLAUDE.md`「Supabase」「Realtime」「時段防撞（三層）」節 | 資料庫欄位（`bookings.attendees`）、`supabase_realtime` publication 前提、防撞三層合約與建立 SQL（`bookings_no_overlap`） | 現行，已套用到正式資料庫（見各節日期） |
-| `CLAUDE.md`「部署」節 | GitHub Pages／Cloudflare 介紹頁的部署方式，以及系統依賴介紹頁影片與網址的合約（四個 `data-video`、`.help-launch-link`）；「VM 部署」小節：內部 VM 的手動部署（push 後跑 `deploy-site.sh`）與退回上一版 | GitHub Pages／Cloudflare 現行；VM 為測試站（2026-11-09 起），正式切換後取代 GitHub Pages |
+| `CLAUDE.md`「部署」節 | GitHub Pages／Cloudflare 介紹頁的部署方式，以及系統依賴介紹頁影片與網址的合約（四個 `data-video`、`.help-launch-link`）；「VM 部署」小節：內部 VM 的手動部署（push 後跑 `deploy-site.sh`）與退回上一版、網頁與 API 同網址（nginx）、說明彈窗「串接 API」段只在 VM 版顯示的合約 | GitHub Pages／Cloudflare 現行；VM 為測試站（2026-11-09 起），正式切換後取代 GitHub Pages |
 | `CLAUDE.md`「地端自架 Supabase 與每日備份」節 | VM 上自架 Supabase 的位置與連法、每日備份（02:30、留 7 份）、還原演練與正式還原做法 | 試跑中（2026-11-09 起）；正式資料仍在雲端，切換前以上方「Supabase」節為準 |
 | `docs/ideas/vm-migration/README.md` | 搬內部 VM＋自架 Supabase 的規劃、VM 現況、安裝與試搬紀錄、切換後驗收清單（W-1106-vm-migration） | 進行中；部署與備份的做法以 `CLAUDE.md` 為正本 |
 | `docs/使用情境.md` | 專案層使用情境（對象、環境、錯了的代價、全站必驗）與已完成功能的情境卡（目前有「我的行事曆顯示節日」：月／週／日顯示節日、不受只看我的／全部影響、CDN 失敗不影響會議） | 使用者確認 2026-10-07，現行 |
