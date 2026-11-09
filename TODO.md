@@ -12,18 +12,18 @@
 **已排除**：單元測試框架不用再建（W-0925-unit-test-framework 已完成、封存於 `archive/TODO-封存.md`）
 
 ## 下一步入口：搬內部 VM＋自架 Supabase（分支 main｜2026-11-09）
-**狀態**：進行中（ssh 2026-11-09 已恢復）；第 5 條待 IT：內部網域與 HTTPS 憑證
+**狀態**：卡住：VM ssh 2026-11-09 10:04 又被拒（第四次，網站與 API 正常）；第 5 條待 IT：CDN、內部網域與 HTTPS
 **目標**：系統與資料庫搬到內部 VM，並行試跑後切換，不掉資料、不重複預約
 **已完成**：VM 唯讀盤點；實測公開金鑰可讀、寫、改、刪 `bookings`；裁定 D-4；Docker＋精簡版自架 Supabase 跑起來（驗收 1、2）；雲端結構匯出並在地端重建、逐項比對一致（驗收 3）；試搬資料 1761 筆、核對值一致（驗收 4）；測試站 `http://10.10.2.96/` 上線、瀏覽器驗收通過（驗收 6）
 **審查輪數**：不適用（尚未改程式碼）
-**下一步**：W-1106-vm-migration 驗收第 7 條只剩桌面通知（等第 5 條 HTTPS，IT）與真手機連公司 Wi-Fi（使用者）；不卡 IT 的下一條是第 8 條（VM 部署方式）。備份（第 10 條）已上線，接手先看 VM `~/backups/backup.log` 有沒有 11-10 02:30 的「成功」。改 `index.html` 後要重跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh` 測試站才會更新。地端 `bookings` 現在是 2026-11-09 08:59 的雲端快照（1761 筆），試跑期間寫入的測試資料不會回雲端；正式切換（第 9 條）前要先清空地端再跑 `import-local-data.sh`（腳本只接受空表）
+**下一步**：W-1106-vm-migration 第 8 條：部署腳本已改好（只部署已 push 的版本、`--prod` 正式模式），2026-11-09 已 push main；ssh 恢復後跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`，輸出版本第一行＝origin/main 即可打勾，順手刪 VM 上 3 個空資料夾（使用者已同意）。第 7 條只剩桌面通知（等第 5 條 HTTPS，IT）與真手機連公司 Wi-Fi（使用者自測）。備份（第 10 條）已上線，接手先看 VM `~/backups/backup.log` 有沒有 11-10 02:30 的「成功」。改 `index.html` 後要重跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh` 測試站才會更新。地端 `bookings` 現在是 2026-11-09 08:59 的雲端快照（1761 筆），試跑期間寫入的測試資料不會回雲端；正式切換（第 9 條）前要先清空地端再跑 `import-local-data.sh`（腳本只接受空表）
 **裁定**：D-3、D-4；記憶體不足先照用、精簡服務（使用者 2026-11-06，寫在 README「VM 現況」）
 **關鍵位置**：`docs/ideas/vm-migration/README.md`「VM 現況」（含連 VM 會被擋的注意事項）「資料庫存取現況」；`docs/ideas/vm-migration/scripts/`；`index.html:3528-3529`（Supabase 網址與金鑰）
 **已排除**：先做方案 1（只搬網站）：一樣要先解決 HTTPS，省不到工（D-4）
 
 ## 待決
 
-- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；（已定：使用者 2026-11-09 只開內網、API 可寫入，不另加存取控制；IT 會掛 CDN，用哪家未問）；VM 上 `~/migration/` 三個密碼打錯留下的空資料夾（`cloud-20261106-1743`、`cloud-data-20261109-0857`、`cloud-data-20261109-0858`，裡面 0 個檔）要不要刪；VM ssh 11/6 晚上被拒的原因要不要找 IT 查（11/9 已恢復）；跟 IT 要一個公司內的存放位置（另一台機器或 NAS），每日備份再複製一份過去（目前只在 VM 本機）；n8n（雲端 Zeabur `ryanchen.zeabur.app`）有 2 支 active workflow 直接讀雲端 `bookings`（`zJ1bKTt83XOfo8ZR` 會前 Telegram 提醒、`97VhYXZVdVaZvNgv` 平日 08:30 日待辦），Zeabur 連不到內網 `10.10.2.96`——正式切換前要選：IT 開對外入口（要先有 HTTPS）、n8n 搬進內網、或這兩支改由 VM 自己發提醒；未解決前切換會讓提醒讀到停更的雲端舊資料（2026-11-09 唯讀盤點）｜2026-11-09
+- W-1106-vm-migration｜IT 給內部網域與 HTTPS 憑證；（已定：使用者 2026-11-09 只開內網、API 可寫入，不另加存取控制；IT 會掛 CDN，用哪家未問）；VM 上 `~/migration/` 三個密碼打錯留下的空資料夾（`cloud-20261106-1743`、`cloud-data-20261109-0857`、`cloud-data-20261109-0858`，裡面 0 個檔）使用者 11-09 同意刪，ssh 被拒還沒刪；VM ssh 被拒要請 IT 查：11-06 三次、11-09 10:04 第四次（距上次 ssh 約 25 分鐘，網站 80 回 200、API 8000 回 401 都正常，只有 22 回 Connection refused）；跟 IT 要一個公司內的存放位置（另一台機器或 NAS），每日備份再複製一份過去（目前只在 VM 本機）；n8n（雲端 Zeabur `ryanchen.zeabur.app`）有 2 支 active workflow 直接讀雲端 `bookings`（`zJ1bKTt83XOfo8ZR` 會前 Telegram 提醒、`97VhYXZVdVaZvNgv` 平日 08:30 日待辦），Zeabur 連不到內網 `10.10.2.96`——已實測同一段讀取程式從內網打 VM 結果與雲端一致（2026-11-09）；使用者 2026-11-09：n8n 不動、不自架。正式切換前仍要決定這兩支怎麼辦（VM 主動把會議資料推給 n8n webhook，或接受切換後提醒停用）；未處理就切換，提醒會讀到停更的雲端舊資料｜2026-11-09
 - W-0927-my-calendar｜階段 2 第 3 步「眼睛看過」要使用者確認；第 4 步延後的 M／L 排順序（含 R3-2 共用 showModal 不走 pushState 要不要補、F7 舊資料主辦人 `HH`、`景涵` 清理，皆見「未修的 M／L 清單」；另含已封存 W-1007-mycal-holiday 的 320px 聖誕節直排（M）、跨年斷言弱（L），見同清單開頭）｜
 
 ## 進行中工作項
