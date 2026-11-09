@@ -1,0 +1,2 @@
+# shell 腳本會送到 VM（Linux）執行，Windows 換行會壞掉
+*.sh text eol=lf
