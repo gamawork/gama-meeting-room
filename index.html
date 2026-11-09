@@ -8365,14 +8365,17 @@ function mycalInitHelpApi() {
         sec.hidden = false;
     });
     // 「全部複製」：依畫面上該語言那份 .help-api 當下的 DOM 組成純文字（程式碼區塊用 ``` 包起來），不含任何按鈕文字
-    const collectApiText = sec => {
+    const collectApiText = root => {
         const out = [];
-        Array.from(sec.children).forEach(el => {
+        Array.from(root.children).forEach(el => {
             if (el.tagName === 'BUTTON') return;
             if (el.classList.contains('help-api-code')) {
                 out.push('```\n' + el.querySelector('pre').textContent.replace(/\s+$/, '') + '\n```');
             } else if (el.tagName === 'UL' || el.tagName === 'OL') {
                 out.push(Array.from(el.children).map(li => '- ' + li.textContent.trim()).join('\n'));
+            } else if (el.tagName === 'DIV') {
+                const t = collectApiText(el);
+                if (t) out.push(t);
             } else {
                 const t = el.textContent.trim();
                 if (t) out.push(t);
