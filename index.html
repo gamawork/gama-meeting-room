@@ -2336,6 +2336,21 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
 .help-tip { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: #f8fafc; color: #475569; font-size: 13px; line-height: 1.55; }
 .help-tip p { margin: 0; font-weight: 700; color: #334155; }
 .help-tip p + ul, .help-tip ul + p { margin-top: 6px; }
+/* 串接 API 說明（只在 VM 版顯示） */
+.help-api-lead { margin: 0 0 4px; line-height: 1.55; }
+.help-api-label { margin: 12px 0 6px; font-weight: 700; color: #334155; }
+.help-api-note { margin: 6px 0 0; font-size: 13px; line-height: 1.55; color: #475569; }
+.help-api code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12.5px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; }
+.help-api-code { position: relative; }
+.help-api-code pre {
+    margin: 0; padding: 10px 70px 10px 12px; border-radius: 8px; background: #0f172a; color: #e2e8f0;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre-wrap; word-break: break-all;
+}
+.help-api-copy {
+    position: absolute; top: 6px; right: 6px; border: 1px solid #475569; background: #1e293b; color: #e2e8f0;
+    border-radius: 6px; padding: 2px 10px; font: inherit; font-size: 12px; cursor: pointer;
+}
+.help-api-copy:hover { background: #334155; }
 .mycal-detail-actions .mycal-detail-copytext svg { width: 14px; height: 14px; }
 /* 詳情彈窗是 mycal-sm（矮），下拉選單往下開容易被 .mycal-dialog 的 overflow:auto 裁掉，改往上開 */
 .mycal-detail-actions .calendar-menu { top: auto; bottom: 100%; }
@@ -2682,6 +2697,61 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                         </ul>
                     </div>
                 </section>
+                <!-- 串接 API：只在 VM 版（網頁與 API 同網址）顯示，網址、金鑰、會議室清單由 mycalInitHelpApi() 帶入 -->
+                <section class="help-section help-api" hidden>
+                    <h3>🔌 串接 API：用程式讀寫預約</h3>
+                    <p class="help-api-lead">給要寫程式或自動化工具串會議室資料的人。預約存在 <code>bookings</code> 這張表，用一般的 HTTP 請求就能讀取、新增、修改、刪除，系統畫面會即時更新。</p>
+                    <p class="help-api-label">1. 先設定兩個變數（網址與金鑰已自動帶入）</p>
+                    <div class="help-api-code"><pre data-api-setup></pre><button type="button" class="help-api-copy">複製</button></div>
+                    <p class="help-api-note">每個請求都要帶 <code>apikey</code> 與 <code>Authorization: Bearer</code> 兩個標頭，值都是金鑰。以下範例在 Mac、Linux 或 Windows 的 Git Bash 執行。</p>
+                    <p class="help-api-label">2. 欄位</p>
+                    <ul>
+                        <li><code>id</code>：自動產生，修改、刪除時用它指定是哪一筆</li>
+                        <li><code>date</code>：日期，例如 <code>2026-11-10</code></li>
+                        <li><code>room</code>：會議室，寫法要跟系統完全一樣：<span data-api-rooms data-sep="、"></span></li>
+                        <li><code>start_time</code>／<code>end_time</code>：24 小時制，例如 <code>14:00</code>。系統畫面 30 分鐘一格，請用整點或半點</li>
+                        <li><code>title</code>：會議名稱；<code>organizer</code>：主辦人</li>
+                        <li><code>attendees</code>：與會者，選填，多位用逗號分隔</li>
+                        <li><code>created_at</code>：建立時間，自動產生</li>
+                    </ul>
+                    <p class="help-api-label">3. 讀取</p>
+                    <div class="help-api-code"><pre># 某一天的預約，依開始時間排序
+curl "$BASE/rest/v1/bookings?date=eq.2026-11-10&amp;order=start_time" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+
+# 一段日期內、某一間會議室
+curl "$BASE/rest/v1/bookings?date=gte.2026-11-10&amp;date=lte.2026-11-16&amp;room=eq.301" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+
+# 會議室名稱是中文時，讓 curl 幫忙編碼
+curl -G "$BASE/rest/v1/bookings" --data-urlencode "room=eq.茶水間" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"</pre><button type="button" class="help-api-copy">複製</button></div>
+                    <p class="help-api-label">4. 新增</p>
+                    <div class="help-api-code"><pre>curl -X POST "$BASE/rest/v1/bookings" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" -H "Prefer: return=representation" \
+  -d '{"date":"2026-11-10","room":"301","start_time":"14:00","end_time":"15:00","title":"週會","organizer":"王小明"}'</pre><button type="button" class="help-api-copy">複製</button></div>
+                    <p class="help-api-note">成功會回傳新建的那筆（含 <code>id</code>）。同一間會議室時段重疊會被資料庫擋下、不會寫入，回傳錯誤碼 <code>23P01</code>；前後接續（10:00–11:00 接 11:00–12:00）可以。</p>
+                    <p class="help-api-label">5. 修改、刪除（把 <code>BOOKING_ID</code> 換成那筆的 id）</p>
+                    <div class="help-api-code"><pre># 修改：只送要改的欄位
+curl -X PATCH "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"週會（改時間）","start_time":"14:30","end_time":"15:30"}'
+
+# 刪除
+curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"</pre><button type="button" class="help-api-copy">複製</button></div>
+                    <div class="help-tip">
+                        <p>注意</p>
+                        <ul>
+                            <li>修改、刪除一定要帶 <code>id=eq.…</code>。沒有條件會改到或刪掉<b>全部</b>預約。</li>
+                            <li>只改、只刪自己建的預約。這裡不用登入，系統分不出是誰改的。</li>
+                            <li>改時間或會議室時，一樣會被重疊檢查擋下。</li>
+                            <li>週期預約是每一次會議各存一筆，要改整個系列得逐筆改。</li>
+                        </ul>
+                    </div>
+                </section>
             </div>
             <div class="help-en">
                 <section class="help-section">
@@ -2717,6 +2787,60 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                         <ul>
                             <li><b>Windows</b>: Go to Settings → System → Notifications. Make sure notifications are on, your browser is allowed, and Do not disturb is off.</li>
                             <li><b>Mac</b>: macOS may ask again the first time a notification appears. Choose Allow. If you declined before, go to System Settings → Notifications, find your browser (e.g. Google Chrome or Safari), turn on Allow notifications, and turn off Focus.</li>
+                        </ul>
+                    </div>
+                </section>
+                <section class="help-section help-api" hidden>
+                    <h3>🔌 API: read and write bookings from code</h3>
+                    <p class="help-api-lead">For anyone connecting scripts or automation tools to room bookings. Bookings live in the <code>bookings</code> table. Plain HTTP requests can read, add, change and delete them, and the system updates live.</p>
+                    <p class="help-api-label">1. Set two variables first (address and key are filled in for you)</p>
+                    <div class="help-api-code"><pre data-api-setup></pre><button type="button" class="help-api-copy">Copy</button></div>
+                    <p class="help-api-note">Every request needs both the <code>apikey</code> and <code>Authorization: Bearer</code> headers, each set to the key. The examples run on Mac, Linux, or Git Bash on Windows.</p>
+                    <p class="help-api-label">2. Fields</p>
+                    <ul>
+                        <li><code>id</code>: generated automatically; use it to pick the booking to change or delete</li>
+                        <li><code>date</code>: date, e.g. <code>2026-11-10</code></li>
+                        <li><code>room</code>: room, spelled exactly as the system stores it: <span data-api-rooms data-sep=", "></span></li>
+                        <li><code>start_time</code> / <code>end_time</code>: 24-hour, e.g. <code>14:00</code>. The schedule uses 30-minute slots, so stick to :00 or :30</li>
+                        <li><code>title</code>: meeting name; <code>organizer</code>: organizer</li>
+                        <li><code>attendees</code>: attendees, optional, comma-separated</li>
+                        <li><code>created_at</code>: creation time, generated automatically</li>
+                    </ul>
+                    <p class="help-api-label">3. Read</p>
+                    <div class="help-api-code"><pre># Bookings on one day, sorted by start time
+curl "$BASE/rest/v1/bookings?date=eq.2026-11-10&amp;order=start_time" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+
+# A date range for one room
+curl "$BASE/rest/v1/bookings?date=gte.2026-11-10&amp;date=lte.2026-11-16&amp;room=eq.301" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
+
+# Room names in Chinese: let curl encode them
+curl -G "$BASE/rest/v1/bookings" --data-urlencode "room=eq.茶水間" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"</pre><button type="button" class="help-api-copy">Copy</button></div>
+                    <p class="help-api-label">4. Add</p>
+                    <div class="help-api-code"><pre>curl -X POST "$BASE/rest/v1/bookings" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" -H "Prefer: return=representation" \
+  -d '{"date":"2026-11-10","room":"301","start_time":"14:00","end_time":"15:00","title":"Weekly sync","organizer":"Alex"}'</pre><button type="button" class="help-api-copy">Copy</button></div>
+                    <p class="help-api-note">On success you get the new booking back (with its <code>id</code>). Overlapping times in the same room are rejected by the database with error code <code>23P01</code> and nothing is saved. Back-to-back bookings (10:00–11:00 then 11:00–12:00) are fine.</p>
+                    <p class="help-api-label">5. Change or delete (replace <code>BOOKING_ID</code> with the booking's id)</p>
+                    <div class="help-api-code"><pre># Change: send only the fields you want to change
+curl -X PATCH "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Weekly sync (moved)","start_time":"14:30","end_time":"15:30"}'
+
+# Delete
+curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
+  -H "apikey: $KEY" -H "Authorization: Bearer $KEY"</pre><button type="button" class="help-api-copy">Copy</button></div>
+                    <div class="help-tip">
+                        <p>Be careful</p>
+                        <ul>
+                            <li>Always include <code>id=eq.…</code> when changing or deleting. Without it, the request changes or deletes <b>every</b> booking.</li>
+                            <li>Only change or delete bookings you created. There is no sign-in here, so the system can't tell who made a change.</li>
+                            <li>Changing the time or room is checked for overlaps too.</li>
+                            <li>Each occurrence of a recurring booking is stored separately, so changing a whole series means changing each one.</li>
                         </ul>
                     </div>
                 </section>
@@ -2949,6 +3073,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                 'notify.fallbackIcs': 'Fell back to single booking and downloaded ICS file',
                 'notify.modalCopied': 'Window content copied',
                 'notify.modalCopyFail': 'Copy failed, please try again',
+                'notify.copied': 'Copied',
                 'notify.fillForm': 'Please fill in booking details',
                 'status.connecting': '🔄 Connecting...',
                 'status.connected': '✅ Connected',
@@ -3257,6 +3382,7 @@ html[lang="en"] .help-zh, html:not([lang="en"]) .help-en { display: none; }
                 'notify.fallbackIcs': '已回退為單次預約模式並下載 ICS 檔案',
                 'notify.modalCopied': '已複製視窗內容',
                 'notify.modalCopyFail': '複製失敗，請稍後再試',
+                'notify.copied': '已複製',
                 'notify.fillForm': '請填寫預約資訊',
                 'status.connecting': '🔄 連接中...',
                 'status.connected': '✅ 已連接',
@@ -7512,7 +7638,7 @@ function appendMessageDetails(baseMessage, detailLines = []) {
     return extras.length ? `${baseMessage}<br><br>${extras.join('<br>')}` : baseMessage;
 }
 
-async function copyModalContent(text) {
+async function copyModalContent(text, okKey = 'notify.modalCopied') {
     try {
         if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(text);
@@ -7528,7 +7654,7 @@ async function copyModalContent(text) {
             textArea.remove();
         }
 
-        showNotification(t('notify.modalCopied'), 'success');
+        showNotification(t(okKey), 'success');
     } catch (error) {
         console.error('複製失敗:', error);
         showNotification(t('notify.modalCopyFail'), 'error');
@@ -8206,6 +8332,24 @@ async function mycalToggleNotify() {
         if (perm === 'granted') mycalFireNotification({ title: t('mycal.notify.testTitle'), body: t('mycal.notify.testBody'), tag: 'mycal-notify-test' }, null);
     } catch (e) { /* 極舊瀏覽器可能不支援 Promise 形式，略過 */ }
     mycalRenderNotifyBtn();
+}
+// 說明彈窗的「串接 API」段：只在網頁與 API 同網址時顯示（VM 版部署時把 SUPABASE_URL 換成 window.location.origin），
+// GitHub Pages 連雲端、不同網址，就維持隱藏。網址與金鑰取網頁當下用的那組，會議室清單取預約表單的選項。
+function mycalInitHelpApi() {
+    if (SUPABASE_URL !== window.location.origin) return;
+    const setup = `BASE=${SUPABASE_URL}\nKEY=${SUPABASE_ANON_KEY}`;
+    const rooms = Array.from(document.querySelectorAll('#meetingRoom option')).map(o => o.value).filter(Boolean);
+    const modal = document.getElementById('helpModal');
+    modal.querySelectorAll('.help-api').forEach(sec => {
+        sec.querySelector('[data-api-setup]').textContent = setup;
+        const roomsEl = sec.querySelector('[data-api-rooms]');
+        roomsEl.textContent = rooms.join(roomsEl.dataset.sep);
+        sec.hidden = false;
+    });
+    modal.addEventListener('click', e => {
+        const btn = e.target?.closest?.('.help-api-copy');
+        if (btn) copyModalContent(btn.previousElementSibling.textContent, 'notify.copied');
+    });
 }
 function mycalBindNotifyBtn() {
     const btn = document.getElementById('mycalNotifyBtn');
@@ -9097,6 +9241,7 @@ function initMycalCalendar() {
         mycalOpenModal(document.getElementById('helpVideoModal'), null);
         video.play().catch(() => { /* 瀏覽器擋自動播放時，使用者按播放鍵即可 */ });
     });
+    mycalInitHelpApi();
     // 頁面載入先檢查一次（此時 bookings 通常還是空的，之後 loadBookings() 完成會經
     // mycalOnDataChanged() 再檢查一次），另外每 30 秒背景檢查一次（背景分頁會被瀏覽器降頻，可接受）
     mycalCheckReminders();
