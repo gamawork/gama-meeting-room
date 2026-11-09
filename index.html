@@ -2723,21 +2723,26 @@ curl "$BASE/rest/v1/bookings?date=eq.2026-11-10&amp;order=start_time" \
 curl "$BASE/rest/v1/bookings?date=gte.2026-11-10&amp;date=lte.2026-11-16&amp;room=eq.301" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
 
-# 會議室名稱是中文時，讓 curl 幫忙編碼
-curl -G "$BASE/rest/v1/bookings" --data-urlencode "room=eq.茶水間" \
+# 中文會議室名稱要寫成編碼後的樣子（這裡是「茶水間」）
+curl "$BASE/rest/v1/bookings?room=eq.%E8%8C%B6%E6%B0%B4%E9%96%93" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY"</pre><button type="button" class="help-api-copy">複製</button></div>
+                    <p class="help-api-note">其他中文名稱的編碼：在瀏覽器按 F12 開 Console，輸入 <code>encodeURIComponent('會客區')</code> 就會顯示。直接把中文寫進指令，在 Windows 上會變亂碼、查不到。</p>
                     <p class="help-api-label">4. 新增</p>
                     <div class="help-api-code"><pre>curl -X POST "$BASE/rest/v1/bookings" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
   -H "Content-Type: application/json" -H "Prefer: return=representation" \
-  -d '{"date":"2026-11-10","room":"301","start_time":"14:00","end_time":"15:00","title":"週會","organizer":"王小明"}'</pre><button type="button" class="help-api-copy">複製</button></div>
-                    <p class="help-api-note">成功會回傳新建的那筆（含 <code>id</code>）。同一間會議室時段重疊會被資料庫擋下、不會寫入，回傳錯誤碼 <code>23P01</code>；前後接續（10:00–11:00 接 11:00–12:00）可以。</p>
+  --data-binary @- &lt;&lt;'EOF'
+{"date":"2026-11-10","room":"301","start_time":"14:00","end_time":"15:00","title":"週會","organizer":"王小明"}
+EOF</pre><button type="button" class="help-api-copy">複製</button></div>
+                    <p class="help-api-note">要送出的內容放在 <code>&lt;&lt;'EOF'</code> 和 <code>EOF</code> 之間，中文才不會在 Windows 上變亂碼（寫在 <code>-d '…'</code> 裡會被轉壞）。成功會回傳新建的那筆（含 <code>id</code>）。同一間會議室時段重疊會被資料庫擋下、不會寫入，回傳錯誤碼 <code>23P01</code>；前後接續（10:00–11:00 接 11:00–12:00）可以。</p>
                     <p class="help-api-label">5. 修改、刪除（把 <code>BOOKING_ID</code> 換成那筆的 id）</p>
                     <div class="help-api-code"><pre># 修改：只送要改的欄位
 curl -X PATCH "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
   -H "Content-Type: application/json" \
-  -d '{"title":"週會（改時間）","start_time":"14:30","end_time":"15:30"}'
+  --data-binary @- &lt;&lt;'EOF'
+{"title":"週會（改時間）","start_time":"14:30","end_time":"15:30"}
+EOF
 
 # 刪除
 curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
@@ -2815,21 +2820,26 @@ curl "$BASE/rest/v1/bookings?date=eq.2026-11-10&amp;order=start_time" \
 curl "$BASE/rest/v1/bookings?date=gte.2026-11-10&amp;date=lte.2026-11-16&amp;room=eq.301" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY"
 
-# Room names in Chinese: let curl encode them
-curl -G "$BASE/rest/v1/bookings" --data-urlencode "room=eq.茶水間" \
+# Chinese room names must be URL-encoded (this one is 茶水間, the Pantry)
+curl "$BASE/rest/v1/bookings?room=eq.%E8%8C%B6%E6%B0%B4%E9%96%93" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY"</pre><button type="button" class="help-api-copy">Copy</button></div>
+                    <p class="help-api-note">To encode another Chinese name, press F12 in the browser, open the Console and enter <code>encodeURIComponent('會客區')</code>. Typing Chinese straight into the command gets garbled on Windows and finds nothing.</p>
                     <p class="help-api-label">4. Add</p>
                     <div class="help-api-code"><pre>curl -X POST "$BASE/rest/v1/bookings" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
   -H "Content-Type: application/json" -H "Prefer: return=representation" \
-  -d '{"date":"2026-11-10","room":"301","start_time":"14:00","end_time":"15:00","title":"Weekly sync","organizer":"Alex"}'</pre><button type="button" class="help-api-copy">Copy</button></div>
-                    <p class="help-api-note">On success you get the new booking back (with its <code>id</code>). Overlapping times in the same room are rejected by the database with error code <code>23P01</code> and nothing is saved. Back-to-back bookings (10:00–11:00 then 11:00–12:00) are fine.</p>
+  --data-binary @- &lt;&lt;'EOF'
+{"date":"2026-11-10","room":"301","start_time":"14:00","end_time":"15:00","title":"Weekly sync","organizer":"Alex"}
+EOF</pre><button type="button" class="help-api-copy">Copy</button></div>
+                    <p class="help-api-note">Put the data between <code>&lt;&lt;'EOF'</code> and <code>EOF</code> so Chinese text isn't garbled on Windows (inside <code>-d '…'</code> it gets mangled). On success you get the new booking back (with its <code>id</code>). Overlapping times in the same room are rejected by the database with error code <code>23P01</code> and nothing is saved. Back-to-back bookings (10:00–11:00 then 11:00–12:00) are fine.</p>
                     <p class="help-api-label">5. Change or delete (replace <code>BOOKING_ID</code> with the booking's id)</p>
                     <div class="help-api-code"><pre># Change: send only the fields you want to change
 curl -X PATCH "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
   -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Weekly sync (moved)","start_time":"14:30","end_time":"15:30"}'
+  --data-binary @- &lt;&lt;'EOF'
+{"title":"Weekly sync (moved)","start_time":"14:30","end_time":"15:30"}
+EOF
 
 # Delete
 curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
