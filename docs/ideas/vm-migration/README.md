@@ -46,6 +46,11 @@
 - 每日備份（2026-11-09，驗收 10）：`gama` 的 crontab 每天 02:30 跑 `~/ops/backup-db.sh`，備份到 `~/backups/YYYYMMDD-HHMMSS/`，只留最新 7 份（新的成功才刪最舊的），紀錄在 `~/backups/backup.log`。還原：`bash ~/ops/restore-drill.sh [備份資料夾]` 只還原到暫存資料庫做比對；真的要還原正式資料時，用同一份 `bookings.dump` 先清空 `bookings` 再 `pg_restore --data-only`，動手前先問使用者。備份只在 VM 本機，之後加一份複製到 IT 給的位置。
 - 測試站（2026-11-09，驗收 6）：`http://10.10.2.96/`，VM 上 nginx 容器 `gama-site`（port 80），檔案在 `~/site`（上一版 `~/site-prev`）。部署：本機 repo 根目錄跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`，只上傳已 commit 的 `index.html`、`gama.ico`，在 VM 上把資料庫網址與金鑰換成地端、標題加「【VM 測試站】」。repo 的 `index.html` 仍指雲端。
   - 已知限制：走 http 不是安全連線，瀏覽器不開放桌面通知，要等 HTTPS（驗收 5）。supabase-js 仍從 unpkg.com、節日資料從 cdn.jsdelivr.net 載入，使用者電腦連不到外網時 supabase-js 載不到、整個系統打不開（節日有降級，supabase-js 沒有）。使用者 2026-11-09：公司網路連得到外網，但仍傾向把 supabase-js 放 VM。做法：`deploy-site.sh` 部署時下載固定的 2.39.0 版、核對 sha256 後放 VM `~/site/vendor/`，頁面改從 VM 載入；repo 的 `index.html` 與測試不變（仍是 unpkg 網址，正式站照舊）。換版本時要同步改腳本裡的 `SDK_*`。節日資料仍從 jsdelivr 載入（失敗有降級）。
+- 部署方式（使用者 2026-11-09：push 後手動部署，取代 push main 自動上 GitHub Pages）：
+  1. commit → `git push` main → 在 repo 根目錄跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`（正式切換前；切換後加 `--prod`，不顯示「【VM 測試站】」）。腳本會檢查 HEAD 等於 origin/main，沒 push 就停。
+  2. 看輸出的版本第一行等於剛 push 的 commit，第二行是模式（test／prod）。
+  3. 部署後有問題要退回上一版：在 VM 上 `mv ~/site ~/site-bad && mv ~/site-prev ~/site && docker restart gama-site`（只能退一版）。
+  4. 正式切換前 push main 仍會同時更新 GitHub Pages 正式站（照舊）。
 - 結構已重建（2026-11-06，驗收 3）：`bookings` 與雲端逐項一致，做法與證據見 `scripts/`（`export-cloud-schema.sh`、`rebuild-schema.sql`、`inventory.sql`）與 `evidence/2026-11-06-schema/`。雲端是 PostgreSQL 17.4，`btree_gist` 裝在 public。
 
 ## 資料庫存取現況（2026-11-06 實測，雲端 Supabase）
