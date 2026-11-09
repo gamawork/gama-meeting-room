@@ -91,7 +91,7 @@ alter publication supabase_realtime add table public.bookings;
 
 正式切換（W-1106 第 9 條）前，正式資料仍在上面的雲端 Supabase；VM 上的是試跑用的地端版。安裝紀錄、試搬資料與連線注意事項見 `docs/ideas/vm-migration/README.md`「VM 現況」。
 
-- 位置：VM `10.10.2.96`（帳號 `gama`）的 `~/supabase-project`（官方自架 Docker 版，精簡服務）；API 入口 `http://10.10.2.96:8000`；密鑰在 VM 的 `.env`，不進 repo。
+- 位置：VM `10.10.2.96`（帳號 `gama`）的 `~/supabase-project`（官方自架 Docker 版，精簡服務）；API 入口 `http://10.10.2.96:8000`（網頁不直連它，改走網站同網址的 `/rest/v1`、`/realtime/v1`，由 nginx 轉過去，見下方「VM 部署」）；密鑰在 VM 的 `.env`，不進 repo。
 - 資料庫沒有對外 port，只能在 VM 內 `docker exec supabase-db psql -U postgres` 連。
 - **每日備份**：`gama` 的 crontab 每天 02:30 跑 `~/ops/backup-db.sh`，備份到 VM `~/backups/YYYYMMDD-HHMMSS/`（`bookings.dump`，pg_dump 自訂格式，含結構、權限、RLS 與資料）；紀錄寫 `~/backups/backup.log`。
   只留最新 7 份（使用者 2026-11-09），新備份成功並核對過才刪最舊的，備份失敗時舊的一份都不刪。
@@ -138,7 +138,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 |---|---|---|
 | 會議室系統（根目錄 `index.html`） | GitHub Pages：`https://gamawork.github.io/gama-meeting-room/` | push 到 main |
 | 新功能介紹頁（`launch/`） | Cloudflare Worker `gama-meeting-room-launch`（帳號 Gamawork2025）：`https://gama-meeting-room-launch.gamawork2025.workers.dev/` | push 到 main；Workers Builds 連 GitHub，照根目錄 `wrangler.jsonc` 只部署 `launch/` |
-| 會議室系統 VM 版（同一份 `index.html`） | 內部 VM：`http://10.10.2.96/`（nginx 容器 `gama-site`）。目前是測試站，正式切換（W-1106 第 9 條）後取代 GitHub Pages | **不會自動部署**：push 後手動跑部署腳本（見下方「VM 部署」） |
+| 會議室系統 VM 版（同一份 `index.html`） | 內部 VM：`http://meeting.gamasys.com.tw/`（IT 給的內部網域，2026-11-09；只有公司內網解析得到，前面沒有 CDN）或 `http://10.10.2.96/`（nginx 容器 `gama-site`）。目前是測試站，正式切換（W-1106 第 9 條）後取代 GitHub Pages | **不會自動部署**：push 後手動跑部署腳本（見下方「VM 部署」） |
 
 - `wrangler.jsonc` 的 `assets.directory` 必須指向 `./launch`：少了它，Workers Builds 會把整個 repo（含 `node_modules`）當網站上傳，
   因單檔超過 25MB 而失敗（2026-09-28 實際發生）。`name` 必須跟 Cloudflare 上的 Worker 名稱一致。
@@ -159,11 +159,12 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 2. 看輸出的版本：第一行要等於剛 push 的 commit，第二行是模式（test／prod）。VM 上存在 `~/site/version.txt`。
 3. 有問題要退回上一版（只能退一版）：VM 上 `mv ~/site ~/site-bad && mv ~/site-prev ~/site && docker restart gama-site`。
 
-- 腳本只上傳已 commit 的 `index.html`、`gama.ico`；到 VM 上才把 Supabase 網址與金鑰換成地端（金鑰從 VM 的 `~/supabase-project/.env` 讀）。
+- 腳本只上傳已 commit 的 `index.html`、`gama.ico`；到 VM 上才把 Supabase 網址換成 `window.location.origin`、金鑰換成地端（金鑰從 VM 的 `~/supabase-project/.env` 讀）。
+- 網頁與 API 同網址（使用者 2026-11-09）：nginx 設定正本是 `docs/ideas/vm-migration/scripts/nginx-site.conf`，部署時放 VM `~/site-conf/default.conf`，把 `/rest/v1`、`/realtime/v1`（WebSocket）轉給 port 8000，其他給靜態網頁；用 IP 或網域打開都能用，之後開 HTTPS 只要一張憑證、不會被瀏覽器擋 http API。每次部署都重建 `gama-site` 容器（設定檔先用暫存容器 `nginx -t` 檢查，沒過就停）。8000 直連仍保留。
   **repo 的 `index.html` 一律指雲端，不要為了 VM 改它**：正式切換前 push main 就是更新 GitHub Pages 正式站。
 - supabase-js 由 VM 提供：腳本從 unpkg 下載固定版本、核對 sha256 後放 `~/site/vendor/`。換 `index.html` 的 supabase-js 版本時，要同步改腳本裡的 `SDK_*`（沒改腳本會停下）。節日資料仍從 jsdelivr 載入（失敗有降級）。
 - 連 VM：帳號 `gama`、金鑰 `~/.ssh/id_ed25519_gama_vm`。一次只開一條 ssh；22 port 偶爾被拒約 1 分鐘、原因未知（見 `docs/ideas/vm-migration/README.md`「VM 現況」）。
-- 已知限制：VM 目前走 http，瀏覽器不開放桌面通知，要等 IT 給內部網域與 HTTPS（W-1106 第 5 條）。
+- 已知限制：VM 目前走 http，瀏覽器不開放桌面通知，要等 IT 開 HTTPS（W-1106 第 5 條；內部網域 2026-11-09 已給）。IT 之後若在前面加 CDN，要重測 WebSocket 能不能通過。
 
 ## 發生亂碼時的處理
 

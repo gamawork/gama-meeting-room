@@ -104,7 +104,7 @@ chmod -R a+rX "$NEW"
 CONF_DIR="$HOME/site-conf"; mkdir -p "$CONF_DIR"
 printf '%s' "$CONF_B64" | base64 -d > "$CONF_DIR/default.conf.new"; unset CONF_B64
 chmod a+r "$CONF_DIR/default.conf.new"
-docker run --rm --add-host=host.docker.internal:host-gateway \
+docker run --rm --add-host=host.docker.internal:host-gateway -e NGINX_ENTRYPOINT_QUIET_LOGS=1 \
   -v "$CONF_DIR/default.conf.new":/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t -q \
   || { echo "停止：nginx 設定檢查沒過"; exit 1; }
 mv "$CONF_DIR/default.conf.new" "$CONF_DIR/default.conf"

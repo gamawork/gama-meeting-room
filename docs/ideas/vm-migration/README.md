@@ -33,7 +33,8 @@
 ### 自架 Supabase 安裝紀錄（2026-11-06）
 
 - 位置：VM `~/supabase-project`（官方 `self-hosted/v0.8.4`，版本寫在 `.supabase-version`，可用官方 `update.sh` 升級）；原始 compose 備份 `docker-compose.yml.orig`；密鑰在 `.env`（權限 600，全部用官方腳本新產生，只在 VM 上）。
-- 對外入口：`http://10.10.2.96:8000`（API 閘道；`/` 是管理後台，要帳密）。還沒有 HTTPS 與網域。
+- 對外入口：`http://10.10.2.96:8000`（API 閘道；`/` 是管理後台，要帳密）。還沒有 HTTPS。
+  2026-11-09：IT 給內部網域 `meeting.gamasys.com.tw`（公司 DNS 解析到 10.10.2.96，公開 DNS 查不到，前面沒有 CDN）；網頁改走同網址的 `/rest/v1`、`/realtime/v1`，由網站的 nginx 轉到 8000（設定 `scripts/nginx-site.conf`，做法正本在專案 `CLAUDE.md`「VM 部署」）。已實測：經網域讀、寫、刪與即時同步都通。
 - 留下的服務：db（PostgreSQL 17.6）、auth、rest、realtime、meta、studio、API 閘道（新版預設 Envoy，不是 Kong）。拿掉 storage、imgproxy、functions、supavisor（pooler）；analytics、vector 新版已移到另一個 compose 檔，本來就不啟動。
 - 拿掉 pooler 後，**資料庫沒有對外 port**，只能在 VM 內 `docker exec supabase-db psql -U postgres`。搬資料時從 VM 內匯入，或屆時再開 port。
 - 閒置記憶體：容器合計約 630 MiB，整機可用約 2.5 GiB。
