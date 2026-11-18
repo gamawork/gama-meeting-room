@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # 把網站部署到 VM（W-1106-vm-migration）。部署流程（使用者 2026-11-09：push 後手動部署）：
 #   commit → git push main → 在本機 repo 根目錄用 Git Bash 執行：
-#   bash docs/ideas/vm-migration/scripts/deploy-site.sh [--prod] [--allow-unpushed]
+#   bash docs/ideas/vm-migration/scripts/deploy-site.sh [--test] [--allow-unpushed]
 # 參數：
-#   --prod            正式模式：不加「【VM 測試站】」字樣（正式切換後用）；不加則是測試站模式。
+#   （不加參數）      正式模式（預設，2026-11-18 起）：不加「【VM 測試站】」字樣。
+#   --test            測試站模式：標題與頁首加「【VM 測試站】」字樣（會覆蓋正式站內容，只在需要時用）。
+#   --prod            同預設（正式模式），保留是為了舊習慣不報錯。
 #   --allow-unpushed  跳過「HEAD 必須等於 origin/main」的檢查（只給測試用）。
 # - 預設只部署已 push 的版本：HEAD 與 origin/main 不同就停，避免 VM 跑的是 GitHub 沒有的程式碼。
 # - 只部署已 commit 的 index.html 與 gama.ico（git archive HEAD），工作目錄的未 commit 改動不會上去。
@@ -12,7 +14,7 @@
 #   SUPABASE_ANON_KEY 換成地端金鑰（從 VM 的 ~/supabase-project/.env 讀，不經過本機）。
 # - nginx 設定取 HEAD 的 nginx-site.conf，放 VM 的 ~/site-conf/default.conf；每次部署都重建 gama-site 容器。
 # - supabase-js 部署時從 unpkg 下載（核對 sha256）放 VM 的 vendor/，頁面改從 VM 載入，不再依賴 unpkg。
-# - 測試站模式（預設）：分頁標題與頁首前加「【VM 測試站】」（<title> 與 i18n 的 app.title），避免同事以為是正式站；--prod 不加。
+# - 測試站模式（--test）：分頁標題與頁首前加「【VM 測試站】」（<title> 與 i18n 的 app.title），避免同事以為是正式站；預設（正式）不加。
 # - version.txt 兩行：第一行 commit 短 hash，第二行模式（test／prod）。
 # - 網站由 VM 上的 nginx 容器（gama-site，port 8080）提供，重開機自動起來。
 #   80／443 讓給 IT 在同一台 VM 裝的 nginx（負責網域與 HTTPS，整站轉給 8080；使用者 2026-11-18）。
@@ -25,12 +27,13 @@ LOCAL_SUPABASE_URL=http://10.10.2.96:8000   # 只給部署後檢查直連 API �
 
 cd "$(git rev-parse --show-toplevel)"
 
-MODE=test; ALLOW_UNPUSHED=0
+MODE=prod; ALLOW_UNPUSHED=0
 for arg in "$@"; do
   case "$arg" in
     --prod) MODE=prod ;;
+    --test) MODE=test ;;
     --allow-unpushed) ALLOW_UNPUSHED=1 ;;
-    *) echo "用法：bash $0 [--prod] [--allow-unpushed]"; echo "  --prod            正式模式（不加【VM 測試站】字樣）"; echo "  --allow-unpushed  跳過 push 檢查（只給測試用）"; exit 1 ;;
+    *) echo "用法：bash $0 [--test] [--allow-unpushed]"; echo "  （不加參數）      正式模式（預設，不加【VM 測試站】字樣）"; echo "  --test            測試站模式（標題與頁首加【VM 測試站】字樣）"; echo "  --prod            同預設（正式模式）"; echo "  --allow-unpushed  跳過 push 檢查（只給測試用）"; exit 1 ;;
   esac
 done
 
@@ -80,7 +83,7 @@ sed -i -E \
   -e "s|^([[:space:]]*const SUPABASE_ANON_KEY = )'[^']*';|\1'$ANON_KEY';|" \
   -e "s|src=\"$SDK_URL\"|src=\"./$SDK_FILE\"|" \
   "$F"
-if [ "$MODE" = test ]; then   # 測試站模式才加字樣；--prod 跳過
+if [ "$MODE" = test ]; then   # 測試站模式才加字樣；預設（正式）跳過
   sed -i -E \
     -e "0,/<title>/s|<title>|<title>【VM 測試站】|" \
     -e "s|'app.title': '|'app.title': '【VM 測試站】|" \

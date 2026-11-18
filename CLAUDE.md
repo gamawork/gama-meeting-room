@@ -139,7 +139,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 |---|---|---|
 | 舊站（根目錄 `index.html` 的 github.io 轉址） | GitHub Pages：`https://gamawork.github.io/gama-meeting-room/`；2026-11-18 起只剩轉址到 `https://meeting.gamasys.com.tw/`，不再提供系統 | push 到 main |
 | 新功能介紹頁（`launch/`） | Cloudflare Worker `gama-meeting-room-launch`（帳號 Gamawork2025）：`https://gama-meeting-room-launch.gamawork2025.workers.dev/` | push 到 main；Workers Builds 連 GitHub，照根目錄 `wrangler.jsonc` 只部署 `launch/` |
-| 會議室系統 **正式站**（同一份 `index.html`，2026-11-18 起） | 內部 VM：`https://meeting.gamasys.com.tw/`（只有公司內網解析得到；IT 的 nginx 在 `10.10.2.23` 提供 HTTPS、轉給 VM 8080 的 nginx 容器 `gama-site`）。直連測試用 `http://10.10.2.96:8080/` | **不會自動部署**：push 後手動跑部署腳本加 `--prod`（見下方「VM 部署」） |
+| 會議室系統 **正式站**（同一份 `index.html`，2026-11-18 起） | 內部 VM：`https://meeting.gamasys.com.tw/`（只有公司內網解析得到；IT 的 nginx 在 `10.10.2.23` 提供 HTTPS、轉給 VM 8080 的 nginx 容器 `gama-site`）。直連測試用 `http://10.10.2.96:8080/` | **不會自動部署**：push 後手動跑部署腳本（預設就是正式模式，見下方「VM 部署」） |
 
 - `wrangler.jsonc` 的 `assets.directory` 必須指向 `./launch`：少了它，Workers Builds 會把整個 repo（含 `node_modules`）當網站上傳，
   因單檔超過 25MB 而失敗（2026-09-28 實際發生）。`name` 必須跟 Cloudflare 上的 Worker 名稱一致。
@@ -155,7 +155,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 ### VM 部署（使用者 2026-11-09：push 後手動部署）
 
 1. commit → `git push` main → 在本機 repo 根目錄用 Git Bash 跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`。
-   正式站用 `--prod`（不加字樣，2026-11-18 切換時已實跑）；不加參數是測試站模式（標題加「【VM 測試站】」），只在需要時用，且會覆蓋正式站內容。
+   不加參數就是正式模式（不加字樣；2026-11-18 起預設，`--prod` 仍接受、等同預設）；`--test` 才是測試站模式（標題加「【VM 測試站】」），只在需要時用，且會覆蓋正式站內容。
    HEAD 不等於 origin/main 時腳本會停（「先 push 再部署」），VM 不會跑到 GitHub 上沒有的程式碼。
 2. 看輸出的版本：第一行要等於剛 push 的 commit，第二行是模式（test／prod）。VM 上存在 `~/site/version.txt`。
 3. 有問題要退回上一版（只能退一版）：VM 上 `mv ~/site ~/site-bad && mv ~/site-prev ~/site && docker restart gama-site`。
