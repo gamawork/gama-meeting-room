@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>
+        // 2026-11-18 正式切換到內部 VM：GitHub Pages 舊站一律轉到新網址，舊站不再寫入雲端資料庫（VM 版 hostname 不同，不受影響）
+        if (location.hostname.endsWith('github.io')) location.replace('https://meeting.gamasys.com.tw/' + location.search + location.hash);
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gama Meeting Room Booking System</title>
     <link rel="icon" type="image/x-icon" href="./gama.ico">
