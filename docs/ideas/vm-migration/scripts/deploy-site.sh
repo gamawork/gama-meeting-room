@@ -14,7 +14,8 @@
 # - supabase-js 部署時從 unpkg 下載（核對 sha256）放 VM 的 vendor/，頁面改從 VM 載入，不再依賴 unpkg。
 # - 測試站模式（預設）：分頁標題與頁首前加「【VM 測試站】」（<title> 與 i18n 的 app.title），避免同事以為是正式站；--prod 不加。
 # - version.txt 兩行：第一行 commit 短 hash，第二行模式（test／prod）。
-# - 網站由 VM 上的 nginx 容器（gama-site，port 80）提供，重開機自動起來。
+# - 網站由 VM 上的 nginx 容器（gama-site，port 8080）提供，重開機自動起來。
+#   80／443 讓給 IT 在同一台 VM 裝的 nginx（負責網域與 HTTPS，整站轉給 8080；使用者 2026-11-18）。
 # 整個部署只開一條 ssh（之前短時間連太多條被擋過，見 README「VM 現況」）。
 set -euo pipefail
 
@@ -114,17 +115,17 @@ rm -rf "$HOME/site-prev"; [ -d "$LIVE" ] && mv "$LIVE" "$HOME/site-prev"; mv "$N
 
 # 每次都重建容器：目錄換了 bind mount 要重掛，設定檔與 host.docker.internal 也要帶上（退回上一版仍可用 docker restart）
 docker rm -f gama-site > /dev/null 2>&1 || true
-docker run -d --name gama-site --restart unless-stopped -p 80:80 \
+docker run -d --name gama-site --restart unless-stopped -p 8080:80 \
   --add-host=host.docker.internal:host-gateway \
   -v "$LIVE":/usr/share/nginx/html:ro \
   -v "$CONF_DIR/default.conf":/etc/nginx/conf.d/default.conf:ro nginx:alpine > /dev/null
 
 sleep 2
-echo "部署版本（第一行 commit、第二行模式）："; curl -fsS http://localhost/version.txt
-echo "supabase-js 由 VM 提供（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' "http://localhost/$SDK_FILE")"
-curl -fsS http://localhost/ | grep -o '<title>[^<]*</title>'
-echo "同網址讀 bookings（經 nginx 轉給 API，應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "http://localhost/rest/v1/bookings?select=id&limit=1")"
-echo "同網址即時同步 WebSocket（應回 101）：$(curl -s -o /dev/null -m 3 -w '%{http_code}' --http1.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' "http://localhost/realtime/v1/websocket?apikey=$ANON_KEY&vsn=1.0.0" || true)"
+echo "部署版本（第一行 commit、第二行模式）："; curl -fsS http://localhost:8080/version.txt
+echo "supabase-js 由 VM 提供（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080/$SDK_FILE")"
+curl -fsS http://localhost:8080/ | grep -o '<title>[^<]*</title>'
+echo "同網址讀 bookings（經 nginx 轉給 API，應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "http://localhost:8080/rest/v1/bookings?select=id&limit=1")"
+echo "同網址即時同步 WebSocket（應回 101）：$(curl -s -o /dev/null -m 3 -w '%{http_code}' --http1.1 -H 'Connection: Upgrade' -H 'Upgrade: websocket' -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' "http://localhost:8080/realtime/v1/websocket?apikey=$ANON_KEY&vsn=1.0.0" || true)"
 echo "直連 API 8000 仍可用（應回 200）：$(curl -s -o /dev/null -w '%{http_code}' -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" "$LOCAL_SUPABASE_URL/rest/v1/bookings?select=id&limit=1")"
 REMOTE
 } | ssh -i "$KEY" -o ConnectTimeout=10 -o BatchMode=yes "$VM" bash -s

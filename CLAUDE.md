@@ -138,7 +138,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 |---|---|---|
 | 會議室系統（根目錄 `index.html`） | GitHub Pages：`https://gamawork.github.io/gama-meeting-room/` | push 到 main |
 | 新功能介紹頁（`launch/`） | Cloudflare Worker `gama-meeting-room-launch`（帳號 Gamawork2025）：`https://gama-meeting-room-launch.gamawork2025.workers.dev/` | push 到 main；Workers Builds 連 GitHub，照根目錄 `wrangler.jsonc` 只部署 `launch/` |
-| 會議室系統 VM 版（同一份 `index.html`） | 內部 VM：`http://meeting.gamasys.com.tw/`（IT 給的內部網域，2026-11-09；只有公司內網解析得到，前面沒有 CDN）或 `http://10.10.2.96/`（nginx 容器 `gama-site`）。目前是測試站，正式切換（W-1106 第 9 條）後取代 GitHub Pages | **不會自動部署**：push 後手動跑部署腳本（見下方「VM 部署」） |
+| 會議室系統 VM 版（同一份 `index.html`） | 內部 VM：`meeting.gamasys.com.tw`（IT 給的內部網域，2026-11-09；只有公司內網解析得到）或 `http://10.10.2.96:8080/`（nginx 容器 `gama-site`，直連測試用）。2026-11-18 起 80／443 由 IT 在同一台 VM 裝的 nginx 接（網域與 HTTPS 由 IT 設定、整站轉給 8080），我們的容器改用 8080。目前是測試站，正式切換（W-1106 第 9 條）後取代 GitHub Pages | **不會自動部署**：push 後手動跑部署腳本（見下方「VM 部署」） |
 
 - `wrangler.jsonc` 的 `assets.directory` 必須指向 `./launch`：少了它，Workers Builds 會把整個 repo（含 `node_modules`）當網站上傳，
   因單檔超過 25MB 而失敗（2026-09-28 實際發生）。`name` 必須跟 Cloudflare 上的 Worker 名稱一致。
