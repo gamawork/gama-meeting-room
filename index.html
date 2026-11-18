@@ -2762,6 +2762,15 @@ curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
                             <li>週期預約是每一次會議各存一筆，要改整個系列得逐筆改。</li>
                         </ul>
                     </div>
+                    <p class="help-api-label">6. 自動提醒自己（排程定時讀取）</p>
+                    <p class="help-api-note">這個網址只有公司內網連得到，所以排程要跑在公司裡的電腦或伺服器上：</p>
+                    <ul class="help-api-note">
+                        <li>可以：內網自架的 n8n（用排程節點讀取，再發 Telegram、Teams 或 Email）、Claude 桌面版的排程任務、Windows 工作排程器跑上面的讀取指令。電腦要開著、連著公司網路才會跑。</li>
+                        <li>不行：雲端服務（例如雲端的 n8n、Claude 雲端排程）查不到這個網址。</li>
+                        <li>目前只能定時去讀，每 5～10 分鐘一次就夠；還不能「一有變動就收到」。</li>
+                        <li>提醒用途只做讀取，不要在排程裡新增、修改或刪除。</li>
+                        <li>只想要開會前提醒：「我的行事曆」開啟桌面通知，開會前 10 分鐘會提醒（網頁要開著）。</li>
+                    </ul>
                 </section>
             </div>
             <div class="help-en">
@@ -2860,6 +2869,15 @@ curl -X DELETE "$BASE/rest/v1/bookings?id=eq.BOOKING_ID" \
                             <li>Each occurrence of a recurring booking is stored separately, so changing a whole series means changing each one.</li>
                         </ul>
                     </div>
+                    <p class="help-api-label">6. Remind yourself automatically (scheduled reads)</p>
+                    <p class="help-api-note">This address only works inside the company network, so the schedule has to run on a computer or server in the office:</p>
+                    <ul class="help-api-note">
+                        <li>Works: a self-hosted n8n on the company network (a schedule node reads the data, then sends Telegram, Teams or email), scheduled tasks in the Claude desktop app, or Windows Task Scheduler running the read command above. The computer has to be on and connected to the company network.</li>
+                        <li>Doesn't work: cloud services (such as cloud-hosted n8n or Claude cloud routines) can't find this address.</li>
+                        <li>For now you can only read on a schedule. Every 5–10 minutes is plenty. Getting notified the moment something changes isn't available yet.</li>
+                        <li>For reminders, only read. Don't add, change or delete bookings from a schedule.</li>
+                        <li>If you just want a heads-up before meetings: turn on desktop notifications in My Calendar and you'll get a reminder 10 minutes before (keep the page open).</li>
+                    </ul>
                 </section>
             </div>
         </div>
