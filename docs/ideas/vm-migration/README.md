@@ -45,6 +45,7 @@
   2026-11-09 08:56 再連已恢復，VM 期間沒重開（uptime 2 天 19 小時）；原因仍未知。
 - 資料已試搬（2026-11-09，驗收 4）：地端 `bookings` 是 11-09 08:59 的雲端快照 1761 筆，與雲端核對值一致。做法：`scripts/dryrun-import.sh`（假資料乾跑）→ `export-cloud-data.sh` → `import-local-data.sh`；匯出檔只在 VM `~/migration/cloud-data-*`。
 - 每日備份（2026-11-09，驗收 10）：每天 02:30 自動備份、只留 7 份、已做還原演練。做法與還原步驟的正本在專案 `CLAUDE.md`「地端自架 Supabase 與每日備份」，這裡不重抄。
+- 2026-11-18 已正式切換：`https://meeting.gamasys.com.tw/` 為正式站，資料以雲端最後匯出（1774 筆）匯入地端，證據見 `TODO.md` W-1106 第 9 條。以下為切換前的測試站紀錄。
 - 測試站（2026-11-09，驗收 6）：`http://10.10.2.96/`，VM 上 nginx 容器 `gama-site`（port 80；2026-11-18 起改 8080，80／443 讓給 IT 在同一台 VM 裝的 nginx，由它管網域與 HTTPS、整站轉給 8080，直連測試用 `http://10.10.2.96:8080/`），檔案在 `~/site`（上一版 `~/site-prev`）。部署：本機 repo 根目錄跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`，只上傳已 commit 的 `index.html`、`gama.ico`，在 VM 上把資料庫網址與金鑰換成地端、標題加「【VM 測試站】」。repo 的 `index.html` 仍指雲端。
   - 已知限制：走 http 不是安全連線，瀏覽器不開放桌面通知，要等 HTTPS（驗收 5）。supabase-js 仍從 unpkg.com、節日資料從 cdn.jsdelivr.net 載入，使用者電腦連不到外網時 supabase-js 載不到、整個系統打不開（節日有降級，supabase-js 沒有）。使用者 2026-11-09：公司網路連得到外網，但仍傾向把 supabase-js 放 VM。做法：`deploy-site.sh` 部署時下載固定的 2.39.0 版、核對 sha256 後放 VM `~/site/vendor/`，頁面改從 VM 載入；repo 的 `index.html` 與測試不變（仍是 unpkg 網址，正式站照舊）。換版本時要同步改腳本裡的 `SDK_*`。節日資料仍從 jsdelivr 載入（失敗有降級）。
 - 部署方式（使用者 2026-11-09：push 後手動部署，取代 push main 自動上 GitHub Pages）：步驟、退回上一版與注意事項的正本在專案 `CLAUDE.md`「VM 部署」，這裡不重抄。正式切換前 push main 仍會同時更新 GitHub Pages 正式站（照舊）。

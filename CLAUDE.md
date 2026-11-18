@@ -86,10 +86,11 @@ alter publication supabase_realtime add table public.bookings;
 
 - UPDATE／DELETE 的 payload.old 預設只有 id（沒設 REPLICA IDENTITY FULL），前端改前資料一律從本機 `bookings` 陣列取。
 - 這個專案的 Supabase 不在本機 CLI 登入的個人帳號底下，Claude 無法直接下 DDL；資料庫設定一律由使用者在後台執行。
+- 地端庫（VM）要不要改由 Claude 下 DDL（Claude 有 VM 金鑰、可 `docker exec`）：待使用者決定；決定前照上一條，由使用者執行。
 
 ### 地端自架 Supabase 與每日備份（VM，2026-11-09 起試跑；W-1106-vm-migration）
 
-正式切換（W-1106 第 9 條）前，正式資料仍在上面的雲端 Supabase；VM 上的是試跑用的地端版。安裝紀錄、試搬資料與連線注意事項見 `docs/ideas/vm-migration/README.md`「VM 現況」。
+2026-11-18 已正式切換（W-1106 第 9 條）：正式資料在 VM 上的地端版，上面的雲端 Supabase 只當備援保留（暫不停用，不再寫入、不會自動同步）。安裝紀錄、試搬資料與連線注意事項見 `docs/ideas/vm-migration/README.md`「VM 現況」。
 
 - 位置：VM `10.10.2.96`（帳號 `gama`）的 `~/supabase-project`（官方自架 Docker 版，精簡服務）；API 入口 `http://10.10.2.96:8000`（網頁不直連它，改走網站同網址的 `/rest/v1`、`/realtime/v1`，由 nginx 轉過去，見下方「VM 部署」）；密鑰在 VM 的 `.env`，不進 repo。
 - 資料庫沒有對外 port，只能在 VM 內 `docker exec supabase-db psql -U postgres` 連。
@@ -132,13 +133,13 @@ exclude using gist (
 Git 身分：工作帳號 `gamawork`，見 `~/.claude/environments/GitHub.md`（L18-24）。
 remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）。
 
-## 部署（push 到 main 會同時觸發兩邊；VM 要另外手動部署）
+## 部署（push 到 main 會同時觸發兩邊；VM 正式站要另外手動部署）
 
 | 內容 | 主機與網址 | 怎麼部署 |
 |---|---|---|
-| 會議室系統（根目錄 `index.html`） | GitHub Pages：`https://gamawork.github.io/gama-meeting-room/` | push 到 main |
+| 舊站（根目錄 `index.html` 的 github.io 轉址） | GitHub Pages：`https://gamawork.github.io/gama-meeting-room/`；2026-11-18 起只剩轉址到 `https://meeting.gamasys.com.tw/`，不再提供系統 | push 到 main |
 | 新功能介紹頁（`launch/`） | Cloudflare Worker `gama-meeting-room-launch`（帳號 Gamawork2025）：`https://gama-meeting-room-launch.gamawork2025.workers.dev/` | push 到 main；Workers Builds 連 GitHub，照根目錄 `wrangler.jsonc` 只部署 `launch/` |
-| 會議室系統 VM 版（同一份 `index.html`） | 內部 VM：`meeting.gamasys.com.tw`（IT 給的內部網域，2026-11-09；只有公司內網解析得到）或 `http://10.10.2.96:8080/`（nginx 容器 `gama-site`，直連測試用）。2026-11-18 起 80／443 由 IT 在同一台 VM 裝的 nginx 接（網域與 HTTPS 由 IT 設定、整站轉給 8080），我們的容器改用 8080。目前是測試站，正式切換（W-1106 第 9 條）後取代 GitHub Pages | **不會自動部署**：push 後手動跑部署腳本（見下方「VM 部署」） |
+| 會議室系統 **正式站**（同一份 `index.html`，2026-11-18 起） | 內部 VM：`https://meeting.gamasys.com.tw/`（只有公司內網解析得到；IT 的 nginx 在 `10.10.2.23` 提供 HTTPS、轉給 VM 8080 的 nginx 容器 `gama-site`）。直連測試用 `http://10.10.2.96:8080/` | **不會自動部署**：push 後手動跑部署腳本加 `--prod`（見下方「VM 部署」） |
 
 - `wrangler.jsonc` 的 `assets.directory` 必須指向 `./launch`：少了它，Workers Builds 會把整個 repo（含 `node_modules`）當網站上傳，
   因單檔超過 25MB 而失敗（2026-09-28 實際發生）。`name` 必須跟 Cloudflare 上的 Worker 名稱一致。
@@ -154,7 +155,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 ### VM 部署（使用者 2026-11-09：push 後手動部署）
 
 1. commit → `git push` main → 在本機 repo 根目錄用 Git Bash 跑 `bash docs/ideas/vm-migration/scripts/deploy-site.sh`。
-   正式切換前是測試站模式（標題加「【VM 測試站】」）；切換後加 `--prod`（不加字樣，切換時才第一次實跑）。
+   正式站用 `--prod`（不加字樣，2026-11-18 切換時已實跑）；不加參數是測試站模式（標題加「【VM 測試站】」），只在需要時用，且會覆蓋正式站內容。
    HEAD 不等於 origin/main 時腳本會停（「先 push 再部署」），VM 不會跑到 GitHub 上沒有的程式碼。
 2. 看輸出的版本：第一行要等於剛 push 的 commit，第二行是模式（test／prod）。VM 上存在 `~/site/version.txt`。
 3. 有問題要退回上一版（只能退一版）：VM 上 `mv ~/site ~/site-bad && mv ~/site-prev ~/site && docker restart gama-site`。
@@ -164,7 +165,7 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 - 說明彈窗的「串接 API」段（使用者 2026-11-09）：右上角 i 鈕的 `#helpModal` 裡中英各一份 `.help-api`，教同事用 curl 讀、新增、修改、刪除 `bookings`，金鑰直接顯示＋複製鈕；第 6 段「自動提醒自己」說明排程只能跑在內網（2026-11-18 實測：雲端 n8n 回 ENOTFOUND，Claude 桌面版排程任務讀取 200）。
   只在 `SUPABASE_URL === window.location.origin` 時顯示（`mycalInitHelpApi()`），所以靠上面部署腳本的網址替換：VM 版看得到，GitHub Pages（連雲端）看不到。網址、金鑰、會議室清單（取 `#meetingRoom` 選項）都在網頁上即時帶入，換金鑰或加會議室不用改說明。
   範例裡的中文一律走 `<<'EOF'` 標準輸入、網址裡的中文會議室用編碼後寫法：Windows（繁中、代碼頁 950）的 Git Bash 會把參數裡的中文轉成 Big5，PostgREST 回「Empty or invalid json」（2026-11-09 實測）。改範例後要在 VM 上照原文實跑一次。
-  **repo 的 `index.html` 一律指雲端，不要為了 VM 改它**：正式切換前 push main 就是更新 GitHub Pages 正式站。
+  **repo 的 `index.html` 仍寫雲端網址，不要為了 VM 改它**：部署時才由腳本替換成地端；GitHub Pages 切換後只做轉址（push main 只會更新那份轉址頁）。
 - supabase-js 由 VM 提供：腳本從 unpkg 下載固定版本、核對 sha256 後放 `~/site/vendor/`。換 `index.html` 的 supabase-js 版本時，要同步改腳本裡的 `SDK_*`（沒改腳本會停下）。節日資料仍從 jsdelivr 載入（失敗有降級）。
 - 連 VM：帳號 `gama`、金鑰 `~/.ssh/id_ed25519_gama_vm`。一次只開一條 ssh；22 port 偶爾被拒約 1 分鐘、原因未知（見 `docs/ideas/vm-migration/README.md`「VM 現況」）。
 - 已知限制：VM 目前走 http，瀏覽器不開放桌面通知，要等 IT 開 HTTPS（W-1106 第 5 條；內部網域 2026-11-09 已給）。IT 之後若在前面加 CDN，要重測 WebSocket 能不能通過。
@@ -213,5 +214,5 @@ remote 走 SSH host 別名 `SSH-gamawork`（`git remote -v` 2026-09-07 實查）
 不驗（使用者明說 YYYY-MM-DD）：（尚無）；審查與驗收不報，回報末尾列「已知不處理」
 必驗（規格）：預約時段防撞與資料顯示；「我的行事曆」月／週／日節日顯示、跨年份、中英文切換、已停用的自訂節日不再出現、節日 CDN 失敗時會議仍可見可操作（使用者確認 2026-10-07，即上方 5 行摘要第 3 行；本次改到的才驗，不是每次全驗）
 外部出狀況要的行為：節日 CDN 失敗時不阻擋預約與會議顯示；Supabase 無法連線時顯示錯誤，不假裝預約成功（使用者確認 2026-10-07，即上方 5 行摘要第 5 行）
-誰用、錯了的代價：多人（跨分頁、跨使用者）預約同一批會議室的系統（根目錄 `index.html`，GitHub Pages），預約存在 Supabase `bookings`。錯了的代價：時段防撞三層失效造成重複預約；Supabase 預約資料遺失或毀損；改資料庫 DDL 由使用者在後台執行（Claude 無法直接下 DDL）；push main 會同時觸發 GitHub Pages 與 Cloudflare Worker 部署
+誰用、錯了的代價：多人（跨分頁、跨使用者）預約同一批會議室的系統（根目錄 `index.html`，2026-11-18 起正式站在內部 VM `https://meeting.gamasys.com.tw/`），預約存在 VM 上地端 Supabase 的 `bookings`（雲端 Supabase 只當備援）。錯了的代價：時段防撞三層失效造成重複預約；地端預約資料遺失或毀損（備份只在 VM 本機）；改資料庫 DDL 目前由使用者執行（地端庫改由 Claude 下 DDL 待使用者決定）；push main 會更新 GitHub Pages 轉址頁與 Cloudflare Worker，VM 要另外手動部署
 ```
